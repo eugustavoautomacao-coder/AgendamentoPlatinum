@@ -16,11 +16,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const { signOut, profile } = useAuth();
 
   const menuItems = [
     {
@@ -114,13 +116,15 @@ const AdminSidebar = () => {
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder-avatar.jpg" />
-            <AvatarFallback className="bg-primary-soft text-primary">AD</AvatarFallback>
+            <AvatarImage src={profile?.avatar_url} />
+            <AvatarFallback className="bg-primary-soft text-primary">
+              {profile?.name?.charAt(0) || 'U'}
+            </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">Admin Salão</p>
-              <p className="text-sm text-muted-foreground truncate">admin@salao.com</p>
+              <p className="font-medium text-foreground truncate">{profile?.name || 'Usuário'}</p>
+              <p className="text-sm text-muted-foreground truncate">{profile?.role}</p>
             </div>
           )}
         </div>
@@ -129,6 +133,7 @@ const AdminSidebar = () => {
           variant="ghost" 
           size="sm" 
           className="w-full justify-start text-muted-foreground hover:text-destructive"
+          onClick={signOut}
         >
           <LogOut className="h-4 w-4" />
           {!isCollapsed && <span className="ml-2">Sair</span>}

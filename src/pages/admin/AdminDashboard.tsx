@@ -3,78 +3,75 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/components/layout/AdminLayout";
+import { useAppointments } from "@/hooks/useAppointments";
+import { useClients } from "@/hooks/useClients";
+import { useProfessionals } from "@/hooks/useProfessionals";
+import { useServices } from "@/hooks/useServices";
+import { format, isToday, isTomorrow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const AdminDashboard = () => {
-  // Mock data - será substituído por dados reais da API
+  const { appointments, loading: appointmentsLoading } = useAppointments();
+  const { clients, loading: clientsLoading } = useClients();
+  const { professionals, loading: professionalsLoading } = useProfessionals();
+  const { services, loading: servicesLoading } = useServices();
+
+  // Calculate stats from real data
+  const todayAppointments = appointments.filter(apt => 
+    isToday(new Date(apt.start_time))
+  );
+  
+  const thisMonthRevenue = appointments
+    .filter(apt => apt.status === 'concluido' && apt.final_price)
+    .reduce((sum, apt) => sum + (apt.final_price || 0), 0);
+
   const stats = [
     {
       title: "Agendamentos Hoje",
-      value: "12",
+      value: todayAppointments.length.toString(),
       icon: Calendar,
-      description: "+2 desde ontem",
+      description: `${todayAppointments.filter(apt => apt.status === 'confirmado').length} confirmados`,
       trend: "up"
     },
     {
       title: "Receita do Mês",
-      value: "R$ 8.450",
+      value: `R$ ${thisMonthRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: DollarSign,
-      description: "+15% vs mês anterior",
+      description: "Serviços concluídos",
       trend: "up"
     },
     {
       title: "Clientes Ativos",
-      value: "186",
+      value: clients.length.toString(),
       icon: Users,
-      description: "+12 novos este mês",
+      description: "Total cadastrados",
       trend: "up"
     },
     {
-      title: "Taxa de Ocupação",
-      value: "87%",
+      title: "Profissionais",
+      value: professionals.length.toString(),
       icon: TrendingUp,
-      description: "Média dos últimos 7 dias",
+      description: "Ativos no salão",
       trend: "neutral"
     }
   ];
 
-  const todayAppointments = [
-    {
-      id: 1,
-      time: "09:00",
-      client: "Maria Silva",
-      service: "Corte + Escova",
-      professional: "Ana Costa",
-      status: "confirmado",
-      duration: "90 min"
-    },
-    {
-      id: 2,
-      time: "10:30",
-      client: "João Santos",
-      service: "Barba",
-      professional: "Carlos Lima",
-      status: "pendente",
-      duration: "45 min"
-    },
-    {
-      id: 3,
-      time: "11:15",
-      client: "Fernanda Oliveira",
-      service: "Manicure",
-      professional: "Lucia Santos",
-      status: "confirmado",
-      duration: "60 min"
-    },
-    {
-      id: 4,
-      time: "14:00",
-      client: "Rafael Costa",
-      service: "Corte Masculino",
-      professional: "Ana Costa",
-      status: "reagendamento",
-      duration: "45 min"
-    }
-  ];
+  // Get next appointments (today and tomorrow)
+  const nextAppointments = appointments
+    .filter(apt => 
+      (isToday(new Date(apt.start_time)) || isTomorrow(new Date(apt.start_time))) &&
+      apt.status !== 'cancelado'
+    )
+    .slice(0, 5)
+    .map(apt => ({
+      id: apt.id,
+      time: format(new Date(apt.start_time), 'HH:mm', { locale: ptBR }),
+      client: apt.client_name || 'Cliente',
+      service: apt.service_name || 'Serviço',
+      professional: apt.professional_name || 'Profissional',
+      status: apt.status,
+      duration: `${apt.service_duration || 60} min`
+    }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -88,6 +85,21 @@ const AdminDashboard = () => {
         return 'bg-muted text-muted-foreground';
     }
   };
+
+  const loading = appointmentsLoading || clientsLoading || professionalsLoading || servicesLoading;
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando dashboard...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -143,7 +155,7 @@ const AdminDashboard = () => {
                       Agendamentos de Hoje
                     </CardTitle>
                     <CardDescription>
-                      {todayAppointments.length} agendamentos programados
+                      {nextAppointments.length} agendamentos programados
                     </CardDescription>
                   </div>
                   <Button variant="outline" size="sm">
@@ -153,7 +165,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {todayAppointments.map((appointment) => (
+                  {nextAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
                       className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
