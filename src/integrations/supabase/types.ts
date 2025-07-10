@@ -14,16 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          client_id: string
+          created_at: string
+          end_time: string
+          final_price: number | null
+          id: string
+          notes: string | null
+          professional_id: string
+          salon_id: string
+          service_id: string
+          start_time: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          end_time: string
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          professional_id: string
+          salon_id: string
+          service_id: string
+          start_time: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          end_time?: string
+          final_price?: number | null
+          id?: string
+          notes?: string | null
+          professional_id?: string
+          salon_id?: string
+          service_id?: string
+          start_time?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professionals: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          salon_id: string
+          schedule: Json | null
+          specialties: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_active?: boolean
+          salon_id: string
+          schedule?: Json | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          salon_id?: string
+          schedule?: Json | null
+          specialties?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professionals_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professionals_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          salon_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          name: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          salon_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          salon_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salons: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          base_price: number
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          name: string
+          salon_id: string
+          tax_machine: number | null
+          tax_other: number | null
+          tax_product: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          created_at?: string
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          is_active?: boolean
+          name: string
+          salon_id: string
+          tax_machine?: number | null
+          tax_other?: number | null
+          tax_product?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          salon_id?: string
+          tax_machine?: number | null
+          tax_other?: number | null
+          tax_product?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      get_user_salon_id: {
+        Args: { user_id: string }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      appointment_status: "pendente" | "confirmado" | "cancelado" | "concluido"
+      user_role: "superadmin" | "admin" | "profissional" | "cliente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +400,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: ["pendente", "confirmado", "cancelado", "concluido"],
+      user_role: ["superadmin", "admin", "profissional", "cliente"],
+    },
   },
 } as const
