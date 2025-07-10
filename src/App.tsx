@@ -12,6 +12,7 @@ import Profissionais from "./pages/admin/Profissionais";
 import Servicos from "./pages/admin/Servicos";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
+import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
@@ -45,43 +46,53 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/admin" replace /> : <Index />} />
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/admin" replace />} />
+      <Route path="/" element={user ? <Navigate to={profile?.role === 'superadmin' ? '/superadmin' : '/admin'} replace /> : <Index />} />
+      <Route path="/login" element={!user ? <Login /> : <Navigate to={profile?.role === 'superadmin' ? '/superadmin' : '/admin'} replace />} />
+      
+      {/* SuperAdmin Routes */}
+      <Route path="/superadmin" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <SuperAdminDashboard />
+        </ProtectedRoute>
+      } />
+      
+      {/* Admin Routes */}
       <Route path="/admin" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <AdminDashboard />
         </ProtectedRoute>
       } />
       <Route path="/admin/agenda" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Agenda />
         </ProtectedRoute>
       } />
       <Route path="/admin/clientes" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Clientes />
         </ProtectedRoute>
       } />
       <Route path="/admin/profissionais" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Profissionais />
         </ProtectedRoute>
       } />
       <Route path="/admin/servicos" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Servicos />
         </ProtectedRoute>
       } />
       <Route path="/admin/relatorios" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Relatorios />
         </ProtectedRoute>
       } />
       <Route path="/admin/configuracoes" element={
-        <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ProtectedRoute allowedRoles={['admin']}>
           <Configuracoes />
         </ProtectedRoute>
       } />
+      
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
