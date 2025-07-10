@@ -58,9 +58,10 @@ const menuItems = [
 ];
 
 export function SuperAdminSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const { profile, signOut } = useAuth();
+  const collapsed = state === "collapsed";
 
   const isActive = (path: string, exact = false) => {
     if (exact) {
@@ -76,7 +77,7 @@ export function SuperAdminSidebar() {
   };
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible>
+    <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
         {/* Header */}
         {!collapsed && (
