@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { useSalonInfo } from "@/hooks/useSalonInfo";
 
 interface AdminSidebarProps {
   isCollapsed?: boolean;
@@ -30,6 +31,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { signOut, profile } = useAuth();
+  const { salonInfo } = useSalonInfo();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -101,7 +103,9 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
           </div>
           {showLabels && !isCollapsed && (
             <div>
-              <h2 className="font-bold text-lg text-foreground">Beauty Manager</h2>
+              <h2 className="font-bold text-lg text-foreground">
+                {salonInfo?.name || 'Beauty Manager'}
+              </h2>
               <p className="text-sm text-muted-foreground">Administrador</p>
             </div>
           )}
