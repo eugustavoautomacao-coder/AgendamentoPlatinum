@@ -50,5 +50,26 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - Componentes específicos, não genéricos
 - Estrutura de pastas definida por Pedro
 
+## 📋 Sistema de Documentação Implementado
+
+### Arquivos de Documentação
+- **changelog.md** - Histórico detalhado de versões e mudanças
+- **technical-notes.md** - Documentação técnica e arquitetural
+- **development-log.md** - Log específico de cada mudança
+- **atualizacoes.md** - Histórico incremental por sprint
+- **checklist.md** - Tarefas e progresso organizados
+
+### Processo de Documentação
+1. **Registrar mudança** no development-log.md
+2. **Atualizar changelog.md** com status
+3. **Documentar decisões** no technical-notes.md
+4. **Manter contexto** atualizado no chat-context.md
+
+### Convenções Estabelecidas
+- **Commits:** Conventional Commits (feat:, fix:, docs:)
+- **Versões:** Semantic Versioning (v1.1.0)
+- **Status:** Emojis padronizados (✅, 🟡, 🔴)
+- **Estrutura:** Organização hierárquica clara
+
 ---
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 
