@@ -16,10 +16,10 @@
 - [x] **checklist.md** - Tarefas e progresso por sprint
 
 ### 🎯 Próximas Implementações
-- [ ] Sistema de autenticação completo
+- [x] Sistema de autenticação básico ✅ **Funcionando conforme esperado**
 - [ ] Middleware de isolamento por tenant
-- [ ] Recuperação de senha via email
 - [ ] Interfaces de gestão de salões (SuperAdmin)
+- [ ] CRUD de profissionais e serviços
 
 ---
 

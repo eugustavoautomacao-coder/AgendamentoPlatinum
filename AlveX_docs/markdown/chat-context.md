@@ -25,7 +25,7 @@
 - **Transições:** Suaves e responsivas
 
 ## 🎯 Módulos Principais
-1. **Autenticação:** Login, roles, recuperação de senha
+1. **Autenticação:** ✅ Login e roles funcionando
 2. **Cadastros:** Clientes (auto), Profissionais (admin), Serviços (admin)
 3. **Agendamento:** Interface cliente, agenda profissional, validações
 4. **Relatórios:** Financeiro, serviços, ranking (admin)

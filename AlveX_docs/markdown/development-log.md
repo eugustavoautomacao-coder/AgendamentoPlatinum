@@ -35,13 +35,29 @@ AlveX_docs/markdown/
 └── checklist.md          # Checklist de tarefas
 ```
 
+#### 🔐 **Decisão sobre Autenticação**
+**Data:** 11/07/2025  
+**Decisão:** Manter sistema de autenticação básico atual  
+**Motivo:** Login e roles já funcionando conforme esperado  
+**Status:** ✅ Confirmado
+
+**Funcionalidades que funcionam:**
+- ✅ Login com email/senha
+- ✅ Redirecionamento por role (superadmin/admin)
+- ✅ Proteção de rotas
+- ✅ Contexto de autenticação
+
+**Funcionalidades adiadas:**
+- 🔄 Recuperação de senha (para versão futura)
+- 🔄 Confirmação de email (para versão futura)
+
 #### 🎯 **Próximas Implementações Planejadas**
 
-##### Sprint 1.1 - Autenticação Completa
-- [ ] **Recuperação de senha** - Implementar fluxo completo
-- [ ] **Validação de email** - Confirmação de conta
+##### Sprint 1.1 - Autenticação e Isolamento
+- [x] **Sistema de login** - ✅ Funcionando conforme esperado
 - [ ] **Middleware de tenant** - Isolamento automático
 - [ ] **Logs contextuais** - Sistema de logging
+- [ ] **Validação de permissões** - Por role e tenant
 
 ##### Sprint 1.2 - Gestão de Salões
 - [ ] **CRUD de salões** - Interface SuperAdmin
