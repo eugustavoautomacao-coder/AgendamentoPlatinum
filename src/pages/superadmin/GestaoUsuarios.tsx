@@ -63,35 +63,44 @@ const GestaoUsuarios = () => {
     }
   };
 
-  // Função para redefinir senha manualmente
+  // Função para redefinir senha via Edge Function
   const handleResetPassword = async () => {
     if (!resetUser || !passwordRef.current?.value) return;
     setResetLoading(true);
-    
     try {
-      // Chamada à API de admin do Supabase
-      const { error } = await supabase.auth.admin.updateUserById(resetUser.id, {
-        password: passwordRef.current.value
-      });
-      
-      if (error) {
-        toast({
-          title: "Erro ao redefinir senha",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Senha redefinida com sucesso!",
-          description: `A senha do usuário foi atualizada.`
-        });
-        setResetUser(null);
-        passwordRef.current.value = "";
+      // Obter access token do usuário logado
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token;
+      if (!accessToken) throw new Error("Token de acesso não encontrado");
+
+      const response = await fetch(
+        "https://vymwodxwwdhjxxzobjha.functions.supabase.co/reset-user-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            userId: resetUser.id,
+            newPassword: passwordRef.current.value,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao redefinir senha");
       }
-    } catch (error) {
+      toast({
+        title: "Senha redefinida com sucesso!",
+        description: `A senha do usuário foi atualizada.`
+      });
+      setResetUser(null);
+      passwordRef.current.value = "";
+    } catch (error: any) {
       toast({
         title: "Erro ao redefinir senha",
-        description: "Erro inesperado ao processar a solicitação",
+        description: error.message || "Erro inesperado ao processar a solicitação",
         variant: "destructive"
       });
     } finally {
