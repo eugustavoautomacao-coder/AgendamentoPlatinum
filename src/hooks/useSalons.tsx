@@ -139,42 +139,36 @@ export function useSalons() {
     phone?: string;
   }) => {
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: adminData.email,
-        password: adminData.password,
-        user_metadata: {
-          name: adminData.name
+      // Chamar a Edge Function para criar o administrador
+      const { data, error } = await supabase.functions.invoke('create-salon-admin', {
+        body: { 
+          salonId, 
+          adminData 
         }
-      });
+      })
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Usuário não criado');
+      if (error) {
+        console.error('Edge function error:', error)
+        throw error
+      }
 
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          salon_id: salonId,
-          role: 'admin',
-          phone: adminData.phone
-        })
-        .eq('id', authData.user.id);
-
-      if (profileError) throw profileError;
+      if (data?.error) {
+        console.error('Admin creation error:', data.error)
+        throw new Error(data.error)
+      }
       
       toast({
         title: "Sucesso",
         description: "Administrador criado com sucesso"
       });
       
-      return { data: authData.user, error: null };
+      return { data: data?.user, error: null };
     } catch (error) {
       console.error('Error creating salon admin:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao criar administrador"
+        description: "Erro ao criar administrador do salão"
       });
       return { data: null, error };
     }
