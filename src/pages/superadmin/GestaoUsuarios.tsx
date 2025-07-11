@@ -95,6 +95,12 @@ const GestaoUsuarios = () => {
         title: "Senha redefinida com sucesso!",
         description: `A senha do usuário foi atualizada.`
       });
+      // Atualizar a lista de usuários após redefinir senha
+      await fetchProfiles({
+        role: roleFilter,
+        salon_id: salonFilter,
+        search: searchTerm
+      });
       setResetUser(null);
       passwordRef.current.value = "";
     } catch (error: any) {
