@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, UserPlus, Edit, Trash2, Crown, Shield, User, Users } from "lucide-react";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import { Button } from "@/components/ui/button";
@@ -9,61 +9,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useProfiles } from "@/hooks/useProfiles";
+import { useSalons } from "@/hooks/useSalons";
+import { useRef } from "react";
 
 const GestaoUsuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [salonFilter, setSalonFilter] = useState("all");
+  
+  const { profiles, loading, fetchProfiles } = useProfiles();
+  const { salons } = useSalons();
+  const { toast } = useToast();
+  const [resetUser, setResetUser] = useState<any>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
-  // Mock data - in real app this would come from useProfiles hook
-  const users = [
-    {
-      id: "1",
-      name: "SuperAdmin",
-      email: "alvex@gmail.com",
-      role: "superadmin",
-      salon: null,
-      avatar_url: null,
-      created_at: "2025-01-10T10:00:00Z",
-      last_login: "2025-01-10T15:30:00Z"
-    },
-    {
-      id: "2", 
-      name: "João Silva",
-      email: "joao@salaobella.com",
-      role: "admin",
-      salon: "Salão Bella Vista",
-      avatar_url: null,
-      created_at: "2025-01-08T14:20:00Z",
-      last_login: "2025-01-10T12:15:00Z"
-    },
-    {
-      id: "3",
-      name: "Maria Santos",
-      email: "maria@salaobella.com", 
-      role: "profissional",
-      salon: "Salão Bella Vista",
-      avatar_url: null,
-      created_at: "2025-01-05T09:30:00Z",
-      last_login: "2025-01-10T08:45:00Z"
-    },
-    {
-      id: "4",
-      name: "Ana Costa",
-      email: "ana@email.com",
-      role: "cliente",
-      salon: "Salão Bella Vista",
-      avatar_url: null,
-      created_at: "2025-01-03T16:15:00Z",
-      last_login: "2025-01-09T19:20:00Z"
-    }
-  ];
-
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  // Aplicar filtros quando mudarem
+  useEffect(() => {
+    fetchProfiles({
+      role: roleFilter,
+      salon_id: salonFilter,
+      search: searchTerm
+    });
+  }, [roleFilter, salonFilter, searchTerm, fetchProfiles]);
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -91,6 +63,55 @@ const GestaoUsuarios = () => {
     }
   };
 
+  // Função para redefinir senha manualmente
+  const handleResetPassword = async () => {
+    if (!resetUser || !passwordRef.current?.value) return;
+    setResetLoading(true);
+    
+    try {
+      // Chamada à API de admin do Supabase
+      const { error } = await supabase.auth.admin.updateUserById(resetUser.id, {
+        password: passwordRef.current.value
+      });
+      
+      if (error) {
+        toast({
+          title: "Erro ao redefinir senha",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Senha redefinida com sucesso!",
+          description: `A senha do usuário foi atualizada.`
+        });
+        setResetUser(null);
+        passwordRef.current.value = "";
+      }
+    } catch (error) {
+      toast({
+        title: "Erro ao redefinir senha",
+        description: "Erro inesperado ao processar a solicitação",
+        variant: "destructive"
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SuperAdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando usuários...</p>
+          </div>
+        </div>
+      </SuperAdminLayout>
+    );
+  }
+
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
@@ -117,9 +138,9 @@ const GestaoUsuarios = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{users.length}</div>
+              <div className="text-2xl font-bold">{profiles.length}</div>
               <p className="text-xs text-muted-foreground">
-                +3 novos esta semana
+                Usuários cadastrados
               </p>
             </CardContent>
           </Card>
@@ -130,7 +151,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {users.filter(u => u.role === 'admin').length}
+                {profiles.filter(u => u.role === 'admin').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Gestores de salão
@@ -144,7 +165,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {users.filter(u => u.role === 'profissional').length}
+                {profiles.filter(u => u.role === 'profissional').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Prestadores de serviço
@@ -158,7 +179,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {users.filter(u => u.role === 'cliente').length}
+                {profiles.filter(u => u.role === 'cliente').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Usuários finais
@@ -168,7 +189,7 @@ const GestaoUsuarios = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -191,6 +212,20 @@ const GestaoUsuarios = () => {
               <SelectItem value="cliente">Cliente</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={salonFilter} onValueChange={setSalonFilter}>
+            <SelectTrigger className="w-[200px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Filtrar por salão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os salões</SelectItem>
+              {salons.map((salon) => (
+                <SelectItem key={salon.id} value={salon.id}>
+                  {salon.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Users Table */}
@@ -208,13 +243,13 @@ const GestaoUsuarios = () => {
                   <TableHead>Usuário</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Salão</TableHead>
-                  <TableHead>Último Login</TableHead>
+                  <TableHead>Telefone</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {profiles.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
@@ -226,7 +261,7 @@ const GestaoUsuarios = () => {
                         </Avatar>
                         <div>
                           <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                          <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                         </div>
                       </div>
                     </TableCell>
@@ -237,13 +272,10 @@ const GestaoUsuarios = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.salon || <span className="text-muted-foreground">-</span>}
+                      {user.salon_name || <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
-                      {user.last_login 
-                        ? new Date(user.last_login).toLocaleDateString('pt-BR')
-                        : <span className="text-muted-foreground">Nunca</span>
-                      }
+                      {user.phone || <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
                       {new Date(user.created_at).toLocaleDateString('pt-BR')}
@@ -268,8 +300,36 @@ const GestaoUsuarios = () => {
                             <Trash2 className="mr-2 h-4 w-4" />
                             Excluir
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setResetUser(user)}>
+                            <User className="mr-2 h-4 w-4" />
+                            Redefinir senha
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      {/* Modal de redefinição de senha */}
+                      <Dialog open={!!resetUser} onOpenChange={() => setResetUser(null)}>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Redefinir senha</DialogTitle>
+                            <DialogDescription>
+                              Defina uma nova senha para o usuário <b>{resetUser?.name}</b>.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <input
+                            ref={passwordRef}
+                            type="password"
+                            className="input input-bordered w-full mt-2"
+                            placeholder="Nova senha"
+                            minLength={6}
+                            required
+                          />
+                          <DialogFooter>
+                            <Button onClick={handleResetPassword} disabled={resetLoading}>
+                              {resetLoading ? "Salvando..." : "Salvar nova senha"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))}

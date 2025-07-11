@@ -17,7 +17,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
           <header className="h-12 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
             <SidebarTrigger className="ml-4" />
             <div className="flex-1 px-4">
-              <h1 className="text-lg font-semibold text-foreground">Sistema SuperAdmin</h1>
+              <h1 className="text-lg font-semibold text-foreground">Sistema AlveX</h1>
             </div>
           </header>
           

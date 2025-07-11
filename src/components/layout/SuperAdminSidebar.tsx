@@ -5,7 +5,8 @@ import {
   CreditCard, 
   BarChart3, 
   Settings,
-  Crown
+  Crown,
+  LogOut
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -142,7 +143,12 @@ export function SuperAdminSidebar() {
             className="w-full justify-start text-muted-foreground hover:text-destructive"
             onClick={signOut}
           >
-            {!collapsed && <span className="text-xs">Sair</span>}
+            {!collapsed && (
+              <>
+                <LogOut className="h-4 w-4 mr-2" />
+                <span className="text-xs">Sair</span>
+              </>
+            )}
           </Button>
         </div>
       </SidebarContent>
