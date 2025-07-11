@@ -104,3 +104,16 @@ AlveX_docs/markdown/
 - ✨ **Nova Funcionalidade**
 - 🔧 **Configuração**
 - 📁 **Estrutura** 
+
+### 2025-07-11 - v1.1.0 - Ajuste Visual Login
+
+#### ✨ **Centralização do Texto na Imagem de Login**
+**Arquivo:** `src/components/auth/AuthLayout.tsx`
+**Mudança:** Texto 'Transforme seu Salão' e descrição centralizados verticalmente na imagem ao lado do formulário de login.
+**Motivo:** Melhorar a estética e legibilidade do texto na tela de login, conforme solicitado pelo usuário.
+**Status:** ✅ Concluído
+
+```diff
+- <div className="absolute inset-0 flex items-end p-8">
++ <div className="absolute inset-0 flex items-center p-8">
+``` 
