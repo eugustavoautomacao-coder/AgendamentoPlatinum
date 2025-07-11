@@ -7,14 +7,29 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('=== Create Salon Admin Function Started ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight')
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     // Verificar se o usuário é superadmin
-    const authHeader = req.headers.get('Authorization')!
+    const authHeader = req.headers.get('Authorization')
+    console.log('Auth header present:', !!authHeader)
+    
+    if (!authHeader) {
+      console.log('No auth header found')
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -22,7 +37,10 @@ serve(async (req) => {
     )
 
     const { data: { user } } = await supabaseClient.auth.getUser()
+    console.log('User authenticated:', !!user)
+    
     if (!user) {
+      console.log('User not found')
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -30,13 +48,16 @@ serve(async (req) => {
     }
 
     // Verificar se é superadmin
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'superadmin') {
+    console.log('Profile query result:', { profile, profileError })
+
+    if (profileError || !profile || profile.role !== 'superadmin') {
+      console.log('User is not superadmin')
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -44,26 +65,45 @@ serve(async (req) => {
     }
 
     // Obter dados do request
-    const { salonId, adminData } = await req.json()
+    const requestBody = await req.json()
+    console.log('Request body:', requestBody)
+    
+    const { salonId, adminData } = requestBody
     
     if (!salonId || !adminData?.email || !adminData?.password || !adminData?.name) {
+      console.log('Missing required fields:', { salonId, adminData })
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // Verificar se as variáveis de ambiente estão configuradas
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    console.log('Environment check:', {
+      supabaseUrl: !!supabaseUrl,
+      serviceRoleKey: !!serviceRoleKey
+    })
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.log('Missing environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Criar cliente Supabase com privilégios de service_role
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    )
+    })
+
+    console.log('Creating user with admin client')
 
     // Criar usuário administrador
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -75,6 +115,12 @@ serve(async (req) => {
       email_confirm: true // Auto-confirmar email para evitar problemas
     })
 
+    console.log('User creation result:', { 
+      success: !!authData?.user, 
+      userId: authData?.user?.id,
+      error: authError?.message 
+    })
+
     if (authError) {
       console.error('Auth error:', authError)
       return new Response(
@@ -84,14 +130,17 @@ serve(async (req) => {
     }
 
     if (!authData.user) {
+      console.log('User creation failed - no user returned')
       return new Response(
         JSON.stringify({ error: 'User creation failed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('Updating user profile')
+
     // Atualizar perfil do usuário
-    const { error: profileError } = await supabaseAdmin
+    const { error: profileError2 } = await supabaseAdmin
       .from('profiles')
       .update({
         salon_id: salonId,
@@ -100,17 +149,22 @@ serve(async (req) => {
       })
       .eq('id', authData.user.id)
 
-    if (profileError) {
-      console.error('Profile error:', profileError)
+    console.log('Profile update result:', { error: profileError2?.message })
+
+    if (profileError2) {
+      console.error('Profile error:', profileError2)
       
       // Se falhar ao atualizar perfil, remover o usuário criado
+      console.log('Rolling back user creation')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       
       return new Response(
-        JSON.stringify({ error: `Failed to update profile: ${profileError.message}` }),
+        JSON.stringify({ error: `Failed to update profile: ${profileError2.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('=== Success! Admin user created ===')
 
     return new Response(
       JSON.stringify({ 
@@ -130,7 +184,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: `Internal server error: ${error.message}` }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

@@ -139,6 +139,8 @@ export function useSalons() {
     phone?: string;
   }) => {
     try {
+      console.log('Creating salon admin:', { salonId, adminEmail: adminData.email });
+      
       // Chamar a Edge Function para criar o administrador
       const { data, error } = await supabase.functions.invoke('create-salon-admin', {
         body: { 
@@ -147,29 +149,38 @@ export function useSalons() {
         }
       })
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
         console.error('Edge function error:', error)
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: `Erro na criação do administrador: ${error.message || 'Erro desconhecido'}`
+        });
         throw error
       }
 
       if (data?.error) {
         console.error('Admin creation error:', data.error)
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: `Erro ao criar administrador: ${data.error}`
+        });
         throw new Error(data.error)
       }
       
-      toast({
-        title: "Sucesso",
-        description: "Administrador criado com sucesso"
-      });
+      if (data?.message) {
+        toast({
+          title: "Sucesso",
+          description: data.message
+        });
+      }
       
       return { data: data?.user, error: null };
     } catch (error) {
       console.error('Error creating salon admin:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao criar administrador do salão"
-      });
       return { data: null, error };
     }
   };
