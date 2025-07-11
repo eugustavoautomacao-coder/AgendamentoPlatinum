@@ -26,7 +26,7 @@ const GestaoUsuarios = () => {
   const { toast } = useToast();
   const [resetUser, setResetUser] = useState<any>(null);
   const [resetLoading, setResetLoading] = useState(false);
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const [password, setPassword] = useState("");
 
   // Aplicar filtros quando mudarem
   useEffect(() => {
@@ -65,7 +65,7 @@ const GestaoUsuarios = () => {
 
   // Função para redefinir senha via Edge Function
   const handleResetPassword = async () => {
-    if (!resetUser || !passwordRef.current?.value) return;
+    if (!resetUser || !password) return;
     setResetLoading(true);
     try {
       // Obter access token do usuário logado
@@ -83,7 +83,7 @@ const GestaoUsuarios = () => {
           },
           body: JSON.stringify({
             userId: resetUser.id,
-            newPassword: passwordRef.current.value,
+            newPassword: password,
           }),
         }
       );
@@ -95,14 +95,15 @@ const GestaoUsuarios = () => {
         title: "Senha redefinida com sucesso!",
         description: `A senha do usuário foi atualizada.`
       });
-      // Atualizar a lista de usuários após redefinir senha
+      // Limpar busca e atualizar a lista de usuários após redefinir senha
+      setSearchTerm('');
       await fetchProfiles({
         role: roleFilter,
         salon_id: salonFilter,
-        search: searchTerm
+        search: ''
       });
+      setPassword("");
       setResetUser(null);
-      passwordRef.current.value = "";
     } catch (error: any) {
       toast({
         title: "Erro ao redefinir senha",
@@ -337,12 +338,13 @@ const GestaoUsuarios = () => {
                 </DialogDescription>
               </DialogHeader>
               <input
-                ref={passwordRef}
                 type="password"
                 className="input input-bordered w-full mt-2"
                 placeholder="Nova senha"
                 minLength={6}
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
               />
               <DialogFooter>
                 <Button onClick={handleResetPassword} disabled={resetLoading}>
