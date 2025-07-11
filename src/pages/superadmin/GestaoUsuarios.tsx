@@ -37,6 +37,10 @@ const GestaoUsuarios = () => {
     });
   }, [roleFilter, salonFilter, searchTerm, fetchProfiles]);
 
+  useEffect(() => {
+    if (!resetUser) setPassword('');
+  }, [resetUser]);
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "superadmin":
