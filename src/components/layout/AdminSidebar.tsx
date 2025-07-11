@@ -93,10 +93,24 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
     return location.pathname.startsWith(href);
   };
 
-  const SidebarContent = ({ showLabels = true }) => (
+  const SidebarContent = ({ showLabels = true, showCloseButton = false }) => (
     <div className="flex flex-col h-full">
+      {/* Close Button for Mobile */}
+      {showCloseButton && (
+        <div className="flex justify-end p-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
       {/* Header */}
-      <div className={`p-6 ${isCollapsed ? 'px-3' : ''}`}>
+      <div className={`${isCollapsed ? 'px-3' : 'p-6'} ${showCloseButton ? 'pt-0' : ''}`}>
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-primary rounded-lg shadow-soft">
             <Sparkles className="h-6 w-6 text-primary-foreground" />
@@ -239,7 +253,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
         }`}
       >
         <div className="bg-card border-r border-border shadow-elegant h-full">
-          <SidebarContent showLabels={true} />
+          <SidebarContent showLabels={true} showCloseButton={true} />
         </div>
       </div>
     </>
