@@ -117,3 +117,22 @@ AlveX_docs/markdown/
 - <div className="absolute inset-0 flex items-end p-8">
 + <div className="absolute inset-0 flex items-center p-8">
 ``` 
+
+### 2025-07-11 - v1.1.0 - Ajuste Visual Profissional Login
+
+#### ✨ **Bloco de Texto Profissional na Imagem de Login**
+**Arquivo:** `src/components/auth/AuthLayout.tsx`
+**Mudança:**
+- Adicionado fundo branco translúcido (`bg-white/80`) ao bloco do texto
+- Padding amplo, borda arredondada (`rounded-2xl`) e sombra (`shadow-lg`)
+- Alinhamento à esquerda da área da imagem (`justify-start ml-8`)
+- Cores do texto ajustadas para contraste
+**Motivo:** Garantir legibilidade e estética profissional do texto sobre a imagem, independentemente do conteúdo visual da imagem.
+**Status:** ✅ Concluído
+
+```diff
+- <div className="absolute inset-0 flex items-center p-8">
+-   <div className="text-white max-w-md">
++ <div className="absolute inset-0 flex items-center justify-start p-8">
++   <div className="bg-white/80 rounded-2xl shadow-lg p-8 max-w-md ml-8">
+``` 

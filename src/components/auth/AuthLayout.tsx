@@ -47,13 +47,13 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
           alt="Beauty Salon Management" 
           className="h-full w-full object-cover"
         />
-        {/* Alinhamento centralizado verticalmente */}
-        <div className="absolute inset-0 flex items-center p-8">
-          <div className="text-white max-w-md">
-            <h2 className="text-3xl font-bold mb-4">
+        {/* Bloco de texto com fundo translúcido, padding, borda arredondada e sombra */}
+        <div className="absolute inset-0 flex items-center justify-start p-8">
+          <div className="bg-white/80 rounded-2xl shadow-lg p-8 max-w-md xl:max-w-sm w-full mx-0 xl:mx-auto animate-pulse-beat">
+            <h2 className="text-3xl font-bold mb-4 text-primary">
               Transforme seu Salão
             </h2>
-            <p className="text-white/90 text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed">
               Sistema completo de gestão para salões de beleza. 
               Agendamentos, equipe e relatórios em uma plataforma segura.
             </p>

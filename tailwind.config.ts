@@ -109,11 +109,24 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-slow': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' }
+				},
+				'pulse-beat': {
+					'0%, 100%': { transform: 'scale(1)' },
+					'10%': { transform: 'scale(1.025)' },
+					'20%': { transform: 'scale(1)' },
+					'30%': { transform: 'scale(1.025)' },
+					'40%, 100%': { transform: 'scale(1)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-slow': 'pulse-slow 2.5s ease-in-out infinite',
+				'pulse-beat': 'pulse-beat 2.8s ease-in-out infinite'
 			}
 		}
 	},
