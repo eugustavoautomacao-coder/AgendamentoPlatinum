@@ -22,6 +22,7 @@
 - [x] Remover debounce (busca local)
 - [x] Mensagens de erro/sucesso aprimoradas
 - [x] Alinhamento de UX com fluxo de salões
+- [x] Corrigir problema do nome do salão aparecendo como 'AlveX' temporariamente durante navegação
 
 ## Sprint 3 - Serviços e Configurações (v3.0)
 - [ ] CRUD de serviços com taxas configuráveis

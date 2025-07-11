@@ -48,3 +48,10 @@
 
 - ProfissionalLayout e ProfissionalSidebar ajustados para responsividade total e compatibilidade com botão de retração/expansão, igual ao AdminSidebar.
 - Corrigido problema de sobreposição dos cards com a sidebar. 
+
+---
+
+### v1.2.1
+
+- Corrigido problema do nome do salão aparecendo como 'AlveX' temporariamente durante navegação.
+- Implementado estado de loading adequado para exibição do nome do salão nas sidebars. 

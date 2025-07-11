@@ -33,7 +33,7 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { signOut, profile } = useAuth();
-  const { salonInfo } = useSalonInfo();
+  const { salonInfo, loading: salonLoading } = useSalonInfo();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -77,7 +77,7 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
           {showLabels && !isCollapsed && (
             <div>
               <h2 className="font-bold text-lg text-foreground">
-                {salonInfo?.name || 'AlveX'}
+                {salonLoading ? 'Carregando...' : salonInfo?.name || 'Salão'}
               </h2>
               <p className="text-sm text-muted-foreground">Profissional</p>
             </div>
@@ -202,4 +202,4 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
   );
 };
 
-export default ProfissionalSidebar; 
+export default ProfissionalSidebar;

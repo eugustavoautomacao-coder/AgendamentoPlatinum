@@ -91,4 +91,12 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - Sidebar do profissional agora conta com botão de retração/expansão sempre visível na versão desktop, igual ao AdminSidebar.
 - Estrutura e props padronizadas para garantir experiência idêntica ao admin.
 
+---
+
+### v1.2.1 (Sprint 1, Etapa 2)
+
+- Corrigido problema do nome do salão aparecendo como 'AlveX' temporariamente durante navegação.
+- Implementado estado de loading adequado no useSalonInfo hook para AdminSidebar e ProfissionalSidebar.
+- Fallback alterado de 'AlveX' para 'Salão' e adicionado indicador 'Carregando...' durante carregamento.
+
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 
