@@ -110,8 +110,8 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
       )}
       
       {/* Header */}
-      <div className={`${isCollapsed ? 'px-3' : 'p-6'} ${showCloseButton ? 'pt-0' : ''}`}>
-        <div className="flex items-center gap-3">
+      <div className={`${isCollapsed ? 'px-3 py-6' : 'p-6'} ${showCloseButton ? 'pt-0' : ''}`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <div className="p-2 bg-gradient-primary rounded-lg shadow-soft">
             <Sparkles className="h-6 w-6 text-primary-foreground" />
           </div>
