@@ -17,6 +17,7 @@ import { useSalons } from "@/hooks/useSalons";
 import { useRef } from "react";
 
 const GestaoUsuarios = () => {
+  const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [salonFilter, setSalonFilter] = useState("all");
@@ -28,14 +29,23 @@ const GestaoUsuarios = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [password, setPassword] = useState("");
 
-  // Aplicar filtros quando mudarem
+  // Buscar usuários apenas quando filtros principais mudarem
   useEffect(() => {
     fetchProfiles({
       role: roleFilter,
-      salon_id: salonFilter,
-      search: searchTerm
+      salon_id: salonFilter
     });
-  }, [roleFilter, salonFilter, searchTerm, fetchProfiles]);
+  }, [roleFilter, salonFilter, fetchProfiles]);
+
+  // Filtro local instantâneo
+  const filteredProfiles = profiles.filter(profile => {
+    const search = searchInput.toLowerCase();
+    return (
+      profile.name.toLowerCase().includes(search) ||
+      (profile.salon_name && profile.salon_name.toLowerCase().includes(search)) ||
+      (profile.phone && profile.phone.toLowerCase().includes(search))
+    );
+  });
 
   useEffect(() => {
     if (!resetUser) setPassword('');
@@ -123,7 +133,7 @@ const GestaoUsuarios = () => {
   const handleCloseModal = () => {
     setResetUser(null);
     setPassword('');
-    setSearchTerm('');
+    setSearchInput('');
   };
 
   if (loading) {
@@ -221,8 +231,8 @@ const GestaoUsuarios = () => {
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar usuários..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -276,7 +286,7 @@ const GestaoUsuarios = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {profiles.map((user) => (
+                {filteredProfiles.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center space-x-3">
