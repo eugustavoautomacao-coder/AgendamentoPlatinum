@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -11,18 +11,39 @@ import {
   LogOut,
   Sparkles,
   Menu,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 
-const AdminSidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+interface AdminSidebarProps {
+  isCollapsed?: boolean;
+  setIsCollapsed?: (collapsed: boolean) => void;
+}
+
+const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { signOut, profile } = useAuth();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsMobileOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const menuItems = [
     {
@@ -70,15 +91,15 @@ const AdminSidebar = () => {
     return location.pathname.startsWith(href);
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ showLabels = true }) => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-6">
+      <div className={`p-6 ${isCollapsed ? 'px-3' : ''}`}>
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-primary rounded-lg shadow-soft">
             <Sparkles className="h-6 w-6 text-primary-foreground" />
           </div>
-          {!isCollapsed && (
+          {showLabels && !isCollapsed && (
             <div>
               <h2 className="font-bold text-lg text-foreground">Beauty Manager</h2>
               <p className="text-sm text-muted-foreground">Administrador</p>
@@ -90,21 +111,30 @@ const AdminSidebar = () => {
       <Separator />
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className={`flex-1 space-y-2 ${isCollapsed ? 'p-2' : 'p-4'}`}>
         {menuItems.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+            className={`flex items-center gap-3 rounded-lg transition-all duration-200 group relative ${
+              isCollapsed ? 'px-3 py-3 justify-center' : 'px-3 py-2.5'
+            } ${
               isActive(item.href, item.exact)
                 ? 'bg-primary text-primary-foreground shadow-soft'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
             }`}
             onClick={() => setIsMobileOpen(false)}
+            title={isCollapsed ? item.title : undefined}
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
             {!isCollapsed && (
-              <span className="font-medium">{item.title}</span>
+              <span className="font-medium animate-fade-in">{item.title}</span>
+            )}
+            {/* Tooltip for collapsed state */}
+            {isCollapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                {item.title}
+              </div>
             )}
           </NavLink>
         ))}
@@ -113,8 +143,8 @@ const AdminSidebar = () => {
       <Separator />
 
       {/* User Profile */}
-      <div className="p-4">
-        <div className="flex items-center gap-3 mb-4">
+      <div className={`${isCollapsed ? 'p-2' : 'p-4'}`}>
+        <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           <Avatar className="h-10 w-10">
             <AvatarImage src={profile?.avatar_url} />
             <AvatarFallback className="bg-primary-soft text-primary">
@@ -132,8 +162,11 @@ const AdminSidebar = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
+          className={`w-full text-muted-foreground hover:text-destructive ${
+            isCollapsed ? 'justify-center px-0' : 'justify-start'
+          }`}
           onClick={signOut}
+          title={isCollapsed ? 'Sair' : undefined}
         >
           <LogOut className="h-4 w-4" />
           {!isCollapsed && <span className="ml-2">Sair</span>}
@@ -175,16 +208,22 @@ const AdminSidebar = () => {
         <div className="bg-card border-r border-border shadow-elegant">
           <div className="relative h-full">
             {/* Collapse Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute -right-3 top-6 z-10 h-6 w-6 bg-card border border-border shadow-soft"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
+            {setIsCollapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute -right-3 top-6 z-10 h-6 w-6 bg-card border border-border shadow-soft hover:bg-accent"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
+            )}
             
-            <SidebarContent />
+            <SidebarContent showLabels={!isCollapsed} />
           </div>
         </div>
       </div>
@@ -196,7 +235,7 @@ const AdminSidebar = () => {
         }`}
       >
         <div className="bg-card border-r border-border shadow-elegant h-full">
-          <SidebarContent />
+          <SidebarContent showLabels={true} />
         </div>
       </div>
     </>
