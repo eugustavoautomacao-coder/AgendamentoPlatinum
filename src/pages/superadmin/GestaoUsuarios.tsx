@@ -178,7 +178,7 @@ const GestaoUsuarios = () => {
 
       // Chamada para Edge Function
       const response = await fetch(
-        "https://<SUA-URL-SUPABASE>.functions.supabase.co/create-user",
+        "https://vymwodxwwdhjxxzobjha.supabase.co/functions/v1/create-user",
         {
           method: "POST",
           headers: {
