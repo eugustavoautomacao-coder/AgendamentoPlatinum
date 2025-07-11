@@ -30,7 +30,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       <div 
         className={`transition-all duration-300 ${
           isMobile 
-            ? 'ml-0' 
+            ? 'ml-0 pl-16' // Espaço para o botão mobile no mobile
             : isCollapsed 
               ? 'lg:ml-20' 
               : 'lg:ml-64'

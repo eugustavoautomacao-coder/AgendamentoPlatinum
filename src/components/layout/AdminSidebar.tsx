@@ -184,14 +184,14 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
       {/* Mobile Menu Button */}
       <Button
         variant="ghost"
-        size="icon"
-        className="fixed top-4 right-4 z-50 lg:hidden bg-card border border-border shadow-soft"
+        size="sm"
+        className="fixed top-4 left-4 z-50 lg:hidden bg-card border border-border shadow-soft h-8 w-8 p-0"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
       >
         {isMobileOpen ? (
-          <X className="h-6 w-6" />
+          <X className="h-4 w-4" />
         ) : (
-          <Menu className="h-6 w-6" />
+          <Menu className="h-4 w-4" />
         )}
       </Button>
 
