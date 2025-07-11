@@ -173,29 +173,57 @@ export function useSalons() {
         return { data: null, error: new Error("User creation failed") };
       }
 
-      // Aguardar um pouco para o trigger criar o perfil
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Aguardar para o trigger criar o perfil
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Atualizar o perfil para ser admin do salão
-      const { error: updateError } = await supabase
+      // Verificar se o perfil foi criado, se não, criar manualmente
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          salon_id: salonId,
-          role: 'admin',
-          phone: adminData.phone || null
-        })
-        .eq('id', signUpData.user.id);
+        .select('id')
+        .eq('id', signUpData.user.id)
+        .single();
 
-      console.log('Profile update result:', { updateError });
+      if (!existingProfile) {
+        console.log('Profile not created by trigger, creating manually');
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: signUpData.user.id,
+            name: adminData.name,
+            role: 'admin',
+            salon_id: salonId,
+            phone: adminData.phone || null
+          });
 
-      if (updateError) {
-        console.error('Update error:', updateError);
-        toast({
-          variant: "destructive",
-          title: "Erro", 
-          description: `Erro ao atualizar perfil: ${updateError.message}`
-        });
-        return { data: null, error: updateError };
+        if (createProfileError) {
+          console.error('Create profile error:', createProfileError);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: `Erro ao criar perfil: ${createProfileError.message}`
+          });
+          return { data: null, error: createProfileError };
+        }
+      } else {
+        // Atualizar o perfil existente para ser admin do salão
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            salon_id: salonId,
+            role: 'admin',
+            phone: adminData.phone || null
+          })
+          .eq('id', signUpData.user.id);
+
+        if (updateError) {
+          console.error('Update error:', updateError);
+          toast({
+            variant: "destructive",
+            title: "Erro", 
+            description: `Erro ao atualizar perfil: ${updateError.message}`
+          });
+          return { data: null, error: updateError };
+        }
       }
 
       toast({
