@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -22,17 +22,14 @@ export function useProfiles() {
   const { profile: currentProfile } = useAuth();
   const { toast } = useToast();
 
-  const fetchProfiles = async (filters?: {
+  const fetchProfiles = useCallback(async (filters?: {
     role?: string;
     salon_id?: string;
     search?: string;
   }) => {
     if (currentProfile?.role !== 'superadmin') return;
-    
     try {
       setLoading(true);
-      
-      // Construir query base
       let query = supabase
         .from('profiles')
         .select(`
@@ -42,21 +39,14 @@ export function useProfiles() {
           )
         `)
         .order('created_at', { ascending: false });
-
-      // Aplicar filtros
       if (filters?.role && filters.role !== 'all') {
         query = query.eq('role', filters.role);
       }
-      
       if (filters?.salon_id && filters.salon_id !== 'all') {
         query = query.eq('salon_id', filters.salon_id);
       }
-
       const { data, error } = await query;
-
       if (error) throw error;
-
-      // Transformar dados
       const transformedData = (data || []).map(profile => ({
         id: profile.id,
         name: profile.name,
@@ -68,8 +58,6 @@ export function useProfiles() {
         created_at: profile.created_at,
         updated_at: profile.updated_at
       }));
-
-      // Aplicar filtro de busca local se necessário
       let filteredData = transformedData;
       if (filters?.search) {
         const searchTerm = filters.search.toLowerCase();
@@ -78,7 +66,6 @@ export function useProfiles() {
           (profile.salon_name && profile.salon_name.toLowerCase().includes(searchTerm))
         );
       }
-
       setProfiles(filteredData);
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -90,7 +77,7 @@ export function useProfiles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentProfile?.role, toast]);
 
   const updateProfile = async (id: string, data: Partial<Profile>) => {
     try {
@@ -104,15 +91,12 @@ export function useProfiles() {
           avatar_url: data.avatar_url
         })
         .eq('id', id);
-
       if (error) throw error;
-      
       await fetchProfiles();
       toast({
         title: "Sucesso",
         description: "Usuário atualizado com sucesso"
       });
-      
       return { error: null };
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -127,20 +111,16 @@ export function useProfiles() {
 
   const deleteProfile = async (id: string) => {
     try {
-      // Em vez de deletar, podemos desassociar do salão
       const { error } = await supabase
         .from('profiles')
         .update({ salon_id: null })
         .eq('id', id);
-
       if (error) throw error;
-      
       await fetchProfiles();
       toast({
         title: "Sucesso",
         description: "Usuário removido com sucesso"
       });
-      
       return { error: null };
     } catch (error) {
       console.error('Error deleting profile:', error);
@@ -152,12 +132,6 @@ export function useProfiles() {
       return { error };
     }
   };
-
-  useEffect(() => {
-    if (currentProfile?.role === 'superadmin') {
-      fetchProfiles();
-    }
-  }, [currentProfile?.role]);
 
   return {
     profiles,
