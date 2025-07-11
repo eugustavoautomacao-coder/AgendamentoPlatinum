@@ -108,6 +108,7 @@ const GestaoUsuarios = () => {
       });
       setPassword("");
       setResetUser(null);
+      handleCloseModal();
     } catch (error: any) {
       toast({
         title: "Erro ao redefinir senha",
@@ -117,6 +118,12 @@ const GestaoUsuarios = () => {
     } finally {
       setResetLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setResetUser(null);
+    setPassword('');
+    setSearchTerm('');
   };
 
   if (loading) {
@@ -333,7 +340,7 @@ const GestaoUsuarios = () => {
             </Table>
           </CardContent>
           {/* Modal de redefinição de senha - FORA do map */}
-          <Dialog open={!!resetUser} onOpenChange={() => setResetUser(null)}>
+          <Dialog open={!!resetUser} onOpenChange={handleCloseModal}>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Redefinir senha</DialogTitle>
