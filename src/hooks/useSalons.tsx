@@ -141,46 +141,76 @@ export function useSalons() {
     try {
       console.log('Creating salon admin:', { salonId, adminEmail: adminData.email });
       
-      // Chamar a Edge Function para criar o administrador
-      const { data, error } = await supabase.functions.invoke('create-salon-admin', {
-        body: { 
-          salonId, 
-          adminData 
+      // Primeiro, criar o usuário através do signup normal
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: adminData.email,
+        password: adminData.password,
+        options: {
+          data: {
+            name: adminData.name
+          }
         }
-      })
+      });
 
-      console.log('Edge function response:', { data, error });
+      console.log('SignUp result:', { signUpData, signUpError });
 
-      if (error) {
-        console.error('Edge function error:', error)
+      if (signUpError) {
+        console.error('SignUp error:', signUpError);
         toast({
           variant: "destructive",
           title: "Erro",
-          description: `Erro na criação do administrador: ${error.message || 'Erro desconhecido'}`
+          description: `Erro ao criar usuário: ${signUpError.message}`
         });
-        throw error
+        return { data: null, error: signUpError };
       }
 
-      if (data?.error) {
-        console.error('Admin creation error:', data.error)
+      if (!signUpData.user) {
+        toast({
+          variant: "destructive", 
+          title: "Erro",
+          description: "Falha na criação do usuário"
+        });
+        return { data: null, error: new Error("User creation failed") };
+      }
+
+      // Aguardar um pouco para o trigger criar o perfil
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Atualizar o perfil para ser admin do salão
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          salon_id: salonId,
+          role: 'admin',
+          phone: adminData.phone || null
+        })
+        .eq('id', signUpData.user.id);
+
+      console.log('Profile update result:', { updateError });
+
+      if (updateError) {
+        console.error('Update error:', updateError);
         toast({
           variant: "destructive",
-          title: "Erro",
-          description: `Erro ao criar administrador: ${data.error}`
+          title: "Erro", 
+          description: `Erro ao atualizar perfil: ${updateError.message}`
         });
-        throw new Error(data.error)
+        return { data: null, error: updateError };
       }
+
+      toast({
+        title: "Sucesso",
+        description: `Administrador criado com sucesso! Email: ${adminData.email}`
+      });
       
-      if (data?.message) {
-        toast({
-          title: "Sucesso",
-          description: data.message
-        });
-      }
-      
-      return { data: data?.user, error: null };
+      return { data: signUpData.user, error: null };
     } catch (error) {
       console.error('Error creating salon admin:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro inesperado ao criar administrador"
+      });
       return { data: null, error };
     }
   };
