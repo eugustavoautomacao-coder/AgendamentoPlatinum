@@ -108,4 +108,17 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - Nome do salão agora vem diretamente do perfil do usuário (disponível imediatamente).
 - Eliminado estado de loading para exibição do nome do salão.
 
+---
+
+## Sprints e Etapas
+
+### Sprint 1
+- **v1.0.0**: Setup inicial do projeto, estrutura, autenticação e integração Supabase.
+- **v1.1.0**: Cadastro real de usuários (admin, profissional, cliente), modal, validação de roles, triggers e constraints ajustadas.
+- **v1.2.0**: Área do profissional criada (layout, sidebar, páginas, rotas protegidas), experiência idêntica ao admin, responsividade e dados reais.
+- **v1.2.1**: Correção do nome do salão ('AlveX'), loading e fallback inteligente.
+- **v1.2.2**: Otimização do nome do salão (cache local, perfil), sem loading visível.
+
+---
+
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 

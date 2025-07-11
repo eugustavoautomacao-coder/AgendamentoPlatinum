@@ -53,3 +53,17 @@
 - [ ] Segurança implementada
 - [ ] Testes de todos os fluxos críticos 
 - [x] Ajustar ProfissionalLayout e ProfissionalSidebar para responsividade total e botão de retração/expansão igual ao AdminSidebar 
+
+---
+
+## Checklist por Sprint
+
+### Sprint 1
+- [x] Setup inicial do projeto e autenticação
+- [x] Cadastro real de usuários (admin, profissional, cliente)
+- [x] Modal de cadastro integrado ao Supabase
+- [x] Ajuste de triggers e constraints no banco
+- [x] Criação da área do profissional (layout, sidebar, páginas, rotas protegidas)
+- [x] Responsividade e experiência idêntica ao admin
+- [x] Correção do nome do salão ('AlveX') e fallback
+- [x] Otimização do nome do salão (cache local, perfil) 

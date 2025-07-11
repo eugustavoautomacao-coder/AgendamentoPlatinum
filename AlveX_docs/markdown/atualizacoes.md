@@ -62,3 +62,19 @@
 
 - Otimizado estado de loading do nome do salão nas sidebars.
 - Implementado cache local e uso direto do nome do salão do perfil do usuário. 
+
+---
+
+## Histórico de Sprints
+
+### Sprint 1 (v1.0.x - v1.2.x)
+
+- **v1.0.0**: Início do projeto, setup inicial, estrutura de pastas, configuração do Supabase, autenticação básica e layout inicial.
+- **v1.1.0**: Implementação do fluxo de cadastro de usuários (admin, profissional, cliente) via modal, integração real com Supabase (Edge Function), validação de roles, vínculo obrigatório com salão, e ajuste de triggers/constraints no banco.
+- **v1.2.0**: Criação da área do profissional (layout, sidebar, páginas, rotas protegidas), cópia fiel da experiência do admin, responsividade e visual idêntico, hooks reais para dados filtrados por profissional logado.
+- **v1.2.1**: Correção do problema do nome do salão aparecendo como 'AlveX' temporariamente, implementação de estado de loading adequado e fallback inteligente.
+- **v1.2.2**: Otimização do estado de loading do nome do salão, uso de cache local e nome do salão vindo diretamente do perfil do usuário, eliminando delays visuais.
+
+---
+
+*Este histórico será atualizado a cada nova sprint, etapa ou release relevante.* 
