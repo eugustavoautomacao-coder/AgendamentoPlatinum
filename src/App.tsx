@@ -13,6 +13,11 @@ import Servicos from "./pages/admin/Servicos";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
+import GestaoSaloes from "./pages/superadmin/GestaoSaloes";
+import GestaoUsuarios from "./pages/superadmin/GestaoUsuarios";
+import Assinaturas from "./pages/superadmin/Assinaturas";
+import SuperAdminRelatorios from "./pages/superadmin/Relatorios";
+import SuperAdminConfiguracoes from "./pages/superadmin/Configuracoes";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 
@@ -53,6 +58,31 @@ function AppRoutes() {
       <Route path="/superadmin" element={
         <ProtectedRoute allowedRoles={['superadmin']}>
           <SuperAdminDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/superadmin/saloes" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <GestaoSaloes />
+        </ProtectedRoute>
+      } />
+      <Route path="/superadmin/usuarios" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <GestaoUsuarios />
+        </ProtectedRoute>
+      } />
+      <Route path="/superadmin/assinaturas" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <Assinaturas />
+        </ProtectedRoute>
+      } />
+      <Route path="/superadmin/relatorios" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <SuperAdminRelatorios />
+        </ProtectedRoute>
+      } />
+      <Route path="/superadmin/configuracoes" element={
+        <ProtectedRoute allowedRoles={['superadmin']}>
+          <SuperAdminConfiguracoes />
         </ProtectedRoute>
       } />
       
