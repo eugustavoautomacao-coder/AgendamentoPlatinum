@@ -235,7 +235,6 @@ const GestaoUsuarios = () => {
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="profissional">Profissional</SelectItem>
                       <SelectItem value="cliente">Cliente</SelectItem>
-                      <SelectItem value="superadmin">SuperAdmin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
