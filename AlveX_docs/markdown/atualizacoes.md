@@ -41,3 +41,10 @@
 - Remoção do debounce na busca (agora filtro local, sem delay).
 - Mensagens de erro e sucesso aprimoradas.
 - Estrutura e fluxo alinhados ao padrão de UX do filtro de salões. 
+
+---
+
+### v1.2.0
+
+- ProfissionalLayout e ProfissionalSidebar ajustados para responsividade total e compatibilidade com botão de retração/expansão, igual ao AdminSidebar.
+- Corrigido problema de sobreposição dos cards com a sidebar. 

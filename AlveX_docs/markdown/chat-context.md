@@ -84,4 +84,11 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - Todos os ajustes revisados e validados com o usuário.
 
 ---
+
+### v1.2.0 (Sprint 1, Etapa 2)
+
+- Ajustado ProfissionalLayout e ProfissionalSidebar para responsividade total, evitando sobreposição do conteúdo com a sidebar.
+- Sidebar do profissional agora conta com botão de retração/expansão sempre visível na versão desktop, igual ao AdminSidebar.
+- Estrutura e props padronizadas para garantir experiência idêntica ao admin.
+
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 

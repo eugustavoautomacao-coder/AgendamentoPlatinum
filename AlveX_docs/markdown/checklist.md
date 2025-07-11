@@ -50,3 +50,4 @@
 - [ ] Performance otimizada
 - [ ] Segurança implementada
 - [ ] Testes de todos os fluxos críticos 
+- [x] Ajustar ProfissionalLayout e ProfissionalSidebar para responsividade total e botão de retração/expansão igual ao AdminSidebar 

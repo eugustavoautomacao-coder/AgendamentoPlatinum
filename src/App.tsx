@@ -21,6 +21,11 @@ import SuperAdminConfiguracoes from "./pages/superadmin/Configuracoes";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import ProfissionalDashboard from "./pages/profissional/ProfissionalDashboard";
+import ProfissionalAgenda from "./pages/profissional/Agenda";
+import ProfissionalClientes from "./pages/profissional/Clientes";
+import ProfissionalServicos from "./pages/profissional/Servicos";
+import ProfissionalRelatorios from "./pages/profissional/Relatorios";
+import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
 
 const queryClient = new QueryClient();
 
@@ -136,6 +141,31 @@ function AppRoutes() {
       <Route path="/profissional" element={
         <ProtectedRoute allowedRoles={['profissional']}>
           <ProfissionalDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/agenda" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalAgenda />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/clientes" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalClientes />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/servicos" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalServicos />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/relatorios" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalRelatorios />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/configuracoes" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalConfiguracoes />
         </ProtectedRoute>
       } />
       
