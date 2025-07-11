@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProfiles } from "@/hooks/useProfiles";
 import { useSalons } from "@/hooks/useSalons";
 import { useRef } from "react";
+import { Label } from "@/components/ui/label";
 
 const GestaoUsuarios = () => {
   const [searchInput, setSearchInput] = useState("");
@@ -28,6 +29,27 @@ const GestaoUsuarios = () => {
   const [resetUser, setResetUser] = useState<any>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [password, setPassword] = useState("");
+
+  // Estado do modal de cadastro
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'admin',
+    salon_id: ''
+  });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  // Validação visual simples
+  const isSalonRequired = newUser.role !== 'superadmin';
+  const isFormValid =
+    newUser.name.trim() &&
+    newUser.email.trim() &&
+    newUser.password.trim() &&
+    newUser.role &&
+    (!isSalonRequired || newUser.salon_id);
 
   // Buscar usuários apenas quando filtros principais mudarem
   useEffect(() => {
@@ -161,10 +183,84 @@ const GestaoUsuarios = () => {
             </p>
           </div>
 
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Novo Usuário
-          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Novo Usuário
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+              <DialogHeader>
+                <DialogTitle>Novo Usuário</DialogTitle>
+                <DialogDescription>Preencha os dados para cadastrar um novo usuário.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 px-1">
+                <div className="space-y-2">
+                  <Label htmlFor="user-name">Nome</Label>
+                  <Input
+                    id="user-name"
+                    value={newUser.name}
+                    onChange={e => setNewUser(u => ({ ...u, name: e.target.value }))}
+                    placeholder="Nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-email">E-mail</Label>
+                  <Input
+                    id="user-email"
+                    type="email"
+                    value={newUser.email}
+                    onChange={e => setNewUser(u => ({ ...u, email: e.target.value }))}
+                    placeholder="usuario@email.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-password">Senha</Label>
+                  <Input
+                    id="user-password"
+                    type="password"
+                    value={newUser.password}
+                    onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))}
+                    placeholder="Senha"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-role">Role</Label>
+                  <Select value={newUser.role} onValueChange={value => setNewUser(u => ({ ...u, role: value }))}>
+                    <SelectTrigger id="user-role" className="w-full">
+                      <SelectValue placeholder="Selecione o role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="profissional">Profissional</SelectItem>
+                      <SelectItem value="cliente">Cliente</SelectItem>
+                      <SelectItem value="superadmin">SuperAdmin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-salon">Salão</Label>
+                  <Select value={newUser.salon_id} onValueChange={value => setNewUser(u => ({ ...u, salon_id: value }))} disabled={!isSalonRequired}>
+                    <SelectTrigger id="user-salon" className="w-full" disabled={!isSalonRequired}>
+                      <SelectValue placeholder="Selecione o salão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salons.map(salon => (
+                        <SelectItem key={salon.id} value={salon.id}>{salon.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {createError && <div className="text-destructive text-sm mt-2">{createError}</div>}
+              </div>
+              <DialogFooter>
+                <Button disabled={!isFormValid || createLoading} onClick={() => {}}>
+                  {createLoading ? "Salvando..." : "Cadastrar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats Cards */}
