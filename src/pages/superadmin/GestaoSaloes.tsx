@@ -7,14 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useSalons } from "@/hooks/useSalons";
+import { useSalons, Salon } from "@/hooks/useSalons";
 import { useToast } from "@/hooks/use-toast";
 
 const GestaoSaloes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,7 +29,7 @@ const GestaoSaloes = () => {
     adminPassword: ""
   });
 
-  const { salons, loading, createSalon, createSalonAdmin } = useSalons();
+  const { salons, loading, createSalon, createSalonAdmin, updateSalon, deleteSalon } = useSalons();
   const { toast } = useToast();
 
   const filteredSalons = salons?.filter(salon =>
@@ -68,6 +72,64 @@ const GestaoSaloes = () => {
       });
     } catch (error) {
       console.error("Erro ao criar salão:", error);
+    }
+  };
+
+  const handleEditSalon = (salon: Salon) => {
+    setSelectedSalon(salon);
+    setFormData({
+      name: salon.name,
+      email: salon.email || "",
+      phone: salon.phone || "",
+      address: salon.address || "",
+      adminName: "",
+      adminEmail: "",
+      adminPassword: ""
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateSalon = async () => {
+    if (!selectedSalon) return;
+
+    try {
+      await updateSalon(selectedSalon.id, {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        address: formData.address || null
+      });
+
+      setIsEditOpen(false);
+      setSelectedSalon(null);
+      setFormData({ 
+        name: "", 
+        email: "", 
+        phone: "", 
+        address: "",
+        adminName: "",
+        adminEmail: "",
+        adminPassword: ""
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar salão:", error);
+    }
+  };
+
+  const handleDeleteSalon = (salon: Salon) => {
+    setSelectedSalon(salon);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDeleteSalon = async () => {
+    if (!selectedSalon) return;
+
+    try {
+      await deleteSalon(selectedSalon.id);
+      setIsDeleteOpen(false);
+      setSelectedSalon(null);
+    } catch (error) {
+      console.error("Erro ao deletar salão:", error);
     }
   };
 
@@ -321,10 +383,10 @@ const GestaoSaloes = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditSalon(salon)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive">
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteSalon(salon)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -335,6 +397,84 @@ const GestaoSaloes = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Edit Salon Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+            <DialogHeader>
+              <DialogTitle>Editar Salão</DialogTitle>
+              <DialogDescription>
+                Atualize as informações do salão
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 px-1">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome do Salão</Label>
+                <Input
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Digite o nome do salão"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">E-mail</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="contato@salao.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Telefone</Label>
+                <Input
+                  id="edit-phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-address">Endereço</Label>
+                <Textarea
+                  id="edit-address"
+                  value={formData.address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Endereço completo do salão"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)} className="w-full sm:w-auto">
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateSalon} className="w-full sm:w-auto">
+                  Atualizar Salão
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o salão "{selectedSalon?.name}"? 
+                Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteSalon} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SuperAdminLayout>
   );
