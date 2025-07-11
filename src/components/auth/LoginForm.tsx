@@ -147,9 +147,14 @@ const LoginForm = ({ onSubmit, isLoading = false }: LoginFormProps) => {
           
           <div className="text-center text-sm text-muted-foreground">
             <p>Não tem acesso?</p>
-            <Button variant="link" size="sm" className="p-0 h-auto">
+            <a
+              href="https://wa.me/5524999991916?text=Ol%C3%A1%20!%20Gostaria%20de%20solicitar%20suporte%20ao%20meu%20acesso%20no%20Sistema%20Alvex"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline font-medium"
+            >
               Solicitar acesso ao administrador
-            </Button>
+            </a>
           </div>
         </CardFooter>
       </form>

@@ -59,7 +59,7 @@ const Index = () => {
               <span className="text-transparent bg-gradient-primary bg-clip-text"> Salão de Beleza</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Plataforma completa de gestão multitenant para salões de beleza. 
+              Plataforma completa de gestão para salões de beleza. 
               Agendamentos, equipe, clientes e relatórios em um só lugar.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -162,7 +162,7 @@ const Index = () => {
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
             <p className="text-background/80">
-              © 2024 Beauty Salon Manager. Sistema multitenant seguro e confiável.
+              © 2025 AlveX Salon Manager. Sistema seguro e confiável.
             </p>
           </div>
         </div>

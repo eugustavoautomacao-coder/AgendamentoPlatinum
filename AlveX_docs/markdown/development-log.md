@@ -136,3 +136,24 @@ AlveX_docs/markdown/
 + <div className="absolute inset-0 flex items-center justify-start p-8">
 +   <div className="bg-white/80 rounded-2xl shadow-lg p-8 max-w-md ml-8">
 ``` 
+
+### 2024-07-11 - v1.1.0 - Link WhatsApp com mensagem automática
+
+#### ✨ **Link de Suporte via WhatsApp na Tela de Login**
+**Arquivo:** `src/components/auth/LoginForm.tsx`
+**Mudança:**
+- O botão 'Solicitar acesso ao administrador' agora redireciona para o WhatsApp com o número 24 99999-1916.
+- Mensagem automática preenchida: "Olá ! Gostaria de solicitar suporte ao meu acesso no Sistema Alvex"
+**Motivo:** Facilitar o contato do usuário com o suporte de forma rápida e padronizada.
+**Status:** ✅ Concluído
+
+```jsx
+<a
+  href="https://wa.me/5524999991916?text=Ol%C3%A1%20!%20Gostaria%20de%20solicitar%20suporte%20ao%20meu%20acesso%20no%20Sistema%20Alvex"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-primary hover:underline font-medium"
+>
+  Solicitar acesso ao administrador
+</a>
+``` 
