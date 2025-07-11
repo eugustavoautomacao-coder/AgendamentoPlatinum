@@ -115,47 +115,94 @@ const Clientes = () => {
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
+                  className="p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
                 >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={`/placeholder-avatar-${client.id}.jpg`} />
-                    <AvatarFallback className="bg-primary-soft text-primary">
-                      {client.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <div className="font-medium text-foreground">
-                      {client.name}
+                  {/* Mobile Layout */}
+                  <div className="block md:hidden space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
+                        <AvatarImage src={`/placeholder-avatar-${client.id}.jpg`} />
+                        <AvatarFallback className="bg-primary-soft text-primary">
+                          {client.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-foreground truncate">
+                          {client.name}
+                        </div>
+                        <div className="text-sm font-medium text-primary">
+                          {client.totalVisits} visitas
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {client.email}
+                    
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{client.email}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {client.phone}
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 flex-shrink-0" />
+                        <span>{client.phone}</span>
                       </div>
+                      <div className="text-xs">
+                        Última visita: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="outline" className="flex-1">
+                        Ver Histórico
+                      </Button>
+                      <Button size="sm" variant="outline" className="flex-1">
+                        Editar
+                      </Button>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-foreground">
-                      {client.totalVisits} visitas
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex md:items-center md:gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={`/placeholder-avatar-${client.id}.jpg`} />
+                      <AvatarFallback className="bg-primary-soft text-primary">
+                        {client.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground">
+                        {client.name}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {client.email}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {client.phone}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Última: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
-                    </div>
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      Ver Histórico
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      Editar
-                    </Button>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-foreground">
+                        {client.totalVisits} visitas
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Última: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline">
+                        Ver Histórico
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        Editar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
