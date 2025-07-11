@@ -306,36 +306,36 @@ const GestaoUsuarios = () => {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      {/* Modal de redefinição de senha */}
-                      <Dialog open={!!resetUser} onOpenChange={() => setResetUser(null)}>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Redefinir senha</DialogTitle>
-                            <DialogDescription>
-                              Defina uma nova senha para o usuário <b>{resetUser?.name}</b>.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <input
-                            ref={passwordRef}
-                            type="password"
-                            className="input input-bordered w-full mt-2"
-                            placeholder="Nova senha"
-                            minLength={6}
-                            required
-                          />
-                          <DialogFooter>
-                            <Button onClick={handleResetPassword} disabled={resetLoading}>
-                              {resetLoading ? "Salvando..." : "Salvar nova senha"}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
+          {/* Modal de redefinição de senha - FORA do map */}
+          <Dialog open={!!resetUser} onOpenChange={() => setResetUser(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Redefinir senha</DialogTitle>
+                <DialogDescription>
+                  Defina uma nova senha para o usuário <b>{resetUser?.name}</b>.
+                </DialogDescription>
+              </DialogHeader>
+              <input
+                ref={passwordRef}
+                type="password"
+                className="input input-bordered w-full mt-2"
+                placeholder="Nova senha"
+                minLength={6}
+                required
+              />
+              <DialogFooter>
+                <Button onClick={handleResetPassword} disabled={resetLoading}>
+                  {resetLoading ? "Salvando..." : "Salvar nova senha"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Card>
       </div>
     </SuperAdminLayout>
