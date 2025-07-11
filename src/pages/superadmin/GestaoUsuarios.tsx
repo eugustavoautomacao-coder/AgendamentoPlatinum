@@ -158,6 +158,55 @@ const GestaoUsuarios = () => {
     setSearchInput('');
   };
 
+  const handleCreateUser = async () => {
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      // Obter access token do usuário logado
+      const session = await supabase.auth.getSession();
+      const accessToken = session.data.session?.access_token;
+      if (!accessToken) throw new Error("Token de acesso não encontrado");
+
+      // Montar payload
+      const payload = {
+        name: newUser.name.trim(),
+        email: newUser.email.trim(),
+        password: newUser.password,
+        role: newUser.role,
+        salon_id: newUser.role === 'cliente' ? null : newUser.salon_id
+      };
+
+      // Chamada para Edge Function
+      const response = await fetch(
+        "https://<SUA-URL-SUPABASE>.functions.supabase.co/create-user",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao cadastrar usuário");
+      }
+      toast({
+        title: "Usuário cadastrado com sucesso!",
+        description: `O usuário ${newUser.name} foi criado.`
+      });
+      setIsCreateOpen(false);
+      setNewUser({ name: '', email: '', password: '', role: 'admin', salon_id: '' });
+      // Atualizar listagem
+      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+    } catch (error: any) {
+      setCreateError(error.message || "Erro inesperado ao cadastrar usuário");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <SuperAdminLayout>
@@ -254,7 +303,7 @@ const GestaoUsuarios = () => {
                 {createError && <div className="text-destructive text-sm mt-2">{createError}</div>}
               </div>
               <DialogFooter>
-                <Button disabled={!isFormValid || createLoading} onClick={() => {}}>
+                <Button disabled={!isFormValid || createLoading} onClick={handleCreateUser}>
                   {createLoading ? "Salvando..." : "Cadastrar"}
                 </Button>
               </DialogFooter>
