@@ -154,4 +154,11 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ajuste para h1 em dispositivos móveis para não sobrepor o botão da sidebar */
+  @media (max-width: 1024px) {
+    main h1 {
+      @apply ml-12;
+    }
+  }
 }
