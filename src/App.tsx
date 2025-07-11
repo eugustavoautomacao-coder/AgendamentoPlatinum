@@ -20,6 +20,7 @@ import SuperAdminRelatorios from "./pages/superadmin/Relatorios";
 import SuperAdminConfiguracoes from "./pages/superadmin/Configuracoes";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import ProfissionalDashboard from "./pages/profissional/ProfissionalDashboard";
 
 const queryClient = new QueryClient();
 
@@ -51,8 +52,16 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to={profile?.role === 'superadmin' ? '/superadmin' : '/admin'} replace /> : <Index />} />
-      <Route path="/login" element={!user ? <Login /> : <Navigate to={profile?.role === 'superadmin' ? '/superadmin' : '/admin'} replace />} />
+      <Route path="/" element={user ? <Navigate to={
+        profile?.role === 'superadmin' ? '/superadmin'
+        : profile?.role === 'admin' ? '/admin'
+        : profile?.role === 'profissional' ? '/profissional'
+        : '/'} replace /> : <Index />} />
+      <Route path="/login" element={!user ? <Login /> : <Navigate to={
+        profile?.role === 'superadmin' ? '/superadmin'
+        : profile?.role === 'admin' ? '/admin'
+        : profile?.role === 'profissional' ? '/profissional'
+        : '/'} replace />} />
       
       {/* SuperAdmin Routes */}
       <Route path="/superadmin" element={
@@ -120,6 +129,13 @@ function AppRoutes() {
       <Route path="/admin/configuracoes" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Configuracoes />
+        </ProtectedRoute>
+      } />
+      
+      {/* Profissional Routes */}
+      <Route path="/profissional" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalDashboard />
         </ProtectedRoute>
       } />
       

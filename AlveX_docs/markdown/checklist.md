@@ -13,6 +13,15 @@
 - [ ] Cadastro de profissionais (admin)
 - [ ] Auto-cadastro de clientes (link público)
 - [ ] Gestão de perfis e permissões
+- [x] Listagem real de usuários (Supabase, cruzando autenticação e perfil)
+- [x] Filtros por role e salão (query principal)
+- [x] Busca local e instantânea (UX igual salões)
+- [x] Redefinição de senha via Edge Function (Service Role Key, superadmin)
+- [x] Modal de redefinição de senha limpa busca, senha e estado ao fechar
+- [x] Correção: listagem nunca some após redefinir senha ou fechar modal
+- [x] Remover debounce (busca local)
+- [x] Mensagens de erro/sucesso aprimoradas
+- [x] Alinhamento de UX com fluxo de salões
 
 ## Sprint 3 - Serviços e Configurações (v3.0)
 - [ ] CRUD de serviços com taxas configuráveis

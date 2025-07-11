@@ -71,5 +71,17 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - **Status:** Emojis padronizados (✅, 🟡, 🔴)
 - **Estrutura:** Organização hierárquica clara
 
+### [Sprint 1 – Gestão de Usuários]
+
+- Decisão: Filtro de busca de usuários deve ser local e instantâneo, igual ao de salões, para melhor UX.
+- Implementação: Busca todos os usuários conforme filtros principais (role/salão) e aplica busca local por nome/email/telefone.
+- Redefinição de senha: Implementada via Supabase Edge Function, garantindo segurança (Service Role Key) e permissão de superadmin.
+- Correção: Modal de redefinição de senha agora limpa campo de busca, senha e estado ao ser fechado, evitando sumiço da listagem.
+- Refatoração: Input de senha do modal controlado por estado, eliminando bugs de referência nula.
+- Removido debounce da busca, pois filtro agora é local.
+- Mensagens de erro e sucesso aprimoradas.
+- Alinhamento de UX: Fluxo de usuários agora idêntico ao de salões.
+- Todos os ajustes revisados e validados com o usuário.
+
 ---
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 

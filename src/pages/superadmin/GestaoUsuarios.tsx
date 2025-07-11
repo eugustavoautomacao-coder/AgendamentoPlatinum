@@ -172,10 +172,10 @@ const GestaoUsuarios = () => {
         name: newUser.name.trim(),
         email: newUser.email.trim(),
         password: newUser.password,
-        role: newUser.role,
-        salon_id: newUser.role === 'cliente' ? null : newUser.salon_id
+        role: newUser.role.trim().toLowerCase(),
+        salon_id: newUser.role === 'cliente' ? null : (newUser.salon_id || null)
       };
-
+      console.log("Payload enviado:", payload);
       // Chamada para Edge Function
       const response = await fetch(
         "https://vymwodxwwdhjxxzobjha.supabase.co/functions/v1/create-user",
@@ -190,6 +190,7 @@ const GestaoUsuarios = () => {
       );
       const data = await response.json();
       if (!response.ok) {
+        console.error("Erro detalhado da Edge Function:", data.error);
         throw new Error(data.error || "Erro ao cadastrar usuário");
       }
       toast({
