@@ -100,15 +100,15 @@ const GestaoSaloes = () => {
                 Novo Salão
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
               <DialogHeader>
                 <DialogTitle>Criar Novo Salão</DialogTitle>
                 <DialogDescription>
                   Adicione um novo salão ao sistema
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
+              <div className="space-y-4 px-1">
+                <div className="space-y-2">
                   <Label htmlFor="name">Nome do Salão</Label>
                   <Input
                     id="name"
@@ -117,7 +117,7 @@ const GestaoSaloes = () => {
                     placeholder="Digite o nome do salão"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <Input
                     id="email"
@@ -127,7 +127,7 @@ const GestaoSaloes = () => {
                     placeholder="contato@salao.com"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="phone">Telefone</Label>
                   <Input
                     id="phone"
@@ -136,7 +136,7 @@ const GestaoSaloes = () => {
                     placeholder="(11) 99999-9999"
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="address">Endereço</Label>
                   <Textarea
                     id="address"
@@ -147,11 +147,11 @@ const GestaoSaloes = () => {
                 </div>
 
                 {/* Separador */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 space-y-2">
                   <h3 className="text-lg font-medium mb-3">Dados do Administrador</h3>
                   
-                  <div className="space-y-3">
-                    <div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
                       <Label htmlFor="adminName">Nome do Administrador</Label>
                       <Input
                         id="adminName"
@@ -162,7 +162,7 @@ const GestaoSaloes = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="adminEmail">E-mail do Administrador</Label>
                       <Input
                         id="adminEmail"
@@ -174,7 +174,7 @@ const GestaoSaloes = () => {
                       />
                     </div>
                     
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="adminPassword">Senha</Label>
                       <Input
                         id="adminPassword"
@@ -187,11 +187,11 @@ const GestaoSaloes = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)} className="w-full sm:w-auto">
                     Cancelar
                   </Button>
-                  <Button onClick={handleCreateSalon}>
+                  <Button onClick={handleCreateSalon} className="w-full sm:w-auto">
                     Criar Salão
                   </Button>
                 </div>
