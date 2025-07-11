@@ -205,7 +205,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
           isCollapsed ? 'lg:w-20' : 'lg:w-64'
         }`}
       >
-        <div className="bg-card border-r border-border shadow-elegant">
+        <div className="bg-card border-r border-border shadow-elegant h-screen">
           <div className="relative h-full">
             {/* Collapse Button */}
             {setIsCollapsed && (
