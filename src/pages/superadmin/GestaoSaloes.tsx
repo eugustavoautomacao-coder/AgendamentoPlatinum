@@ -19,10 +19,13 @@ const GestaoSaloes = () => {
     name: "",
     email: "",
     phone: "",
-    address: ""
+    address: "",
+    adminName: "",
+    adminEmail: "",
+    adminPassword: ""
   });
 
-  const { salons, loading, createSalon } = useSalons();
+  const { salons, loading, createSalon, createSalonAdmin } = useSalons();
   const { toast } = useToast();
 
   const filteredSalons = salons?.filter(salon =>
@@ -32,19 +35,39 @@ const GestaoSaloes = () => {
 
   const handleCreateSalon = async () => {
     try {
-      await createSalon(formData);
+      // Primeiro criar o salão
+      const salonResult = await createSalon({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address
+      });
+
+      if (salonResult.error) {
+        throw new Error("Erro ao criar salão");
+      }
+
+      // Depois criar o administrador do salão
+      if (salonResult.data && formData.adminEmail && formData.adminPassword && formData.adminName) {
+        await createSalonAdmin(salonResult.data.id, {
+          name: formData.adminName,
+          email: formData.adminEmail,
+          password: formData.adminPassword
+        });
+      }
+
       setIsCreateOpen(false);
-      setFormData({ name: "", email: "", phone: "", address: "" });
-      toast({
-        title: "Sucesso",
-        description: "Salão criado com sucesso!"
+      setFormData({ 
+        name: "", 
+        email: "", 
+        phone: "", 
+        address: "",
+        adminName: "",
+        adminEmail: "",
+        adminPassword: ""
       });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao criar salão"
-      });
+      console.error("Erro ao criar salão:", error);
     }
   };
 
@@ -121,6 +144,48 @@ const GestaoSaloes = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                     placeholder="Endereço completo do salão"
                   />
+                </div>
+
+                {/* Separador */}
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-medium mb-3">Dados do Administrador</h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="adminName">Nome do Administrador</Label>
+                      <Input
+                        id="adminName"
+                        value={formData.adminName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, adminName: e.target.value }))}
+                        placeholder="Nome completo do administrador"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="adminEmail">E-mail do Administrador</Label>
+                      <Input
+                        id="adminEmail"
+                        type="email"
+                        value={formData.adminEmail}
+                        onChange={(e) => setFormData(prev => ({ ...prev, adminEmail: e.target.value }))}
+                        placeholder="admin@salao.com"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="adminPassword">Senha</Label>
+                      <Input
+                        id="adminPassword"
+                        type="password"
+                        value={formData.adminPassword}
+                        onChange={(e) => setFormData(prev => ({ ...prev, adminPassword: e.target.value }))}
+                        placeholder="Senha para acesso do administrador"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
