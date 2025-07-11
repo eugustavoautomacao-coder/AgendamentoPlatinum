@@ -55,3 +55,10 @@
 
 - Corrigido problema do nome do salão aparecendo como 'AlveX' temporariamente durante navegação.
 - Implementado estado de loading adequado para exibição do nome do salão nas sidebars. 
+
+---
+
+### v1.2.2
+
+- Otimizado estado de loading do nome do salão nas sidebars.
+- Implementado cache local e uso direto do nome do salão do perfil do usuário. 

@@ -99,4 +99,13 @@ Appointment { id, clientId, professionalId, serviceId, startTime, endTime, statu
 - Implementado estado de loading adequado no useSalonInfo hook para AdminSidebar e ProfissionalSidebar.
 - Fallback alterado de 'AlveX' para 'Salão' e adicionado indicador 'Carregando...' durante carregamento.
 
+---
+
+### v1.2.2 (Sprint 1, Etapa 2)
+
+- Otimizado estado de loading do nome do salão nas sidebars.
+- Implementado cache local (24h) para dados do salão no useSalonInfo hook.
+- Nome do salão agora vem diretamente do perfil do usuário (disponível imediatamente).
+- Eliminado estado de loading para exibição do nome do salão.
+
 *Este arquivo será atualizado continuamente com decisões e contexto do desenvolvimento.* 

@@ -31,7 +31,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
   const { signOut, profile } = useAuth();
-  const { salonInfo, loading: salonLoading } = useSalonInfo();
+  const { salonName } = useSalonInfo();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -118,7 +118,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
           {showLabels && !isCollapsed && (
             <div>
               <h2 className="font-bold text-lg text-foreground">
-                {salonLoading ? 'Carregando...' : salonInfo?.name || 'Salão'}
+                {salonName}
               </h2>
               <p className="text-sm text-muted-foreground">Administrador</p>
             </div>

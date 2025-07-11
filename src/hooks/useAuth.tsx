@@ -10,6 +10,7 @@ interface Profile {
   role: 'superadmin' | 'admin' | 'profissional' | 'cliente';
   phone?: string;
   avatar_url?: string;
+  salon_name?: string;
 }
 
 interface AuthContextType {
@@ -44,12 +45,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('*')
+                .select(`
+                  *,
+                  salons (
+                    name
+                  )
+                `)
                 .eq('id', session.user.id)
                 .single();
               
               if (error) throw error;
-              setProfile(profile);
+              
+              // Adicionar nome do salão ao perfil
+              const profileWithSalon = {
+                ...profile,
+                salon_name: profile.salons?.name
+              };
+              
+              setProfile(profileWithSalon);
             } catch (error) {
               console.error('Error fetching profile:', error);
               toast({
