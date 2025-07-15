@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useSalonInfo } from "@/hooks/useSalonInfo";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/profissional", exact: true },
@@ -115,12 +116,24 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
       <Separator />
       <div className={`${isCollapsed ? 'p-2' : 'p-4'}`}>
         <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={profile?.avatar_url} />
-            <AvatarFallback className="bg-primary-soft text-primary">
-              {profile?.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="h-10 w-10 cursor-pointer">
+                <AvatarImage src={profile?.avatar_url} />
+                <AvatarFallback className="bg-primary-soft text-primary">
+                  {profile?.name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/perfil">Meu Perfil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground truncate">{profile?.name || 'Usuário'}</p>
@@ -128,17 +141,18 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
             </div>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`w-full text-muted-foreground hover:text-destructive ${
-            isCollapsed ? 'justify-center px-0' : 'justify-start'
-          }`}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="w-full justify-start text-muted-foreground hover:text-destructive"
           onClick={signOut}
-          title={isCollapsed ? 'Sair' : undefined}
         >
-          <LogOut className="h-4 w-4" />
-          {!isCollapsed && <span className="ml-2">Sair</span>}
+          {!isCollapsed && (
+            <>
+              <LogOut className="h-4 w-4 mr-2" />
+              <span className="text-xs">Sair</span>
+            </>
+          )}
         </Button>
       </div>
     </div>
