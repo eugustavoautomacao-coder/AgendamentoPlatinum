@@ -11,19 +11,19 @@
 
 ### 🎯 Sprint: Dark Mode System (v1.2.0)
 
-#### 1. Configuração Base do Dark Mode
-- [ ] Criar contexto de tema (ThemeProvider)
-- [ ] Implementar hook useTheme
-- [ ] Configurar persistência do tema (localStorage)
-- [ ] Adicionar toggle de tema no layout principal
+#### 1. Configuração Base do Dark Mode ✅
+- [x] Criar contexto de tema (ThemeProvider)
+- [x] Implementar hook useTheme
+- [x] Configurar persistência do tema (localStorage)
+- [x] Adicionar toggle de tema no layout principal
 
-#### 2. Configuração do Tailwind CSS
-- [ ] Atualizar tailwind.config.ts com variáveis de tema
-- [ ] Definir cores para modo claro e escuro
-- [ ] Configurar CSS variables para transições suaves
-- [ ] Testar aplicação das classes dark:
+#### 2. Configuração do Tailwind CSS ✅
+- [x] Atualizar tailwind.config.ts com variáveis de tema
+- [x] Definir cores para modo claro e escuro
+- [x] Configurar CSS variables para transições suaves
+- [x] Testar aplicação das classes dark:
 
-#### 3. Componentes UI - Dark Mode
+#### 3. Componentes UI - Dark Mode 🚧
 - [ ] Sidebar (Admin, Profissional, SuperAdmin)
 - [ ] Header/Navigation
 - [ ] Cards e containers
@@ -32,33 +32,33 @@
 - [ ] Modais e dropdowns
 - [ ] Tabelas e listagens
 
-#### 4. Páginas Principais - Dark Mode
+#### 4. Páginas Principais - Dark Mode 🚧
 - [ ] Login e autenticação
 - [ ] Dashboard (Admin, Profissional, SuperAdmin)
 - [ ] Páginas de gestão (usuários, salões, etc.)
 - [ ] Páginas de configurações
 - [ ] Página de perfil
 
-#### 5. Elementos Específicos
+#### 5. Elementos Específicos 🚧
 - [ ] Avatar e imagens
 - [ ] Ícones e elementos gráficos
 - [ ] Estados de loading e feedback
 - [ ] Mensagens de erro e sucesso
 - [ ] Tooltips e popovers
 
-#### 6. Responsividade e Acessibilidade
+#### 6. Responsividade e Acessibilidade 🚧
 - [ ] Testar em diferentes tamanhos de tela
 - [ ] Verificar contraste de cores
 - [ ] Testar transições suaves
 - [ ] Validar acessibilidade (WCAG)
 
-#### 7. Testes e Validação
+#### 7. Testes e Validação 🚧
 - [ ] Testar toggle de tema
 - [ ] Verificar persistência entre sessões
 - [ ] Testar em todas as páginas
 - [ ] Validar performance
 
-#### 8. Documentação
+#### 8. Documentação 🚧
 - [ ] Atualizar README com instruções de tema
 - [ ] Documentar variáveis CSS
 - [ ] Registrar decisões de design no chat-context.md
@@ -73,4 +73,8 @@
 - Transições suaves entre temas
 - Persistência de preferência do usuário
 - Acessibilidade e contraste adequados
-- Performance otimizada 
+- Performance otimizada
+
+### 🚀 Progresso Atual
+**Status:** Base implementada - Toggle funcionando
+**Próximo:** Adaptar componentes UI para dark mode 
