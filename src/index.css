@@ -88,18 +88,6 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
     @apply bg-gradient-to-br from-accent to-accent/80;
   }
   
-  .shadow-soft {
-    @apply shadow-soft dark:shadow-dark-soft;
-  }
-  
-  .shadow-elegant {
-    @apply shadow-elegant dark:shadow-dark-elegant;
-  }
-  
-  .shadow-glow {
-    @apply shadow-glow dark:shadow-dark-glow;
-  }
-  
   .bg-primary-soft {
     @apply bg-primary/10 dark:bg-primary/20;
   }
@@ -113,15 +101,15 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
   }
   
   .hover-lift {
-    @apply transition-all duration-200 hover:shadow-elegant hover:-translate-y-1;
+    @apply transition-all duration-200 hover:-translate-y-1;
   }
   
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-soft hover:bg-accent/50;
+    @apply transition-all duration-200 hover:bg-accent/50;
   }
   
   .button-hover {
-    @apply transition-all duration-200 hover:shadow-soft active:scale-95;
+    @apply transition-all duration-200 active:scale-95;
   }
   
   .input-focus {
@@ -133,7 +121,7 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
   }
   
   .sidebar-item-active {
-    @apply bg-primary text-primary-foreground shadow-soft;
+    @apply bg-primary text-primary-foreground;
   }
   
   .modal-backdrop {
