@@ -185,13 +185,13 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
           isCollapsed ? 'lg:w-20' : 'lg:w-64'
         }`}
       >
-        <div className="bg-card border-r border-border shadow-elegant h-screen">
+        <div className="bg-card border-r border-border shadow-elegant h-screen relative">
           <div className="relative h-full">
             {/* Botão de retração/expansão sempre visível na sidebar desktop */}
             <Button
               variant="ghost"
               size="icon"
-              className="absolute -right-4 top-6 z-60 h-8 w-8 bg-card border border-border shadow-soft hover:bg-accent hover:shadow-elegant transition-all duration-200"
+              className="absolute -right-3 top-6 z-60 h-8 w-8 bg-card border border-border shadow-soft hover:bg-accent hover:shadow-elegant transition-all duration-200"
               onClick={() => setIsCollapsed && setIsCollapsed(!isCollapsed)}
             >
               {isCollapsed ? (
