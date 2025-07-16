@@ -243,7 +243,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute -right-3 top-6 z-10 h-6 w-6 bg-card border border-border shadow-soft hover:bg-accent"
+                className="absolute -right-4 top-6 z-20 h-8 w-8 bg-card border border-border shadow-soft hover:bg-accent hover:shadow-elegant transition-all duration-200"
                 onClick={() => setIsCollapsed(!isCollapsed)}
               >
                 {isCollapsed ? (
