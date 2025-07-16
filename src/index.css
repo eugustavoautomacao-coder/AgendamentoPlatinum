@@ -8,141 +8,56 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
 
 @layer base {
   :root {
-    /* Background & Surface Colors */
-    --background: 340 15% 98%;
-    --foreground: 340 8% 15%;
-
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 340 8% 15%;
-
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 340 8% 15%;
-
-    /* Primary Brand - Rosa elegante para beleza */
-    --primary: 330 45% 55%;
-    --primary-foreground: 0 0% 100%;
-    --primary-soft: 330 25% 85%;
-    --primary-glow: 330 55% 75%;
-
-    /* Secondary - Roxo suave para sofisticação */
-    --secondary: 270 35% 92%;
-    --secondary-foreground: 270 15% 25%;
-    --secondary-accent: 270 45% 65%;
-
-    /* Neutral & Muted */
-    --muted: 340 8% 96%;
-    --muted-foreground: 340 5% 45%;
-
-    --accent: 340 12% 94%;
-    --accent-foreground: 340 8% 20%;
-
-    /* Status Colors */
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 140 50% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 45 85% 55%;
-    --warning-foreground: 45 15% 15%;
-
-    /* UI Elements */
-    --border: 340 15% 88%;
-    --input: 340 15% 88%;
-    --ring: 330 45% 55%;
-
-    /* Spacing & Borders */
-    --radius: 0.75rem;
-
-    /* Gradients - Sutis e elegantes */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--primary-soft)));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(340 15% 98%));
-    
-    /* Shadows - Suaves e profissionais */
-    --shadow-soft: 0 2px 8px -2px hsl(var(--primary) / 0.1);
-    --shadow-elegant: 0 8px 25px -8px hsl(var(--primary) / 0.15);
-    --shadow-float: 0 12px 40px -12px hsl(var(--primary) / 0.2);
-    
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s ease-out;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 221.2 83.2% 53.3%;
   }
 
   .dark {
-    /* Dark mode para beauty - elegante e sofisticado */
-    --background: 340 12% 8%;
-    --foreground: 340 15% 95%;
-
-    --card: 340 10% 12%;
-    --card-foreground: 340 15% 95%;
-
-    --popover: 340 10% 12%;
-    --popover-foreground: 340 15% 95%;
-
-    --primary: 330 55% 65%;
-    --primary-foreground: 340 12% 8%;
-    --primary-soft: 330 25% 25%;
-    --primary-glow: 330 45% 55%;
-
-    --secondary: 270 25% 18%;
-    --secondary-foreground: 270 35% 85%;
-    --secondary-accent: 270 35% 55%;
-
-    --muted: 340 8% 15%;
-    --muted-foreground: 340 5% 65%;
-
-    --accent: 340 10% 18%;
-    --accent-foreground: 340 15% 85%;
-
-    --destructive: 0 65% 65%;
-    --destructive-foreground: 340 12% 8%;
-
-    --success: 140 45% 55%;
-    --success-foreground: 340 12% 8%;
-
-    --warning: 45 75% 65%;
-    --warning-foreground: 45 15% 15%;
-
-    --border: 340 8% 20%;
-    --input: 340 8% 20%;
-    --ring: 330 55% 65%;
-
-    /* Dark mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--primary-soft)));
-    --gradient-card: linear-gradient(145deg, hsl(340 10% 12%), hsl(340 8% 15%));
-    
-    /* Dark shadows com glow sutil */
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
-    --shadow-elegant: 0 8px 25px -8px hsl(0 0% 0% / 0.4);
-    --shadow-float: 0 12px 40px -12px hsl(0 0% 0% / 0.5);
-
-    /* Sidebar dark */
-    --sidebar-background: 340 10% 10%;
-    --sidebar-foreground: 340 15% 85%;
-    --sidebar-primary: 330 55% 65%;
-    --sidebar-primary-foreground: 340 12% 8%;
-    --sidebar-accent: 340 8% 18%;
-    --sidebar-accent-foreground: 340 15% 85%;
-    --sidebar-border: 340 8% 20%;
-    --sidebar-ring: 330 55% 65%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --sidebar: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 224.3 76.3% 94.1%;
   }
 }
 
@@ -150,15 +65,129 @@ Inspirado em Treatwell, Zenbeauty - cores suaves, elegantes e profissionais
   * {
     @apply border-border;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-200;
   }
+  
+  html {
+    @apply transition-colors duration-200;
+  }
+}
 
-  /* Ajuste para h1 em dispositivos móveis para não sobrepor o botão da sidebar */
-  @media (max-width: 1024px) {
-    main h1 {
-      @apply ml-12;
-    }
+@layer components {
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-primary to-primary/80;
+  }
+  
+  .bg-gradient-secondary {
+    @apply bg-gradient-to-br from-secondary to-secondary/80;
+  }
+  
+  .bg-gradient-accent {
+    @apply bg-gradient-to-br from-accent to-accent/80;
+  }
+  
+  .shadow-soft {
+    @apply shadow-soft dark:shadow-dark-soft;
+  }
+  
+  .shadow-elegant {
+    @apply shadow-elegant dark:shadow-dark-elegant;
+  }
+  
+  .shadow-glow {
+    @apply shadow-glow dark:shadow-dark-glow;
+  }
+  
+  .bg-primary-soft {
+    @apply bg-primary/10 dark:bg-primary/20;
+  }
+  
+  .text-primary-soft {
+    @apply text-primary/80 dark:text-primary/90;
+  }
+  
+  .border-primary-soft {
+    @apply border-primary/20 dark:border-primary/30;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-200 hover:shadow-elegant hover:-translate-y-1;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-soft hover:bg-accent/50;
+  }
+  
+  .button-hover {
+    @apply transition-all duration-200 hover:shadow-soft active:scale-95;
+  }
+  
+  .input-focus {
+    @apply focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200;
+  }
+  
+  .sidebar-item {
+    @apply transition-all duration-200 hover:bg-accent hover:text-accent-foreground;
+  }
+  
+  .sidebar-item-active {
+    @apply bg-primary text-primary-foreground shadow-soft;
+  }
+  
+  .modal-backdrop {
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+  
+  .toast-success {
+    @apply bg-green-500 text-white dark:bg-green-600;
+  }
+  
+  .toast-error {
+    @apply bg-red-500 text-white dark:bg-red-600;
+  }
+  
+  .toast-info {
+    @apply bg-blue-500 text-white dark:bg-blue-600;
+  }
+  
+  .toast-warning {
+    @apply bg-yellow-500 text-white dark:bg-yellow-600;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
   }
 }

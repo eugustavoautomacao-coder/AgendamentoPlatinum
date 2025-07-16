@@ -1,5 +1,6 @@
 import React from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SuperAdminSidebar } from './SuperAdminSidebar';
 
 interface SuperAdminLayoutProps {
@@ -14,10 +15,15 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
         
         <main className="flex-1">
           {/* Global header with trigger */}
-          <header className="h-12 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-            <SidebarTrigger className="ml-4" />
-            <div className="flex-1 px-4">
-              <h1 className="text-lg font-semibold text-foreground">Sistema AlveX</h1>
+          <header className="h-12 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+            <div className="flex items-center">
+              <SidebarTrigger className="ml-4" />
+              <div className="flex-1 px-4">
+                <h1 className="text-lg font-semibold text-foreground">Sistema AlveX</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pr-4">
+              <ThemeToggle size="sm" />
             </div>
           </header>
           

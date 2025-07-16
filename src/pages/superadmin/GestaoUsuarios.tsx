@@ -42,6 +42,22 @@ const GestaoUsuarios = () => {
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
+  // Estado do modal de edição
+  const [editUser, setEditUser] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', salon_id: '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // Estado do modal de exclusão
+  const [deleteUser, setDeleteUser] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Estado do modal de alteração de role
+  const [roleUser, setRoleUser] = useState<any>(null);
+  const [newRole, setNewRole] = useState('');
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleError, setRoleError] = useState<string | null>(null);
+
   // Validação visual simples
   const isSalonRequired = newUser.role !== 'superadmin';
   const isFormValid =
@@ -50,6 +66,9 @@ const GestaoUsuarios = () => {
     newUser.password.trim() &&
     newUser.role &&
     (!isSalonRequired || newUser.salon_id);
+
+  // Ajustar validação do formulário de edição
+  const isEditFormValid = editForm.name.trim() && editForm.email.trim() && editForm.phone.trim();
 
   // Buscar usuários apenas quando filtros principais mudarem
   useEffect(() => {
@@ -205,6 +224,96 @@ const GestaoUsuarios = () => {
       setCreateError(error.message || "Erro inesperado ao cadastrar usuário");
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  // Função para abrir modal de edição
+  const handleOpenEdit = (user: any) => {
+    setEditUser(user);
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      salon_id: user.salon_id || ''
+    });
+    setEditError(null);
+  };
+
+  // Função para salvar edição
+  const handleEditUser = async () => {
+    if (!editUser) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+          salon_id: editForm.salon_id || null
+        })
+        .eq('id', editUser.id);
+      if (error) throw error;
+      toast({ title: 'Usuário atualizado com sucesso!' });
+      setEditUser(null);
+      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+    } catch (error: any) {
+      setEditError(error.message || 'Erro ao atualizar usuário');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Função para excluir usuário
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', deleteUser.id);
+      if (error) throw error;
+      toast({ title: 'Usuário excluído com sucesso!' });
+      setDeleteUser(null);
+      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao excluir usuário',
+        description: error.message || 'Erro inesperado',
+        variant: 'destructive'
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Função para abrir modal de alteração de role
+  const handleOpenRole = (user: any) => {
+    setRoleUser(user);
+    setNewRole(user.role);
+    setRoleError(null);
+  };
+
+  // Função para salvar alteração de role
+  const handleChangeRole = async () => {
+    if (!roleUser || !newRole) return;
+    setRoleLoading(true);
+    setRoleError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', roleUser.id);
+      if (error) throw error;
+      toast({ title: 'Role atualizado com sucesso!' });
+      setRoleUser(null);
+      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+    } catch (error: any) {
+      setRoleError(error.message || 'Erro ao atualizar role');
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -470,15 +579,15 @@ const GestaoUsuarios = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenRole(user)}>
                             <Shield className="mr-2 h-4 w-4" />
                             Alterar Role
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(user)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Excluir
                           </DropdownMenuItem>
@@ -515,6 +624,117 @@ const GestaoUsuarios = () => {
               <DialogFooter>
                 <Button onClick={handleResetPassword} disabled={resetLoading}>
                   {resetLoading ? "Salvando..." : "Salvar nova senha"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Modal de edição de usuário */}
+          <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+              <DialogHeader>
+                <DialogTitle>Editar Usuário</DialogTitle>
+                <DialogDescription>Altere os dados do usuário e salve as modificações.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 px-1">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-name">Nome</Label>
+                  <Input
+                    id="edit-user-name"
+                    value={editForm.name}
+                    onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Nome completo"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-email">E-mail</Label>
+                  <Input
+                    id="edit-user-email"
+                    type="email"
+                    value={editForm.email}
+                    disabled
+                    className="bg-muted cursor-not-allowed"
+                    placeholder="usuario@email.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-phone">Telefone</Label>
+                  <Input
+                    id="edit-user-phone"
+                    value={editForm.phone}
+                    onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder="Telefone"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-user-salon">Salão</Label>
+                  <Select value={editForm.salon_id} onValueChange={value => setEditForm(f => ({ ...f, salon_id: value }))}>
+                    <SelectTrigger id="edit-user-salon" className="w-full">
+                      <SelectValue placeholder="Selecione o salão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salons.map(salon => (
+                        <SelectItem key={salon.id} value={salon.id}>{salon.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {editError && <div className="text-destructive text-sm mt-2">{editError}</div>}
+              </div>
+              <DialogFooter>
+                <Button disabled={editLoading || !isEditFormValid} onClick={handleEditUser}>
+                  {editLoading ? 'Salvando...' : 'Salvar alterações'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Modal de confirmação de exclusão */}
+          <Dialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Excluir usuário</DialogTitle>
+                <DialogDescription>
+                  Tem certeza que deseja excluir o usuário <b>{deleteUser?.name}</b>? Esta ação não poderá ser desfeita.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteUser(null)} disabled={deleteLoading}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteUser} disabled={deleteLoading}>
+                  {deleteLoading ? 'Excluindo...' : 'Excluir'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Modal de alteração de role */}
+          <Dialog open={!!roleUser} onOpenChange={() => setRoleUser(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Alterar Role</DialogTitle>
+                <DialogDescription>
+                  Selecione o novo role para o usuário <b>{roleUser?.name}</b>.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 px-1">
+                <Select value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o novo role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="profissional">Profissional</SelectItem>
+                    <SelectItem value="cliente">Cliente</SelectItem>
+                  </SelectContent>
+                </Select>
+                {roleError && <div className="text-destructive text-sm mt-2">{roleError}</div>}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setRoleUser(null)} disabled={roleLoading}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleChangeRole} disabled={roleLoading || !newRole || newRole === roleUser?.role}>
+                  {roleLoading ? 'Salvando...' : 'Salvar novo role'}
                 </Button>
               </DialogFooter>
             </DialogContent>

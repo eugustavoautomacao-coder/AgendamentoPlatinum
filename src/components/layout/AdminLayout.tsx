@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import AdminSidebar from "./AdminSidebar";
 
 interface AdminLayoutProps {
@@ -25,6 +26,22 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         isCollapsed={isCollapsed} 
         setIsCollapsed={setIsCollapsed}
       />
+      
+      {/* Header */}
+      <header className={`h-12 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 transition-all duration-300 ${
+        isMobile 
+          ? 'ml-0' 
+          : isCollapsed 
+            ? 'lg:ml-20' 
+            : 'lg:ml-64'
+      }`}>
+        <div className="flex items-center px-4">
+          <h1 className="text-lg font-semibold text-foreground">Sistema AlveX</h1>
+        </div>
+        <div className="flex items-center gap-2 pr-4">
+          <ThemeToggle size="sm" />
+        </div>
+      </header>
       
       {/* Main Content */}
       <div 

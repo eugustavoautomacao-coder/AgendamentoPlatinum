@@ -11,6 +11,7 @@ interface Profile {
   phone?: string;
   avatar_url?: string;
   salon_name?: string;
+  email: string;
 }
 
 interface AuthContextType {
@@ -59,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Adicionar nome do salão ao perfil
               const profileWithSalon = {
                 ...profile,
-                salon_name: profile.salons?.name
+                salon_name: profile.salons?.name,
+                email: profile.email || session.user.email // Prioriza o email do profile, senão pega do user
               };
               
               setProfile(profileWithSalon);

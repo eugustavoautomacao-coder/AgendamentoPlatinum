@@ -1,69 +1,76 @@
-# Checklist - MVP Sistema de Agendamento Multitenant
+# Checklist - AlveX
 
-## Sprint 1 - Fundação e Autenticação (v1.0)
-- [ ] Setup inicial do projeto (backend + frontend)
-- [ ] Configuração do banco de dados com suporte multitenant
-- [ ] Sistema de autenticação com roles (superadmin, admin, profissional, cliente)
-- [ ] Middleware de isolamento por tenant
-- [ ] Recuperação de senha via email
+## Sprint Atual: Dark Mode Implementation
 
-## Sprint 2 - Gestão de Salões e Usuários (v2.0)
-- [ ] CRUD de salões (apenas superadmin)
-- [ ] Provisionamento de admin inicial por salão
-- [ ] Cadastro de profissionais (admin)
-- [ ] Auto-cadastro de clientes (link público)
-- [ ] Gestão de perfis e permissões
-- [x] Listagem real de usuários (Supabase, cruzando autenticação e perfil)
-- [x] Filtros por role e salão (query principal)
-- [x] Busca local e instantânea (UX igual salões)
-- [x] Redefinição de senha via Edge Function (Service Role Key, superadmin)
-- [x] Modal de redefinição de senha limpa busca, senha e estado ao fechar
-- [x] Correção: listagem nunca some após redefinir senha ou fechar modal
-- [x] Remover debounce (busca local)
-- [x] Mensagens de erro/sucesso aprimoradas
-- [x] Alinhamento de UX com fluxo de salões
-- [x] Corrigir problema do nome do salão aparecendo como 'AlveX' temporariamente durante navegação
-- [x] Otimizar estado de loading do nome do salão nas sidebars
+### ✅ Tarefas Concluídas
+- [x] Sidebar e nome do salão otimizados
+- [x] Gestão de usuários (Superadmin) - CRUD completo
+- [x] Edição de perfil do usuário com upload de avatar
+- [x] Supabase Storage e policies configuradas
+- [x] Botão de sair nas sidebars (Admin/Profissional)
 
-## Sprint 3 - Serviços e Configurações (v3.0)
-- [ ] CRUD de serviços com taxas configuráveis
-- [ ] Configuração de horários dos profissionais
-- [ ] Gestão de especialidades
-- [ ] Configurações de preços e duração
+### 🎯 Sprint: Dark Mode System (v1.2.0)
 
-## Sprint 4 - Sistema de Agendamento (v4.0)
-- [ ] Interface de agendamento para clientes
-- [ ] Visualização de agenda disponível
-- [ ] Confirmação e remarcação de horários
-- [ ] Dashboard do profissional
-- [ ] Validações de disponibilidade
+#### 1. Configuração Base do Dark Mode
+- [ ] Criar contexto de tema (ThemeProvider)
+- [ ] Implementar hook useTheme
+- [ ] Configurar persistência do tema (localStorage)
+- [ ] Adicionar toggle de tema no layout principal
 
-## Sprint 5 - Relatórios e Finalização (v5.0)
-- [ ] Relatórios financeiros (admin)
-- [ ] Relatórios de serviços realizados
-- [ ] Ranking de serviços
-- [ ] Testes de isolamento multitenant
-- [ ] Responsividade mobile-first
-- [ ] Deploy e documentação final
+#### 2. Configuração do Tailwind CSS
+- [ ] Atualizar tailwind.config.ts com variáveis de tema
+- [ ] Definir cores para modo claro e escuro
+- [ ] Configurar CSS variables para transições suaves
+- [ ] Testar aplicação das classes dark:
 
-## Critérios de Qualidade
-- [ ] Zero vazamento de dados entre tenants
-- [ ] Interface intuitiva e responsiva
-- [ ] Performance otimizada
-- [ ] Segurança implementada
-- [ ] Testes de todos os fluxos críticos 
-- [x] Ajustar ProfissionalLayout e ProfissionalSidebar para responsividade total e botão de retração/expansão igual ao AdminSidebar 
+#### 3. Componentes UI - Dark Mode
+- [ ] Sidebar (Admin, Profissional, SuperAdmin)
+- [ ] Header/Navigation
+- [ ] Cards e containers
+- [ ] Formulários e inputs
+- [ ] Botões e elementos interativos
+- [ ] Modais e dropdowns
+- [ ] Tabelas e listagens
 
----
+#### 4. Páginas Principais - Dark Mode
+- [ ] Login e autenticação
+- [ ] Dashboard (Admin, Profissional, SuperAdmin)
+- [ ] Páginas de gestão (usuários, salões, etc.)
+- [ ] Páginas de configurações
+- [ ] Página de perfil
 
-## Checklist por Sprint
+#### 5. Elementos Específicos
+- [ ] Avatar e imagens
+- [ ] Ícones e elementos gráficos
+- [ ] Estados de loading e feedback
+- [ ] Mensagens de erro e sucesso
+- [ ] Tooltips e popovers
 
-### Sprint 1
-- [x] Setup inicial do projeto e autenticação
-- [x] Cadastro real de usuários (admin, profissional, cliente)
-- [x] Modal de cadastro integrado ao Supabase
-- [x] Ajuste de triggers e constraints no banco
-- [x] Criação da área do profissional (layout, sidebar, páginas, rotas protegidas)
-- [x] Responsividade e experiência idêntica ao admin
-- [x] Correção do nome do salão ('AlveX') e fallback
-- [x] Otimização do nome do salão (cache local, perfil) 
+#### 6. Responsividade e Acessibilidade
+- [ ] Testar em diferentes tamanhos de tela
+- [ ] Verificar contraste de cores
+- [ ] Testar transições suaves
+- [ ] Validar acessibilidade (WCAG)
+
+#### 7. Testes e Validação
+- [ ] Testar toggle de tema
+- [ ] Verificar persistência entre sessões
+- [ ] Testar em todas as páginas
+- [ ] Validar performance
+
+#### 8. Documentação
+- [ ] Atualizar README com instruções de tema
+- [ ] Documentar variáveis CSS
+- [ ] Registrar decisões de design no chat-context.md
+
+### 📋 Próximas Sprints Planejadas
+- Sprint v1.3.0: Melhorias de UX/UI
+- Sprint v1.4.0: Funcionalidades avançadas
+- Sprint v2.0.0: Release principal
+
+### 🎯 Objetivos do Sprint Dark Mode
+- Sistema de tema completo e consistente
+- Transições suaves entre temas
+- Persistência de preferência do usuário
+- Acessibilidade e contraste adequados
+- Performance otimizada 
