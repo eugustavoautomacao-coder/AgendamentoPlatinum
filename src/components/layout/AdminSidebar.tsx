@@ -238,22 +238,6 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
       >
         <div className="bg-card border-r border-border shadow-elegant h-screen relative">
           <div className="relative h-full">
-            {/* Collapse Button */}
-            {setIsCollapsed && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute -right-3 top-6 z-[9999] h-8 w-8 bg-card border border-border shadow-soft hover:bg-accent hover:shadow-elegant transition-all duration-200"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <ChevronLeft className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            
             <SidebarContent showLabels={!isCollapsed} />
           </div>
         </div>
