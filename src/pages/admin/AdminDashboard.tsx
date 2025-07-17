@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle } from "lucide-react";
+import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -118,6 +118,7 @@ const AdminDashboard = () => {
               Hoje
             </Button>
             <Button>
+              <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
             </Button>
           </div>
@@ -210,7 +211,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button className="w-full justify-start" variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Novo Agendamento
                 </Button>
                 <Button className="w-full justify-start" variant="outline">

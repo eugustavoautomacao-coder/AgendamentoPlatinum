@@ -34,15 +34,15 @@ const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
         <Button
           variant="ghost"
           size="icon"
-          className={`fixed top-6 z-[9999] h-8 w-8 bg-card border border-border shadow-soft hover:bg-accent hover:shadow-elegant transition-all duration-200 ${
+          className={`fixed top-6 z-[9999] h-6 w-6 bg-background/90 backdrop-blur-sm border border-border/60 shadow-sm hover:shadow-md hover:bg-accent/80 transition-all duration-200 ${
             isCollapsed ? 'left-16' : 'left-60'
           }`}
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground/80 hover:text-foreground transition-colors" />
           ) : (
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3 text-muted-foreground/80 hover:text-foreground transition-colors" />
           )}
         </Button>
       )}
