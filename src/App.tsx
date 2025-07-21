@@ -28,6 +28,7 @@ import ProfissionalServicos from "./pages/profissional/Servicos";
 import ProfissionalRelatorios from "./pages/profissional/Relatorios";
 import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
 import Perfil from "./pages/Perfil";
+import AdminLayout from "@/components/layout/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -103,7 +104,7 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       
-      {/* Admin Routes */}
+      {/* Admin Routes padrão antigo */}
       <Route path="/admin" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <AdminDashboard />

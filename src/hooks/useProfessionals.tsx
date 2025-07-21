@@ -79,50 +79,43 @@ export function useProfessionals() {
     if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
 
     try {
-      // First create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: Math.random().toString(36).slice(-8), // Temporary password
-        user_metadata: {
-          name: userData.name
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Usuário não criado');
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          salon_id: profile.salon_id,
-          role: 'profissional',
-          phone: userData.phone
-        })
-        .eq('id', authData.user.id);
-
-      if (profileError) throw profileError;
-
-      // Create professional record
-      const { error: professionalError } = await supabase
-        .from('professionals')
-        .insert([{
-          id: authData.user.id,
-          salon_id: profile.salon_id,
+      // Obter token do usuário logado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Usuário não autenticado"
+        });
+        return { data: null, error: 'Usuário não autenticado' };
+      }
+      // Determinar URL base das funções
+      const baseUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '/functions/v1';
+      const response = await fetch(`${baseUrl}/create-professional`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
           specialties: userData.specialties,
-          schedule: userData.schedule || {}
-        }]);
+          schedule: userData.schedule,
+          salon_id: profile.salon_id
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao criar profissional');
 
-      if (professionalError) throw professionalError;
-      
       await fetchProfessionals();
       toast({
         title: "Sucesso",
         description: "Profissional criado com sucesso"
       });
-      
-      return { data: authData.user, error: null };
-    } catch (error) {
+      return { data: result, error: null };
+    } catch (error: any) {
       console.error('Error creating professional:', error);
       toast({
         variant: "destructive",
@@ -146,15 +139,15 @@ export function useProfessionals() {
       if (error) throw error;
       
       // Update profile if needed
-      if (data.name || data.phone) {
+      if (data.name || data.phone || data.avatar_url) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             name: data.name,
-            phone: data.phone
+            phone: data.phone,
+            avatar_url: data.avatar_url
           })
           .eq('id', id);
-
         if (profileError) throw profileError;
       }
       

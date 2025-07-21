@@ -10,6 +10,7 @@ export interface Client {
   email: string;
   phone?: string;
   avatar_url?: string;
+  observacoes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,9 +39,10 @@ export function useClients() {
         id: client.id,
         salon_id: client.salon_id,
         name: client.name,
-        email: '', // Email comes from auth.users which we can't query directly
+        email: client.email || '',
         phone: client.phone,
         avatar_url: client.avatar_url,
+        observacoes: client.observacoes || '',
         created_at: client.created_at,
         updated_at: client.updated_at
       })) || [];
@@ -62,47 +64,58 @@ export function useClients() {
     name: string;
     email: string;
     phone?: string;
+    observacoes?: string;
+    avatar_url?: string;
   }) => {
     if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
-
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: clientData.email,
-        password: Math.random().toString(36).slice(-8), // Temporary password
-        user_metadata: {
-          name: clientData.name
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Usuário não criado');
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          salon_id: profile.salon_id,
-          role: 'cliente',
-          phone: clientData.phone
+      // Obter token do usuário logado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Usuário não autenticado"
+        });
+        return { data: null, error: 'Usuário não autenticado' };
+      }
+      // Determinar URL base das funções
+      const baseUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '/functions/v1';
+      const response = await fetch(`${baseUrl}/create-client`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name: clientData.name,
+          email: clientData.email,
+          phone: clientData.phone,
+          observacoes: clientData.observacoes,
+          avatar_url: clientData.avatar_url,
+          salon_id: profile.salon_id
         })
-        .eq('id', authData.user.id);
-
-      if (profileError) throw profileError;
-      
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Erro ao criar cliente');
       await fetchClients();
       toast({
         title: "Sucesso",
         description: "Cliente criado com sucesso"
       });
-      
-      return { data: authData.user, error: null };
-    } catch (error) {
+      return { data: result, error: null };
+    } catch (error: any) {
       console.error('Error creating client:', error);
+      let description = "Erro ao criar cliente";
+      if (error.message?.includes('already been registered')) {
+        description = "Já existe um cliente cadastrado com este e-mail.";
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao criar cliente"
+        description
       });
       return { data: null, error };
     }
@@ -114,7 +127,10 @@ export function useClients() {
         .from('profiles')
         .update({
           name: clientData.name,
-          phone: clientData.phone
+          email: clientData.email, // garantir atualização do email
+          phone: clientData.phone,
+          observacoes: clientData.observacoes,
+          avatar_url: clientData.avatar_url
         })
         .eq('id', id);
 
