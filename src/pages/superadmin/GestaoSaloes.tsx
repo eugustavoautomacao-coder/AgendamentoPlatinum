@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, MapPin, Phone, Mail, Users } from "lucide-react";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSalons, Salon } from "@/hooks/useSalons";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const GestaoSaloes = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,21 +20,34 @@ const GestaoSaloes = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [deleteCascade, setDeleteCascade] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    nome: "",
     email: "",
-    phone: "",
-    address: "",
+    cnpj: "",
     adminName: "",
     adminEmail: "",
     adminPassword: ""
   });
 
-  const { salons, loading, createSalon, createSalonAdmin, updateSalon, deleteSalon } = useSalons();
+  const { salons, loading, createSalon, createSalonAdmin, updateSalon, deleteSalon, refetch } = useSalons();
   const { toast } = useToast();
 
+  // Formata CNPJ no padrão 00.000.000/0000-00
+  const formatCnpj = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 14);
+    const parts = [] as string[];
+    if (digits.length > 0) parts.push(digits.slice(0, 2));
+    if (digits.length > 2) parts.push(digits.slice(2, 5));
+    if (digits.length > 5) parts.push(digits.slice(5, 8));
+    let rest = '';
+    if (digits.length > 8) rest = digits.slice(8, 12) + '-' + digits.slice(12, 14);
+    const head = parts.length ? parts.join('.') : '';
+    return head + (digits.length > 8 ? '/' : '') + rest;
+  };
+
   const filteredSalons = salons?.filter(salon =>
-    salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (salon.nome || salon.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     salon.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
@@ -41,10 +55,9 @@ const GestaoSaloes = () => {
     try {
       // Primeiro criar o salão
       const salonResult = await createSalon({
-        name: formData.name,
+        nome: formData.nome,
         email: formData.email,
-        phone: formData.phone,
-        address: formData.address
+        cnpj: formData.cnpj.replace(/\D/g, '')
       });
 
       if (salonResult.error) {
@@ -62,26 +75,26 @@ const GestaoSaloes = () => {
 
       setIsCreateOpen(false);
       setFormData({ 
-        name: "", 
+        nome: "", 
         email: "", 
-        phone: "", 
-        address: "",
+        cnpj: "",
         adminName: "",
         adminEmail: "",
         adminPassword: ""
       });
+      toast({ title: 'Salão criado com sucesso!' });
     } catch (error) {
       console.error("Erro ao criar salão:", error);
+      toast({ variant: 'destructive', title: 'Erro ao criar salão' });
     }
   };
 
   const handleEditSalon = (salon: Salon) => {
     setSelectedSalon(salon);
     setFormData({
-      name: salon.name,
+      nome: salon.nome || salon.name,
       email: salon.email || "",
-      phone: salon.phone || "",
-      address: salon.address || "",
+      cnpj: salon.cnpj || "",
       adminName: "",
       adminEmail: "",
       adminPassword: ""
@@ -94,25 +107,25 @@ const GestaoSaloes = () => {
 
     try {
       await updateSalon(selectedSalon.id, {
-        name: formData.name,
+        nome: formData.nome,
         email: formData.email || null,
-        phone: formData.phone || null,
-        address: formData.address || null
-      });
+        cnpj: (formData.cnpj ? formData.cnpj.replace(/\D/g, '') : null)
+      } as any);
 
       setIsEditOpen(false);
       setSelectedSalon(null);
       setFormData({ 
-        name: "", 
+        nome: "", 
         email: "", 
-        phone: "", 
-        address: "",
+        cnpj: "",
         adminName: "",
         adminEmail: "",
         adminPassword: ""
       });
+      toast({ title: 'Salão atualizado com sucesso!' });
     } catch (error) {
       console.error("Erro ao atualizar salão:", error);
+      toast({ variant: 'destructive', title: 'Erro ao atualizar salão' });
     }
   };
 
@@ -125,11 +138,57 @@ const GestaoSaloes = () => {
     if (!selectedSalon) return;
 
     try {
-      await deleteSalon(selectedSalon.id);
+      if (deleteCascade) {
+        // Exclusão em cascata - primeiro remover registros relacionados
+        const { error: usersError } = await supabase
+          .from('users')
+          .delete()
+          .eq('salao_id', selectedSalon.id);
+        
+        if (usersError) {
+          console.error('Error deleting users:', usersError);
+          throw new Error('Erro ao remover usuários vinculados');
+        }
+
+        const { error: employeesError } = await supabase
+          .from('employees')
+          .delete()
+          .eq('salao_id', selectedSalon.id);
+        
+        if (employeesError) {
+          console.error('Error deleting employees:', employeesError);
+          throw new Error('Erro ao remover funcionários vinculados');
+        }
+
+        const { error: servicesError } = await supabase
+          .from('services')
+          .delete()
+          .eq('salao_id', selectedSalon.id);
+        
+        if (servicesError) {
+          console.error('Error deleting services:', servicesError);
+          throw new Error('Erro ao remover serviços vinculados');
+        }
+      }
+
+      const result = await deleteSalon(selectedSalon.id);
+
+      if (result.error) {
+        throw result.error;
+      }
+
       setIsDeleteOpen(false);
       setSelectedSalon(null);
+      setDeleteCascade(false);
+      
+      // Forçar atualização da lista usando refetch
+      await refetch();
+      
+      toast({ title: 'Salão excluído com sucesso!' });
     } catch (error) {
       console.error("Erro ao deletar salão:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao excluir salão';
+      toast({ variant: 'destructive', title: 'Erro ao excluir salão', description: errorMessage });
     }
   };
 
@@ -174,8 +233,8 @@ const GestaoSaloes = () => {
                   <Label htmlFor="name">Nome do Salão</Label>
                   <Input
                     id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    value={formData.nome}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                     placeholder="Digite o nome do salão"
                   />
                 </div>
@@ -190,21 +249,13 @@ const GestaoSaloes = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="cnpj">CNPJ</Label>
                   <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Endereço</Label>
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Endereço completo do salão"
+                    id="cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cnpj: formatCnpj(e.target.value) }))}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
                   />
                 </div>
 
@@ -341,7 +392,7 @@ const GestaoSaloes = () => {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Contato</TableHead>
-                  <TableHead>Endereço</TableHead>
+                  <TableHead>CNPJ</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criado em</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -368,10 +419,9 @@ const GestaoSaloes = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {salon.address && (
+                      {salon.cnpj && (
                         <div className="flex items-center text-sm">
-                          <MapPin className="mr-1 h-3 w-3" />
-                          <span className="truncate max-w-[200px]">{salon.address}</span>
+                          <span className="truncate max-w-[200px]">{formatCnpj(salon.cnpj)}</span>
                         </div>
                       )}
                     </TableCell>
@@ -412,8 +462,8 @@ const GestaoSaloes = () => {
                 <Label htmlFor="edit-name">Nome do Salão</Label>
                 <Input
                   id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  value={formData.nome}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                   placeholder="Digite o nome do salão"
                 />
               </div>
@@ -428,21 +478,13 @@ const GestaoSaloes = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-phone">Telefone</Label>
+                <Label htmlFor="edit-cnpj">CNPJ</Label>
                 <Input
-                  id="edit-phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-address">Endereço</Label>
-                <Textarea
-                  id="edit-address"
-                  value={formData.address}
-                  onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Endereço completo do salão"
+                  id="edit-cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: formatCnpj(e.target.value) }))}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
                 />
               </div>
               <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
@@ -462,15 +504,45 @@ const GestaoSaloes = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir o salão "{selectedSalon?.name}"? 
-                Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  <p>
+                    Tem certeza que deseja excluir o salão "{selectedSalon?.nome || selectedSalon?.name}"? 
+                    Esta ação não pode ser desfeita.
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="deleteCascade"
+                      checked={deleteCascade}
+                      onChange={(e) => setDeleteCascade(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="deleteCascade" className="text-sm">
+                      Excluir também todos os usuários, funcionários e serviços vinculados
+                    </label>
+                  </div>
+                  {deleteCascade && (
+                    <p className="text-sm text-red-600 font-medium">
+                      ⚠️ ATENÇÃO: Esta opção irá remover permanentemente todos os dados relacionados ao salão!
+                    </p>
+                  )}
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteSalon} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Excluir
+              <AlertDialogCancel onClick={() => {
+                setIsDeleteOpen(false);
+                setDeleteCascade(false);
+                setSelectedSalon(null);
+              }}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeleteSalon} 
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteCascade ? 'Excluir Tudo' : 'Excluir Salão'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

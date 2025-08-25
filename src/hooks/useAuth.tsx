@@ -5,13 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Profile {
   id: string;
-  salon_id: string | null;
-  name: string;
-  role: 'superadmin' | 'admin' | 'profissional' | 'cliente';
-  phone?: string;
-  avatar_url?: string;
-  salon_name?: string;
+  salao_id: string | null;
+  nome: string;
+  tipo: 'system_admin' | 'admin' | 'funcionario' | 'cliente';
+  telefone?: string;
   email: string;
+  salao_nome?: string;
 }
 
 interface AuthContextType {
@@ -33,6 +32,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  const refetch = async () => {
+    if (!session?.user) return;
+    
+    try {
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          saloes (
+            nome
+          )
+        `)
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      // Adicionar nome do salão ao perfil
+      const profileWithSalon = {
+        ...profile,
+        salao_nome: profile.saloes?.nome,
+        email: profile.email || session.user.email
+      };
+      
+      setProfile(profileWithSalon);
+    } catch (error) {
+      console.error('Error refetching profile:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -45,11 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(async () => {
             try {
               const { data: profile, error } = await supabase
-                .from('profiles')
+                .from('users')
                 .select(`
                   *,
-                  salons (
-                    name
+                  saloes (
+                    nome
                   )
                 `)
                 .eq('id', session.user.id)
@@ -60,18 +89,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Adicionar nome do salão ao perfil
               const profileWithSalon = {
                 ...profile,
-                salon_name: profile.salons?.name,
+                salao_nome: profile.saloes?.nome,
                 email: profile.email || session.user.email // Prioriza o email do profile, senão pega do user
               };
               
               setProfile(profileWithSalon);
             } catch (error) {
               console.error('Error fetching profile:', error);
-              toast({
-                variant: "destructive",
-                title: "Erro",
-                description: "Erro ao carregar perfil do usuário"
-              });
+              // Remover toast daqui para evitar loop
+              console.error('Erro ao carregar perfil do usuário');
             }
           }, 0);
         } else {
@@ -90,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, []); // Remover dependência toast
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -127,11 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao fazer logout"
-      });
+      console.error('Erro ao fazer logout:', error);
     }
   };
 
@@ -143,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refetch,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

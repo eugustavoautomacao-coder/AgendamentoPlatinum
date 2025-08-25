@@ -5,23 +5,21 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Appointment {
   id: string;
-  salon_id: string;
-  client_id: string;
-  professional_id: string;
-  service_id: string;
-  start_time: string;
-  end_time: string;
+  salao_id: string;
+  cliente_id: string;
+  funcionario_id: string;
+  servico_id: string;
+  data_hora: string;
   status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
-  notes?: string;
-  final_price?: number;
-  created_at: string;
-  updated_at: string;
+  motivo_cancelamento?: string;
+  data_conclusao?: string;
+  criado_em: string;
   // Joined data
-  client_name?: string;
-  professional_name?: string;
-  service_name?: string;
-  service_duration?: number;
-  service_price?: number;
+  cliente_nome?: string;
+  funcionario_nome?: string;
+  servico_nome?: string;
+  servico_duracao?: number;
+  servico_preco?: number;
 }
 
 export function useAppointments() {
@@ -31,7 +29,7 @@ export function useAppointments() {
   const { toast } = useToast();
 
   const fetchAppointments = async () => {
-    if (!profile?.salon_id) return;
+    if (!profile?.salao_id) return;
     
     try {
       setLoading(true);
@@ -39,10 +37,10 @@ export function useAppointments() {
         .from('appointments')
         .select(`
           *,
-          services(name, duration_minutes, base_price)
+          servico:servico_id(nome, duracao_minutos, preco)
         `)
-        .eq('salon_id', profile.salon_id)
-        .order('start_time', { ascending: true });
+        .eq('salao_id', profile.salao_id)
+        .order('data_hora', { ascending: true });
 
       if (error) throw error;
 
@@ -50,17 +48,17 @@ export function useAppointments() {
       const appointmentsWithNames = await Promise.all(
         (data || []).map(async (apt) => {
           const [clientData, professionalData] = await Promise.all([
-            supabase.from('profiles').select('name').eq('id', apt.client_id).single(),
-            supabase.from('profiles').select('name').eq('id', apt.professional_id).single()
+            supabase.from('users').select('nome').eq('id', apt.cliente_id).single(),
+            supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
           ]);
           
           return {
             ...apt,
-            client_name: clientData.data?.name,
-            professional_name: professionalData.data?.name,
-            service_name: apt.services?.name,
-            service_duration: apt.services?.duration_minutes,
-            service_price: apt.services?.base_price
+            cliente_nome: clientData.data?.nome,
+            funcionario_nome: professionalData.data?.nome,
+            servico_nome: apt.servico?.nome,
+            servico_duracao: apt.servico?.duracao_minutos,
+            servico_preco: apt.servico?.preco
           };
         })
       );
@@ -80,33 +78,29 @@ export function useAppointments() {
   };
 
   const createAppointment = async (appointmentData: {
-    client_id: string;
-    professional_id: string;
-    service_id: string;
-    start_time: string;
-    notes?: string;
+    cliente_id: string;
+    funcionario_id: string;
+    servico_id: string;
+    data_hora: string;
+    motivo_cancelamento?: string;
   }) => {
-    if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
+    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
     try {
       // Get service duration to calculate end_time
       const { data: service, error: serviceError } = await supabase
         .from('services')
-        .select('duration_minutes')
-        .eq('id', appointmentData.service_id)
+        .select('duracao_minutos')
+        .eq('id', appointmentData.servico_id)
         .single();
 
       if (serviceError) throw serviceError;
-
-      const startTime = new Date(appointmentData.start_time);
-      const endTime = new Date(startTime.getTime() + (service.duration_minutes * 60000));
 
       const { data, error } = await supabase
         .from('appointments')
         .insert([{
           ...appointmentData,
-          salon_id: profile.salon_id,
-          end_time: endTime.toISOString(),
+          salao_id: profile.salao_id,
           status: 'pendente'
         }])
         .select()
@@ -189,10 +183,10 @@ export function useAppointments() {
   };
 
   useEffect(() => {
-    if (profile?.salon_id) {
+    if (profile?.salao_id) {
       fetchAppointments();
     }
-  }, [profile?.salon_id]);
+  }, [profile?.salao_id]);
 
   return {
     appointments,

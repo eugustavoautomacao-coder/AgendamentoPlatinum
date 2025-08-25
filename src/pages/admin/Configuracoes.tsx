@@ -7,8 +7,96 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/layout/AdminLayout";
+import { useSalonInfo } from '@/hooks/useSalonInfo';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+const defaultSchedule = [
+  { day: 'Segunda-feira', key: 'monday', open: '08:00', close: '18:00', active: true },
+  { day: 'Terça-feira', key: 'tuesday', open: '08:00', close: '18:00', active: true },
+  { day: 'Quarta-feira', key: 'wednesday', open: '08:00', close: '18:00', active: true },
+  { day: 'Quinta-feira', key: 'thursday', open: '08:00', close: '18:00', active: true },
+  { day: 'Sexta-feira', key: 'friday', open: '08:00', close: '19:00', active: true },
+  { day: 'Sábado', key: 'saturday', open: '08:00', close: '17:00', active: true },
+  { day: 'Domingo', key: 'sunday', open: '09:00', close: '15:00', active: false },
+];
 
 const Configuracoes = () => {
+  const { salonInfo, loading, refetchSalonInfo } = useSalonInfo();
+  const { toast } = useToast();
+  const [schedule, setSchedule] = useState(defaultSchedule);
+  const [saving, setSaving] = useState(false);
+  // Estados para os campos do salão
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+
+  // Preencher com valor salvo ao abrir
+  useEffect(() => {
+    if (salonInfo) {
+      setName(salonInfo.name || '');
+      setAddress(salonInfo.address || '');
+      setPhone(salonInfo.phone || '');
+      setEmail(salonInfo.email || '');
+    }
+    if (salonInfo?.working_hours) {
+      const wh = salonInfo.working_hours;
+      setSchedule(defaultSchedule.map((d) => ({
+        ...d,
+        ...wh[d.key],
+        open: wh[d.key]?.open || d.open,
+        close: wh[d.key]?.close || d.close,
+        active: wh[d.key]?.active ?? d.active
+      })));
+    }
+  }, [salonInfo]);
+
+  const handleScheduleChange = (idx, field, value) => {
+    setSchedule((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d));
+  };
+
+  const handleSave = async () => {
+    if (!salonInfo?.id) return;
+    setSaving(true);
+    // Montar objeto working_hours
+    const working_hours = {};
+    schedule.forEach((d) => {
+      working_hours[d.key] = { open: d.open, close: d.close, active: d.active };
+    });
+    const { error } = await supabase.from('salons').update({
+      name,
+      address,
+      phone,
+      email,
+      working_hours
+    }).eq('id', salonInfo.id);
+    setSaving(false);
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: error.message || 'Não foi possível salvar as alterações.'
+      });
+    } else {
+      toast({
+        title: 'Alterações salvas',
+        description: 'As informações do salão foram atualizadas com sucesso.'
+      });
+      if (refetchSalonInfo) {
+        await refetchSalonInfo();
+        // Atualizar os campos do formulário com os valores reais do banco
+        if (salonInfo) {
+          setName(salonInfo.name || '');
+          setAddress(salonInfo.address || '');
+          setPhone(salonInfo.phone || '');
+          setEmail(salonInfo.email || '');
+        }
+      }
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -19,9 +107,9 @@ const Configuracoes = () => {
               Gerencie as configurações do seu salão
             </p>
           </div>
-          <Button>
+          <Button onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />
-            Salvar Alterações
+            {saving ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
         </div>
 
@@ -43,7 +131,8 @@ const Configuracoes = () => {
                 <Input
                   id="salon-name"
                   placeholder="Beauty Salon"
-                  defaultValue="Beauty Salon Luxo"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
                 />
               </div>
 
@@ -52,7 +141,8 @@ const Configuracoes = () => {
                 <Textarea
                   id="salon-address"
                   placeholder="Endereço completo do salão"
-                  defaultValue="Rua das Flores, 123 - Centro, São Paulo - SP"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
                   rows={3}
                 />
               </div>
@@ -63,7 +153,8 @@ const Configuracoes = () => {
                   <Input
                     id="salon-phone"
                     placeholder="(11) 99999-9999"
-                    defaultValue="(11) 3456-7890"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
                   />
                 </div>
 
@@ -73,7 +164,8 @@ const Configuracoes = () => {
                     id="salon-email"
                     type="email"
                     placeholder="contato@salao.com"
-                    defaultValue="contato@beautysalonluxo.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -92,36 +184,29 @@ const Configuracoes = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { day: "Segunda-feira", open: "08:00", close: "18:00", active: true },
-                { day: "Terça-feira", open: "08:00", close: "18:00", active: true },
-                { day: "Quarta-feira", open: "08:00", close: "18:00", active: true },
-                { day: "Quinta-feira", open: "08:00", close: "18:00", active: true },
-                { day: "Sexta-feira", open: "08:00", close: "19:00", active: true },
-                { day: "Sábado", open: "08:00", close: "17:00", active: true },
-                { day: "Domingo", open: "09:00", close: "15:00", active: false }
-              ].map((schedule) => (
+              {schedule.map((schedule, idx) => (
                 <div key={schedule.day} className="flex items-center gap-4">
                   <div className="flex items-center space-x-2">
-                    <Switch id={schedule.day} defaultChecked={schedule.active} />
+                    <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
                     <Label htmlFor={schedule.day} className="min-w-[100px] text-sm">
                       {schedule.day}
                     </Label>
                   </div>
-                  
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="time"
-                      defaultValue={schedule.open}
+                      value={schedule.open}
                       className="w-24"
                       disabled={!schedule.active}
+                      onChange={e => handleScheduleChange(idx, 'open', e.target.value)}
                     />
                     <span className="text-muted-foreground">às</span>
                     <Input
                       type="time"
-                      defaultValue={schedule.close}
+                      value={schedule.close}
                       className="w-24"
                       disabled={!schedule.active}
+                      onChange={e => handleScheduleChange(idx, 'close', e.target.value)}
                     />
                   </div>
                 </div>
@@ -252,41 +337,6 @@ const Configuracoes = () => {
                 </div>
                 <Switch defaultChecked />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Zona de Perigo */}
-        <Card className="shadow-elegant border-destructive/20">
-          <CardHeader>
-            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-            <CardDescription>
-              Ações irreversíveis - use com cautela
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-destructive/5 rounded-lg border border-destructive/20">
-              <div>
-                <h4 className="font-medium text-destructive">Resetar Configurações</h4>
-                <p className="text-sm text-muted-foreground">
-                  Volta todas as configurações para o padrão
-                </p>
-              </div>
-              <Button variant="destructive" size="sm">
-                Resetar
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-destructive/5 rounded-lg border border-destructive/20">
-              <div>
-                <h4 className="font-medium text-destructive">Excluir Conta</h4>
-                <p className="text-sm text-muted-foreground">
-                  Remove permanentemente todos os dados do salão
-                </p>
-              </div>
-              <Button variant="destructive" size="sm">
-                Excluir Conta
-              </Button>
             </div>
           </CardContent>
         </Card>

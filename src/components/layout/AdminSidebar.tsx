@@ -169,7 +169,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
               <Avatar className="h-10 w-10 cursor-pointer">
                 <AvatarImage src={profile?.avatar_url} />
                 <AvatarFallback className="bg-primary-soft text-primary">
-                  {profile?.name?.charAt(0) || 'U'}
+                  {profile?.nome?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
@@ -184,7 +184,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
           </DropdownMenu>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">{profile?.name || 'Usuário'}</p>
+              <p className="font-medium text-foreground truncate">{profile?.nome || 'Usuário'}</p>
               <p className="text-sm text-muted-foreground truncate">{profile?.role}</p>
             </div>
           )}

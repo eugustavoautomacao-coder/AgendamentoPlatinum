@@ -20,9 +20,9 @@ const SuperAdminDashboard = () => {
       try {
         // Get total users
         const { count: usersCount } = await supabase
-          .from('profiles')
+          .from('users')
           .select('*', { count: 'exact', head: true })
-          .neq('role', 'superadmin');
+          .neq('tipo', 'system_admin');
 
         // Get total appointments
         const { count: appointmentsCount } = await supabase

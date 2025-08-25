@@ -126,7 +126,7 @@ export function SuperAdminSidebar() {
                 <Avatar className="h-8 w-8 cursor-pointer">
                   <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="bg-primary-soft text-primary text-xs">
-                    {profile?.name?.charAt(0) || 'SA'}
+                    {profile?.nome?.charAt(0) || 'SA'}
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
@@ -142,7 +142,7 @@ export function SuperAdminSidebar() {
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-foreground truncate text-sm">
-                  {profile?.name || 'SuperAdmin'}
+                  {profile?.nome || 'SuperAdmin'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {profile?.role || 'superadmin'}

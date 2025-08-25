@@ -5,15 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Professional {
   id: string;
-  salon_id: string;
-  name: string;
-  phone?: string;
+  salao_id: string;
+  nome: string;
+  telefone?: string;
+  email?: string;
+  cargo?: string;
   avatar_url?: string;
-  specialties: string[];
-  schedule: any;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  criado_em: string;
 }
 
 export function useProfessionals() {
@@ -23,37 +21,29 @@ export function useProfessionals() {
   const { toast } = useToast();
 
   const fetchProfessionals = async () => {
-    if (!profile?.salon_id) return;
+    if (!profile?.salao_id) {
+      return;
+    }
     
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('professionals')
-        .select(`
-          *,
-          profiles (
-            name,
-            phone,
-            avatar_url
-          )
-        `)
-        .eq('salon_id', profile.salon_id)
-        .eq('is_active', true)
-        .order('created_at');
+        .from('employees')
+        .select('*')
+        .eq('salao_id', profile.salao_id)
+        .order('criado_em');
 
       if (error) throw error;
       
       const transformedData = data?.map(prof => ({
         id: prof.id,
-        salon_id: prof.salon_id,
-        name: prof.profiles?.name || '',
-        phone: prof.profiles?.phone,
-        avatar_url: prof.profiles?.avatar_url,
-        specialties: prof.specialties || [],
-        schedule: prof.schedule || {},
-        is_active: prof.is_active,
-        created_at: prof.created_at,
-        updated_at: prof.updated_at
+        salao_id: prof.salao_id,
+        nome: prof.nome || '',
+        telefone: prof.telefone,
+        email: prof.email,
+        cargo: prof.cargo,
+        avatar_url: prof.avatar_url,
+        criado_em: prof.criado_em
       })) || [];
       
       setProfessionals(transformedData);
@@ -70,51 +60,31 @@ export function useProfessionals() {
   };
 
   const createProfessional = async (userData: {
-    name: string;
+    nome: string;
     email: string;
-    phone?: string;
-    specialties: string[];
-    schedule?: any;
+    telefone?: string;
+    cargo?: string;
   }) => {
-    if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
+    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
     try {
-      // Obter token do usuário logado
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Usuário não autenticado"
-        });
-        return { data: null, error: 'Usuário não autenticado' };
-      }
-      // Determinar URL base das funções
-      const baseUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '/functions/v1';
-      const response = await fetch(`${baseUrl}/create-professional`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          phone: userData.phone,
-          specialties: userData.specialties,
-          schedule: userData.schedule,
-          salon_id: profile.salon_id
-        })
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Erro ao criar profissional');
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([{
+          ...userData,
+          salao_id: profile.salao_id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
 
       await fetchProfessionals();
       toast({
         title: "Sucesso",
         description: "Profissional criado com sucesso"
       });
-      return { data: result, error: null };
+      return { data, error: null };
     } catch (error: any) {
       console.error('Error creating professional:', error);
       toast({
@@ -129,27 +99,17 @@ export function useProfessionals() {
   const updateProfessional = async (id: string, data: Partial<Professional>) => {
     try {
       const { error } = await supabase
-        .from('professionals')
+        .from('employees')
         .update({
-          specialties: data.specialties,
-          schedule: data.schedule
+          nome: data.nome,
+          telefone: data.telefone,
+          email: data.email,
+          cargo: data.cargo,
+          avatar_url: data.avatar_url
         })
         .eq('id', id);
 
       if (error) throw error;
-      
-      // Update profile if needed
-      if (data.name || data.phone || data.avatar_url) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            name: data.name,
-            phone: data.phone,
-            avatar_url: data.avatar_url
-          })
-          .eq('id', id);
-        if (profileError) throw profileError;
-      }
       
       await fetchProfessionals();
       toast({
@@ -172,8 +132,8 @@ export function useProfessionals() {
   const deleteProfessional = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('professionals')
-        .update({ is_active: false })
+        .from('employees')
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
@@ -197,10 +157,10 @@ export function useProfessionals() {
   };
 
   useEffect(() => {
-    if (profile?.salon_id) {
+    if (profile?.salao_id) {
       fetchProfessionals();
     }
-  }, [profile?.salon_id]);
+  }, [profile?.salao_id]);
 
   return {
     professionals,

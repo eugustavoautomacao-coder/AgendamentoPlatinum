@@ -5,12 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Salon {
   id: string;
-  name: string;
+  nome: string;
   email?: string;
-  phone?: string;
-  address?: string;
+  cnpj?: string;
   created_at: string;
-  updated_at: string;
+  // Compat: alguns componentes ainda usam `name`
+  name?: string;
 }
 
 export function useSalons() {
@@ -20,17 +20,24 @@ export function useSalons() {
   const { toast } = useToast();
 
   const fetchSalons = async () => {
-    if (profile?.role !== 'superadmin') return;
+    // Apenas system_admin acessa; se não for, finalize o loading para não travar a UI
+    if (profile?.tipo !== 'system_admin') {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('salons')
-        .select('*')
+        .from('saloes')
+        .select('id, nome, email, cnpj, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSalons(data || []);
+      
+      // Adiciona alias `name` para compatibilidade com componentes antigos
+      const normalized = (data || []).map((s: any) => ({ ...s, name: s.nome }));
+      setSalons(normalized);
     } catch (error) {
       console.error('Error fetching salons:', error);
       toast({
@@ -44,14 +51,13 @@ export function useSalons() {
   };
 
   const createSalon = async (salonData: {
-    name: string;
+    nome: string;
     email?: string;
-    phone?: string;
-    address?: string;
+    cnpj?: string;
   }) => {
     try {
       const { data, error } = await supabase
-        .from('salons')
+        .from('saloes')
         .insert([salonData])
         .select()
         .single();
@@ -79,7 +85,7 @@ export function useSalons() {
   const updateSalon = async (id: string, salonData: Partial<Salon>) => {
     try {
       const { data, error } = await supabase
-        .from('salons')
+        .from('saloes')
         .update(salonData)
         .eq('id', id)
         .select()
@@ -107,26 +113,76 @@ export function useSalons() {
 
   const deleteSalon = async (id: string) => {
     try {
+      // Primeiro, verificar se há usuários vinculados ao salão
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, nome, tipo')
+        .eq('salao_id', id);
+
+      if (usersError) {
+        throw new Error('Erro ao verificar usuários vinculados');
+      }
+
+      if (users && users.length > 0) {
+        const userTypes = users.map(u => u.tipo).join(', ');
+        throw new Error(`Não é possível excluir o salão. Existem ${users.length} usuário(s) vinculado(s): ${userTypes}`);
+      }
+
+      // Verificar se há funcionários vinculados
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, nome')
+        .eq('salao_id', id);
+
+      if (employeesError) {
+        throw new Error('Erro ao verificar funcionários vinculados');
+      }
+
+      if (employees && employees.length > 0) {
+        throw new Error(`Não é possível excluir o salão. Existem ${employees.length} funcionário(s) vinculado(s)`);
+      }
+
+      // Verificar se há serviços vinculados
+      const { data: services, error: servicesError } = await supabase
+        .from('services')
+        .select('id, nome')
+        .eq('salao_id', id);
+
+      if (servicesError) {
+        throw new Error('Erro ao verificar serviços vinculados');
+      }
+
+      if (services && services.length > 0) {
+        throw new Error(`Não é possível excluir o salão. Existem ${services.length} serviço(s) vinculado(s)`);
+      }
+
+      // Se não há dependências, tentar excluir
       const { error } = await supabase
-        .from('salons')
+        .from('saloes')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
-      
+      if (error) {
+        if (error.code === '23503') {
+          throw new Error('Não é possível excluir o salão. Existem registros vinculados.');
+        }
+        throw error;
+      }
+
       await fetchSalons();
       toast({
         title: "Sucesso",
         description: "Salão removido com sucesso"
       });
-      
+
       return { error: null };
     } catch (error) {
       console.error('Error deleting salon:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao remover salão';
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao remover salão"
+        description: errorMessage
       });
       return { error };
     }
@@ -176,42 +232,43 @@ export function useSalons() {
       // Aguardar para o trigger criar o perfil
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Verificar se o perfil foi criado, se não, criar manualmente
-      const { data: existingProfile } = await supabase
-        .from('profiles')
+      // Verificar se o usuário foi criado, se não, criar manualmente
+      const { data: existingUser } = await supabase
+        .from('users')
         .select('id')
         .eq('id', signUpData.user.id)
         .single();
 
-      if (!existingProfile) {
-        console.log('Profile not created by trigger, creating manually');
-        const { error: createProfileError } = await supabase
-          .from('profiles')
+      if (!existingUser) {
+        console.log('User not created by trigger, creating manually');
+        const { error: createUserError } = await supabase
+          .from('users')
           .insert({
             id: signUpData.user.id,
-            name: adminData.name,
-            role: 'admin',
-            salon_id: salonId,
-            phone: adminData.phone || null
+            nome: adminData.name,
+            tipo: 'admin',
+            salao_id: salonId,
+            telefone: adminData.phone || null,
+            email: adminData.email
           });
 
-        if (createProfileError) {
-          console.error('Create profile error:', createProfileError);
+        if (createUserError) {
+          console.error('Create user error:', createUserError);
           toast({
             variant: "destructive",
             title: "Erro",
-            description: `Erro ao criar perfil: ${createProfileError.message}`
+            description: `Erro ao criar usuário: ${createUserError.message}`
           });
-          return { data: null, error: createProfileError };
+          return { data: null, error: createUserError };
         }
       } else {
-        // Atualizar o perfil existente para ser admin do salão
+        // Atualizar o usuário existente para ser admin do salão
         const { error: updateError } = await supabase
-          .from('profiles')
+          .from('users')
           .update({
-            salon_id: salonId,
-            role: 'admin',
-            phone: adminData.phone || null
+            salao_id: salonId,
+            tipo: 'admin',
+            telefone: adminData.phone || null
           })
           .eq('id', signUpData.user.id);
 
@@ -220,7 +277,7 @@ export function useSalons() {
           toast({
             variant: "destructive",
             title: "Erro", 
-            description: `Erro ao atualizar perfil: ${updateError.message}`
+            description: `Erro ao atualizar usuário: ${updateError.message}`
           });
           return { data: null, error: updateError };
         }
@@ -244,10 +301,13 @@ export function useSalons() {
   };
 
   useEffect(() => {
-    if (profile?.role === 'superadmin') {
+    if (profile?.tipo === 'system_admin') {
       fetchSalons();
+    } else {
+      // Evita travar a tela de dashboard quando o perfil ainda não carregou
+      setLoading(false);
     }
-  }, [profile?.role]);
+  }, [profile?.tipo]);
 
   return {
     salons,

@@ -5,17 +5,13 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Service {
   id: string;
-  salon_id: string;
-  name: string;
-  description?: string;
-  duration_minutes: number;
-  base_price: number;
-  tax_machine: number;
-  tax_product: number;
-  tax_other: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  salao_id: string;
+  nome: string;
+  descricao?: string;
+  duracao_minutos: number;
+  preco: number;
+  categoria?: string;
+  criado_em: string;
 }
 
 export function useServices() {
@@ -25,16 +21,15 @@ export function useServices() {
   const { toast } = useToast();
 
   const fetchServices = async () => {
-    if (!profile?.salon_id) return;
+    if (!profile?.salao_id) return;
     
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('salon_id', profile.salon_id)
-        .eq('is_active', true)
-        .order('name');
+        .eq('salao_id', profile.salao_id)
+        .order('nome');
 
       if (error) throw error;
       setServices(data || []);
@@ -50,13 +45,13 @@ export function useServices() {
     }
   };
 
-  const createService = async (serviceData: Omit<Service, 'id' | 'salon_id' | 'created_at' | 'updated_at'>) => {
-    if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
+  const createService = async (serviceData: Omit<Service, 'id' | 'salao_id' | 'criado_em'>) => {
+    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
     try {
       const { data, error } = await supabase
         .from('services')
-        .insert([{ ...serviceData, salon_id: profile.salon_id }])
+        .insert([{ ...serviceData, salao_id: profile.salao_id }])
         .select()
         .single();
 
@@ -113,7 +108,7 @@ export function useServices() {
     try {
       const { error } = await supabase
         .from('services')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
@@ -137,10 +132,10 @@ export function useServices() {
   };
 
   useEffect(() => {
-    if (profile?.salon_id) {
+    if (profile?.salao_id) {
       fetchServices();
     }
-  }, [profile?.salon_id]);
+  }, [profile?.salao_id]);
 
   return {
     services,

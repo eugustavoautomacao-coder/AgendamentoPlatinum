@@ -5,14 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Client {
   id: string;
-  salon_id: string;
-  name: string;
+  salao_id: string;
+  nome: string;
   email: string;
-  phone?: string;
-  avatar_url?: string;
+  telefone?: string;
   observacoes?: string;
-  created_at: string;
-  updated_at: string;
+  criado_em: string;
 }
 
 export function useClients() {
@@ -21,32 +19,28 @@ export function useClients() {
   const { profile } = useAuth();
   const { toast } = useToast();
 
-  const fetchClients = async () => {
-    if (!profile?.salon_id) return;
-    
+  const fetchClients = async (activeOnly: boolean = true) => {
+    if (!profile?.salao_id) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
-        .eq('salon_id', profile.salon_id)
-        .eq('role', 'cliente')
-        .order('name');
+        .eq('salao_id', profile.salao_id)
+        .eq('tipo', 'cliente')
+        .order('nome');
 
       if (error) throw error;
       
       const transformedData = data?.map(client => ({
         id: client.id,
-        salon_id: client.salon_id,
-        name: client.name,
+        salao_id: client.salao_id,
+        nome: client.nome,
         email: client.email || '',
-        phone: client.phone,
-        avatar_url: client.avatar_url,
+        telefone: client.telefone,
         observacoes: client.observacoes || '',
-        created_at: client.created_at,
-        updated_at: client.updated_at
+        criado_em: client.criado_em
       })) || [];
-      
       setClients(transformedData);
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -61,49 +55,31 @@ export function useClients() {
   };
 
   const createClient = async (clientData: {
-    name: string;
+    nome: string;
     email: string;
-    phone?: string;
+    telefone?: string;
     observacoes?: string;
-    avatar_url?: string;
   }) => {
-    if (!profile?.salon_id) return { error: 'Salon ID não encontrado' };
+    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
     try {
-      // Obter token do usuário logado
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Usuário não autenticado"
-        });
-        return { data: null, error: 'Usuário não autenticado' };
-      }
-      // Determinar URL base das funções
-      const baseUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '/functions/v1';
-      const response = await fetch(`${baseUrl}/create-client`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          name: clientData.name,
-          email: clientData.email,
-          phone: clientData.phone,
-          observacoes: clientData.observacoes,
-          avatar_url: clientData.avatar_url,
-          salon_id: profile.salon_id
-        })
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Erro ao criar cliente');
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          ...clientData,
+          tipo: 'cliente',
+          salao_id: profile.salao_id
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
       await fetchClients();
       toast({
         title: "Sucesso",
         description: "Cliente criado com sucesso"
       });
-      return { data: result, error: null };
+      return { data, error: null };
     } catch (error: any) {
       console.error('Error creating client:', error);
       let description = "Erro ao criar cliente";
@@ -124,13 +100,12 @@ export function useClients() {
   const updateClient = async (id: string, clientData: Partial<Client>) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
-          name: clientData.name,
-          email: clientData.email, // garantir atualização do email
-          phone: clientData.phone,
-          observacoes: clientData.observacoes,
-          avatar_url: clientData.avatar_url
+          nome: clientData.nome,
+          email: clientData.email,
+          telefone: clientData.telefone,
+          observacoes: clientData.observacoes
         })
         .eq('id', id);
 
@@ -156,10 +131,10 @@ export function useClients() {
 
   const deleteClient = async (id: string) => {
     try {
-      // Instead of deleting, we could deactivate or remove salon association
+      // Soft delete: marcar como inativo (se houver campo is_active) ou deletar
       const { error } = await supabase
-        .from('profiles')
-        .update({ salon_id: null })
+        .from('users')
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
@@ -183,10 +158,10 @@ export function useClients() {
   };
 
   useEffect(() => {
-    if (profile?.salon_id) {
+    if (profile?.salao_id) {
       fetchClients();
     }
-  }, [profile?.salon_id]);
+  }, [profile?.salao_id]);
 
   return {
     clients,
@@ -194,6 +169,7 @@ export function useClients() {
     createClient,
     updateClient,
     deleteClient,
-    refetch: fetchClients
+    refetch: fetchClients,
+    fetchClients
   };
 }

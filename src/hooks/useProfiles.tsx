@@ -1,69 +1,69 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 
-export interface Profile {
+interface Profile {
   id: string;
-  name: string;
-  role: 'superadmin' | 'admin' | 'profissional' | 'cliente';
-  salon_id: string | null;
-  salon_name?: string;
-  phone?: string;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-  email?: string; // Vem do auth.users
+  nome: string;
+  tipo: 'system_admin' | 'admin' | 'funcionario' | 'cliente';
+  salao_id: string | null;
+  salao_nome?: string;
+  telefone?: string;
+  email: string;
+  criado_em: string;
+}
+
+interface ProfileFilters {
+  tipo?: string;
+  salao_id?: string;
+  search?: string;
 }
 
 export function useProfiles() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { profile: currentProfile } = useAuth();
   const { toast } = useToast();
 
-  const fetchProfiles = useCallback(async (filters?: {
-    role?: string;
-    salon_id?: string;
-    search?: string;
-  }) => {
-    if (currentProfile?.role !== 'superadmin') return;
+  const fetchProfiles = useCallback(async (filters?: ProfileFilters) => {
+    // Apenas SuperAdmin pode ver todos os usuários
+    if (currentProfile?.tipo !== 'system_admin') return;
     try {
       setLoading(true);
       let query = supabase
-        .from('profiles')
+        .from('users')
         .select(`
           *,
-          salons (
-            name
+          saloes (
+            nome
           )
         `)
-        .order('created_at', { ascending: false });
-      if (filters?.role && filters.role !== 'all') {
-        query = query.eq('role', filters.role);
+        .order('criado_em', { ascending: false });
+      if (filters?.tipo && filters.tipo !== 'all') {
+        query = query.eq('tipo', filters.tipo);
       }
-      if (filters?.salon_id && filters.salon_id !== 'all') {
-        query = query.eq('salon_id', filters.salon_id);
+      if (filters?.salao_id && filters.salao_id !== 'all') {
+        query = query.eq('salao_id', filters.salao_id);
       }
       const { data, error } = await query;
       if (error) throw error;
       const transformedData = (data || []).map(profile => ({
         id: profile.id,
-        name: profile.name,
-        role: profile.role,
-        salon_id: profile.salon_id,
-        salon_name: profile.salons?.name || null,
-        phone: profile.phone,
-        avatar_url: profile.avatar_url,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at
+        nome: profile.nome,
+        tipo: profile.tipo,
+        salao_id: profile.salao_id,
+        salao_nome: profile.saloes?.nome || null,
+        telefone: profile.telefone,
+        email: profile.email,
+        criado_em: profile.criado_em
       }));
       let filteredData = transformedData;
       if (filters?.search) {
         const searchTerm = filters.search.toLowerCase();
         filteredData = transformedData.filter(profile =>
-          profile.name.toLowerCase().includes(searchTerm) ||
-          (profile.salon_name && profile.salon_name.toLowerCase().includes(searchTerm))
+          profile.nome.toLowerCase().includes(searchTerm) ||
+          (profile.salao_nome && profile.salao_nome.toLowerCase().includes(searchTerm))
         );
       }
       setProfiles(filteredData);
@@ -77,18 +77,17 @@ export function useProfiles() {
     } finally {
       setLoading(false);
     }
-  }, [currentProfile?.role, toast]);
+  }, [currentProfile?.tipo, toast]);
 
   const updateProfile = async (id: string, data: Partial<Profile>) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
-          name: data.name,
-          role: data.role,
-          salon_id: data.salon_id,
-          phone: data.phone,
-          avatar_url: data.avatar_url
+          nome: data.nome,
+          tipo: data.tipo,
+          salao_id: data.salao_id,
+          telefone: data.telefone
         })
         .eq('id', id);
       if (error) throw error;
@@ -112,8 +111,8 @@ export function useProfiles() {
   const deleteProfile = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update({ salon_id: null })
+        .from('users')
+        .update({ salao_id: null })
         .eq('id', id);
       if (error) throw error;
       await fetchProfiles();
@@ -133,12 +132,46 @@ export function useProfiles() {
     }
   };
 
+  const createProfile = async (data: Omit<Profile, 'id' | 'criado_em'>) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          nome: data.nome,
+          tipo: data.tipo,
+          salao_id: data.salao_id,
+          telefone: data.telefone,
+          email: data.email
+        });
+      if (error) throw error;
+      await fetchProfiles();
+      toast({
+        title: "Sucesso",
+        description: "Usuário criado com sucesso"
+      });
+      return { error: null };
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao criar usuário"
+      });
+      return { error };
+    }
+  };
+
+  useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
+
   return {
     profiles,
     loading,
     fetchProfiles,
     updateProfile,
     deleteProfile,
+    createProfile,
     refetch: () => fetchProfiles()
   };
 } 

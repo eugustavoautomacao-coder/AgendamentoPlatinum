@@ -4,10 +4,9 @@ import { useAuth } from './useAuth';
 
 interface SalonInfo {
   id: string;
-  name: string;
+  nome: string;
   email?: string;
-  phone?: string;
-  address?: string;
+  cnpj?: string;
 }
 
 export function useSalonInfo() {
@@ -15,20 +14,19 @@ export function useSalonInfo() {
   const [loading, setLoading] = useState(false);
   const { profile } = useAuth();
 
-  useEffect(() => {
-    const fetchSalonInfo = async () => {
-      if (!profile?.salon_id) {
-        setSalonInfo(null);
-        return;
-      }
+  const fetchSalonInfo = async () => {
+    if (!profile?.salao_id) {
+      setSalonInfo(null);
+      return;
+    }
 
       // Verificar cache local primeiro
-      const cachedSalon = localStorage.getItem(`salon_${profile.salon_id}`);
+      const cachedSalon = localStorage.getItem(`salon_${profile.salao_id}`);
       if (cachedSalon) {
         try {
           const parsedSalon = JSON.parse(cachedSalon);
           // Verificar se o cache não expirou (24 horas)
-          const cacheTime = localStorage.getItem(`salon_${profile.salon_id}_time`);
+          const cacheTime = localStorage.getItem(`salon_${profile.salao_id}_time`);
           if (cacheTime && (Date.now() - parseInt(cacheTime)) < 24 * 60 * 60 * 1000) {
             setSalonInfo(parsedSalon);
             return;
@@ -41,16 +39,16 @@ export function useSalonInfo() {
       try {
         setLoading(true);
         const { data, error } = await supabase
-          .from('salons')
-          .select('id, name, email, phone, address')
-          .eq('id', profile.salon_id)
+          .from('saloes')
+          .select('id, nome, email, cnpj')
+          .eq('id', profile.salao_id)
           .single();
 
         if (error) throw error;
         
         // Salvar no cache local
-        localStorage.setItem(`salon_${profile.salon_id}`, JSON.stringify(data));
-        localStorage.setItem(`salon_${profile.salon_id}_time`, Date.now().toString());
+        localStorage.setItem(`salon_${profile.salao_id}`, JSON.stringify(data));
+        localStorage.setItem(`salon_${profile.salao_id}_time`, Date.now().toString());
         
         setSalonInfo(data);
       } catch (error) {
@@ -61,15 +59,17 @@ export function useSalonInfo() {
       }
     };
 
+  useEffect(() => {
     fetchSalonInfo();
-  }, [profile?.salon_id]);
+  }, [profile?.salao_id]);
 
   // Usar nome do salão do perfil (disponível imediatamente) ou dados completos do salão
-  const salonName = profile?.salon_name || salonInfo?.name || 'Salão';
+  const salonName = profile?.salao_nome || salonInfo?.nome || 'Salão';
 
   return { 
     salonInfo, 
     loading,
-    salonName // Sempre disponível, sem loading
+    salonName, // Sempre disponível, sem loading
+    refetchSalonInfo: fetchSalonInfo
   };
 }

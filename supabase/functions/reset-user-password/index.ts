@@ -35,13 +35,13 @@ serve(async (req) => {
       )
     }
 
-    // Verificar se é superadmin
+    // Verificar se é system_admin
     const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
+      .from('users')
+      .select('tipo')
       .eq('id', user.id)
       .single()
-    if (profileError || !profile || profile.role !== 'superadmin') {
+    if (profileError || !profile || profile.tipo !== 'system_admin') {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

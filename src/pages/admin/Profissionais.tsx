@@ -9,194 +9,197 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
-import { useRef } from "react";
 
 const Profissionais = () => {
   const { professionals, loading, createProfessional, deleteProfessional, updateProfessional } = useProfessionals();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    name: "",
+    nome: "",
     email: "",
-    phone: "",
-    specialties: "",
-    schedule: "",
-    avatar_url: ""
+    telefone: "",
+    cargo: ""
   });
-  const [formImage, setFormImage] = useState<File | null>(null);
-  const [formImagePreview, setFormImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
-    name: "",
-    phone: "",
-    specialties: "",
-    schedule: "",
-    avatar_url: ""
+    nome: "",
+    telefone: "",
+    cargo: ""
   });
-  const [editImage, setEditImage] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Upload handler para cadastro
-  const handleFormImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.size <= 2 * 1024 * 1024 && file.type.startsWith('image/')) {
-      setFormImage(file);
-      setFormImagePreview(URL.createObjectURL(file));
-    } else {
-      setFormImage(null);
-      setFormImagePreview(null);
-      toast({ variant: 'destructive', title: 'Erro', description: 'Selecione uma imagem válida de até 2MB.' });
-    }
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
-  // Upload handler para edição
+
   const handleEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.size <= 2 * 1024 * 1024 && file.type.startsWith('image/')) {
-      setEditImage(file);
-      setEditImagePreview(URL.createObjectURL(file));
-    } else {
-      setEditImage(null);
-      setEditImagePreview(null);
-      toast({ variant: 'destructive', title: 'Erro', description: 'Selecione uma imagem válida de até 2MB.' });
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEditImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File, professionalId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${professionalId}-${Date.now()}.${fileExt}`;
+      const filePath = `professionals/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    let avatar_url = "";
-    if (formImage) {
-      const ext = formImage.name.split('.').pop();
-      const fileName = `professional-${form.email.replace(/[^a-zA-Z0-9]/g, '')}.${ext}`; // sem barra!
-      const { data, error } = await supabase.storage.from('avatars').upload(fileName, formImage, { upsert: true });
-      if (error) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao fazer upload da imagem.' });
-      } else {
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        avatar_url = urlData.publicUrl;
-      }
-    }
-    const specialtiesArr = form.specialties.split(",").map(s => s.trim()).filter(Boolean);
+    
     const result = await createProfessional({
-      name: form.name,
+      nome: form.nome,
       email: form.email,
-      phone: form.phone,
-      specialties: specialtiesArr,
-      schedule: form.schedule,
-      avatar_url
+      telefone: form.telefone,
+      cargo: form.cargo
     });
+    
     setSubmitting(false);
     if (!result.error) {
       setOpen(false);
-      setForm({ name: "", email: "", phone: "", specialties: "", schedule: "", avatar_url: "" });
-      setFormImage(null);
-      setFormImagePreview(null);
+      setForm({ nome: "", email: "", telefone: "", cargo: "" });
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    
+    setEditLoading(true);
+    
+    // Handle image upload if there's a new image
+    let avatarUrl = null;
+    const fileInput = document.getElementById('edit-avatar-input') as HTMLInputElement;
+    if (fileInput?.files?.[0]) {
+      avatarUrl = await uploadImage(fileInput.files[0], editId);
+    }
+    
+    const result = await updateProfessional(editId, {
+      nome: editForm.nome,
+      telefone: editForm.telefone,
+      cargo: editForm.cargo,
+      avatar_url: avatarUrl
+    });
+    
+    setEditLoading(false);
+    if (!result.error) {
+      setEditId(null);
+      setEditForm({ nome: "", telefone: "", cargo: "" });
+      setEditImagePreview(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeleteId(id);
     setDeleteLoading(true);
-    const result = await deleteProfessional(deleteId);
+    const result = await deleteProfessional(id);
     setDeleteLoading(false);
     setDeleteId(null);
     if (!result.error) {
-      toast({ title: "Sucesso", description: "Profissional excluído com sucesso" });
+      toast({ title: "Profissional removido com sucesso!" });
     }
   };
 
   const openEdit = (professional: any) => {
     setEditId(professional.id);
     setEditForm({
-      name: professional.name || "",
-      phone: professional.phone || "",
-      specialties: (professional.specialties || []).join(", "),
-      schedule: typeof professional.schedule === 'string' ? professional.schedule : "",
-      avatar_url: professional.avatar_url || ""
+      nome: professional.nome || "",
+      telefone: professional.telefone || "",
+      cargo: professional.cargo || ""
     });
-    setEditImage(null); // Limpar preview ao abrir modal de edição
     setEditImagePreview(null);
   };
 
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editId) return;
-    setEditLoading(true);
-    let avatar_url = editForm.avatar_url;
-    if (editImage) {
-      const ext = editImage.name.split('.').pop();
-      const fileName = `professional-${editId}.${ext}`; // sem barra!
-      const { data, error } = await supabase.storage.from('avatars').upload(fileName, editImage, { upsert: true });
-      if (error) {
-        toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao fazer upload da imagem.' });
-      } else {
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        avatar_url = urlData.publicUrl;
-      }
-    }
-    const specialtiesArr = editForm.specialties.split(",").map(s => s.trim()).filter(Boolean);
-    const result = await updateProfessional(editId, {
-      name: editForm.name,
-      phone: editForm.phone,
-      specialties: specialtiesArr,
-      schedule: editForm.schedule,
-      avatar_url
-    });
-    setEditLoading(false);
-    if (!result.error) {
-      setEditId(null);
-      setEditImage(null);
-      setEditImagePreview(null);
-      toast({ title: "Sucesso", description: "Profissional atualizado com sucesso" });
-    }
-  };
-
-  // Função para remover foto (reutilizada no modal)
-  const handleRemoveAvatarById = async (id: string, avatar_url: string) => {
-    if (!avatar_url) return;
-    const path = avatar_url.split('/storage/v1/object/public/avatars/')[1];
-    if (path) {
-      await supabase.storage.from('avatars').remove([path]);
-    }
-    await updateProfessional(id, { avatar_url: '' });
-    setEditForm(f => ({ ...f, avatar_url: '' }));
-    setEditImage(null);
-    setEditImagePreview(null);
-    toast({ title: 'Sucesso', description: 'Foto removida com sucesso' });
-  };
-
-  // Função para upload rápido
   const handleQuickAvatarChange = async (professional: any, file: File) => {
-    if (!file || file.size > 2 * 1024 * 1024 || !file.type.startsWith('image/')) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Selecione uma imagem válida de até 2MB.' });
-      return;
+    const avatarUrl = await uploadImage(file, professional.id);
+    if (avatarUrl) {
+      await updateProfessional(professional.id, { avatar_url: avatarUrl });
     }
-    const ext = file.name.split('.').pop();
-    const fileName = `professional-${professional.id}.${ext}`;
-    const { data, error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true });
-    if (error) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao fazer upload da imagem.' });
-      return;
-    }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    await updateProfessional(professional.id, { avatar_url: urlData.publicUrl });
-    toast({ title: 'Sucesso', description: 'Foto atualizada com sucesso' });
   };
+
+  const handleRemoveAvatarById = async (id: string, currentAvatarUrl: string) => {
+    try {
+      // Extract file path from URL
+      const urlParts = currentAvatarUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/'); // Get last two parts: folder/filename
+      
+      // Delete from storage
+      await supabase.storage
+        .from('avatars')
+        .remove([filePath]);
+      
+      // Update database
+      await updateProfessional(id, { avatar_url: null });
+      
+      setEditImagePreview(null);
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Profissionais</h1>
+              <p className="text-muted-foreground">Gerencie os profissionais do salão</p>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[200px]" />
+                      <Skeleton className="h-4 w-[150px]" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -295,7 +298,7 @@ const Profissionais = () => {
                           <Avatar className="h-20 w-20">
                             <AvatarImage src={professional.avatar_url || undefined} />
                             <AvatarFallback className="bg-primary-soft text-primary text-lg">
-                              {professional.name?.split(' ').map(n => n[0]).join('')}
+                              {professional.nome?.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
                           <input
@@ -320,7 +323,7 @@ const Profissionais = () => {
                         </div>
                         <div>
                           <h3 className="font-semibold text-foreground text-lg">
-                            {professional.name}
+                            {professional.nome}
                           </h3>
                           <div className="flex items-center justify-center gap-1 mt-1">
                             <Star className="h-4 w-4 fill-warning text-warning" />
@@ -331,18 +334,14 @@ const Profissionais = () => {
                         </div>
                         <div className="space-y-2 w-full">
                           <div className="flex flex-wrap gap-1 justify-center">
-                            {professional.specialties?.length > 0 ? professional.specialties.map((specialty, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {specialty}
-                              </Badge>
-                            )) : <span className="text-xs text-muted-foreground">Sem especialidades</span>}
+                            <span className="text-xs text-muted-foreground">{professional.cargo || 'Sem cargo definido'}</span>
                           </div>
                           <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            {professional.schedule ? (typeof professional.schedule === 'string' ? professional.schedule : 'Personalizado') : 'Horário não informado'}
+                            {professional.telefone || 'Telefone não informado'}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {/* Aqui pode-se exibir total de serviços se houver campo */}
+                            {professional.email}
                           </div>
                         </div>
                         <div className="flex gap-2 w-full">
@@ -364,6 +363,7 @@ const Profissionais = () => {
             </div>
           </CardContent>
         </Card>
+
         {/* Modal de cadastro */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
@@ -373,7 +373,7 @@ const Profissionais = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
-                <Input id="name" name="name" value={form.name} onChange={handleChange} required disabled={submitting} />
+                <Input id="name" name="nome" value={form.nome} onChange={handleChange} required disabled={submitting} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
@@ -381,20 +381,11 @@ const Profissionais = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
-                <Input id="phone" name="phone" value={form.phone} onChange={handleChange} disabled={submitting} />
+                <Input id="phone" name="telefone" value={form.telefone} onChange={handleChange} disabled={submitting} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="specialties">Especialidades <span className="text-xs text-muted-foreground">(separadas por vírgula)</span></Label>
-                <Input id="specialties" name="specialties" value={form.specialties} onChange={handleChange} placeholder="Corte, Escova, Coloração" disabled={submitting} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="schedule">Horário</Label>
-                <Input id="schedule" name="schedule" value={form.schedule} onChange={handleChange} placeholder="Seg-Sex: 9h-18h" disabled={submitting} />
-              </div>
-              <div className="space-y-2">
-                <Label>Foto do profissional</Label>
-                <Input type="file" accept="image/*" onChange={handleFormImage} disabled={submitting} />
-                {formImagePreview && <img src={formImagePreview} alt="Preview" className="h-20 w-20 rounded-full object-cover mt-2 mx-auto" />}
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input id="cargo" name="cargo" value={form.cargo} onChange={handleChange} disabled={submitting} />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={submitting}>
@@ -407,6 +398,7 @@ const Profissionais = () => {
             </form>
           </DialogContent>
         </Dialog>
+
         {/* Modal de confirmação de exclusão */}
         <Dialog open={!!deleteId} onOpenChange={v => !deleteLoading && setDeleteId(null)}>
           <DialogContent>
@@ -415,7 +407,7 @@ const Profissionais = () => {
             </DialogHeader>
             <div className="py-4">Tem certeza que deseja excluir este profissional? Esta ação é reversível.</div>
             <DialogFooter>
-              <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+              <Button variant="destructive" onClick={() => handleDelete(deleteId!)} disabled={deleteLoading}>
                 {deleteLoading ? "Excluindo..." : "Excluir"}
               </Button>
               <DialogClose asChild>
@@ -424,19 +416,20 @@ const Profissionais = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
         {/* Modal de edição */}
         <Dialog open={!!editId} onOpenChange={v => !editLoading && setEditId(null)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Editar Profissional</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
+            <form onSubmit={handleEdit} className="space-y-4">
               {/* Foto e ações no topo */}
               <div className="flex flex-col items-center gap-2 mb-4">
                 <span className="block text-xs text-muted-foreground mb-1">Foto do profissional</span>
                 <div className="relative">
                   <img
-                    src={editImagePreview || editForm.avatar_url || undefined}
+                    src={editImagePreview || (professionals.find(p => p.id === editId)?.avatar_url || undefined)}
                     alt="Foto do profissional"
                     className="h-24 w-24 rounded-full object-cover border-2 border-primary shadow"
                   />
@@ -463,13 +456,16 @@ const Profissionais = () => {
                     <Camera className="h-5 w-5 text-white" />
                   </button>
                 </div>
-                {(editForm.avatar_url || editImagePreview) && (
+                {(professionals.find(p => p.id === editId)?.avatar_url || editImagePreview) && (
                   <button
                     type="button"
                     className="text-xs text-red-600 underline hover:text-red-800"
                     onClick={e => {
                       e.preventDefault();
-                      handleRemoveAvatarById(editId!, editForm.avatar_url);
+                      const professional = professionals.find(p => p.id === editId);
+                      if (professional?.avatar_url) {
+                        handleRemoveAvatarById(editId!, professional.avatar_url);
+                      }
                     }}
                     disabled={editLoading}
                   >
@@ -480,19 +476,15 @@ const Profissionais = () => {
               {/* Campos de texto */}
               <div className="space-y-2">
                 <Label htmlFor="edit-name">Nome</Label>
-                <Input id="edit-name" name="name" value={editForm.name} onChange={handleEditChange} required disabled={editLoading} />
+                <Input id="edit-name" name="nome" value={editForm.nome} onChange={handleEditChange} required disabled={editLoading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-phone">Telefone</Label>
-                <Input id="edit-phone" name="phone" value={editForm.phone} onChange={handleEditChange} disabled={editLoading} />
+                <Input id="edit-phone" name="telefone" value={editForm.telefone} onChange={handleEditChange} disabled={editLoading} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-specialties">Especialidades <span className="text-xs text-muted-foreground">(separadas por vírgula)</span></Label>
-                <Input id="edit-specialties" name="specialties" value={editForm.specialties} onChange={handleEditChange} placeholder="Corte, Escova, Coloração" disabled={editLoading} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-schedule">Horário</Label>
-                <Input id="edit-schedule" name="schedule" value={editForm.schedule} onChange={handleEditChange} placeholder="Seg-Sex: 9h-18h" disabled={editLoading} />
+                <Label htmlFor="edit-cargo">Cargo</Label>
+                <Input id="edit-cargo" name="cargo" value={editForm.cargo} onChange={handleEditChange} disabled={editLoading} />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={editLoading}>

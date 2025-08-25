@@ -9,8 +9,10 @@ import { useProfessionals } from "@/hooks/useProfessionals";
 import { useServices } from "@/hooks/useServices";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { appointments, loading: appointmentsLoading } = useAppointments();
   const { clients, loading: clientsLoading } = useClients();
   const { professionals, loading: professionalsLoading } = useProfessionals();
@@ -18,12 +20,12 @@ const AdminDashboard = () => {
 
   // Calculate stats from real data
   const todayAppointments = appointments.filter(apt => 
-    isToday(new Date(apt.start_time))
+    isToday(new Date(apt.data_hora))
   );
   
   const thisMonthRevenue = appointments
-    .filter(apt => apt.status === 'concluido' && apt.final_price)
-    .reduce((sum, apt) => sum + (apt.final_price || 0), 0);
+    .filter(apt => apt.status === 'concluido' && apt.servico_preco)
+    .reduce((sum, apt) => sum + (apt.servico_preco || 0), 0);
 
   const stats = [
     {
@@ -59,18 +61,18 @@ const AdminDashboard = () => {
   // Get next appointments (today and tomorrow)
   const nextAppointments = appointments
     .filter(apt => 
-      (isToday(new Date(apt.start_time)) || isTomorrow(new Date(apt.start_time))) &&
+      (isToday(new Date(apt.data_hora)) || isTomorrow(new Date(apt.data_hora))) &&
       apt.status !== 'cancelado'
     )
     .slice(0, 5)
     .map(apt => ({
       id: apt.id,
-      time: format(new Date(apt.start_time), 'HH:mm', { locale: ptBR }),
-      client: apt.client_name || 'Cliente',
-      service: apt.service_name || 'Serviço',
-      professional: apt.professional_name || 'Profissional',
+      time: format(new Date(apt.data_hora), 'HH:mm', { locale: ptBR }),
+      client: apt.cliente_nome || 'Cliente',
+      service: apt.servico_nome || 'Serviço',
+      professional: apt.funcionario_nome || 'Profissional',
       status: apt.status,
-      duration: `${apt.service_duration || 60} min`
+      duration: `${apt.servico_duracao || 60} min`
     }));
 
   const getStatusColor = (status: string) => {
@@ -214,11 +216,19 @@ const AdminDashboard = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Agendamento
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => navigate('/admin/clientes?modal=new')}
+                >
                   <Users className="h-4 w-4 mr-2" />
                   Cadastrar Cliente
                 </Button>
-                <Button className="w-full justify-start" variant="outline">
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => navigate('/admin/servicos')}
+                >
                   <Scissors className="h-4 w-4 mr-2" />
                   Gerenciar Serviços
                 </Button>

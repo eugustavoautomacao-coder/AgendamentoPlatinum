@@ -33,11 +33,11 @@ const GestaoUsuarios = () => {
   // Estado do modal de cadastro
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newUser, setNewUser] = useState({
-    name: '',
+    nome: '',
     email: '',
     password: '',
-    role: 'admin',
-    salon_id: ''
+    tipo: 'admin',
+    salao_id: ''
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -59,13 +59,13 @@ const GestaoUsuarios = () => {
   const [roleError, setRoleError] = useState<string | null>(null);
 
   // Validação visual simples
-  const isSalonRequired = newUser.role !== 'superadmin';
+  const isSalonRequired = newUser.tipo !== 'system_admin';
   const isFormValid =
-    newUser.name.trim() &&
+    newUser.nome.trim() &&
     newUser.email.trim() &&
     newUser.password.trim() &&
-    newUser.role &&
-    (!isSalonRequired || newUser.salon_id);
+    newUser.tipo &&
+    (!isSalonRequired || newUser.salao_id);
 
   // Ajustar validação do formulário de edição
   const isEditFormValid = editForm.name.trim() && editForm.email.trim() && editForm.phone.trim();
@@ -73,8 +73,8 @@ const GestaoUsuarios = () => {
   // Buscar usuários apenas quando filtros principais mudarem
   useEffect(() => {
     fetchProfiles({
-      role: roleFilter,
-      salon_id: salonFilter
+      tipo: roleFilter,
+      salao_id: salonFilter
     });
   }, [roleFilter, salonFilter, fetchProfiles]);
 
@@ -82,9 +82,9 @@ const GestaoUsuarios = () => {
   const filteredProfiles = profiles.filter(profile => {
     const search = searchInput.toLowerCase();
     return (
-      profile.name.toLowerCase().includes(search) ||
-      (profile.salon_name && profile.salon_name.toLowerCase().includes(search)) ||
-      (profile.phone && profile.phone.toLowerCase().includes(search))
+      profile.nome.toLowerCase().includes(search) ||
+      (profile.salao_nome && profile.salao_nome.toLowerCase().includes(search)) ||
+      (profile.telefone && profile.telefone.toLowerCase().includes(search))
     );
   });
 
@@ -92,27 +92,27 @@ const GestaoUsuarios = () => {
     if (!resetUser) setPassword('');
   }, [resetUser]);
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case "superadmin":
+  const getRoleIcon = (tipo: string) => {
+    switch (tipo) {
+      case "system_admin":
         return <Crown className="h-4 w-4" />;
       case "admin":
         return <Shield className="h-4 w-4" />;
-      case "profissional":
+      case "funcionario":
         return <User className="h-4 w-4" />;
       default:
         return <Users className="h-4 w-4" />;
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "superadmin":
+  const getRoleBadge = (tipo: string) => {
+    switch (tipo) {
+      case "system_admin":
         return <Badge variant="default" className="bg-purple-600">SuperAdmin</Badge>;
       case "admin":
         return <Badge variant="default" className="bg-blue-600">Admin</Badge>;
-      case "profissional":
-        return <Badge variant="secondary">Profissional</Badge>;
+      case "funcionario":
+        return <Badge variant="secondary">Funcionário</Badge>;
       default:
         return <Badge variant="outline">Cliente</Badge>;
     }
@@ -129,7 +129,7 @@ const GestaoUsuarios = () => {
       if (!accessToken) throw new Error("Token de acesso não encontrado");
 
       const response = await fetch(
-        "https://vymwodxwwdhjxxzobjha.functions.supabase.co/reset-user-password",
+        "https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/reset-user-password",
         {
           method: "POST",
           headers: {
@@ -152,11 +152,7 @@ const GestaoUsuarios = () => {
       });
       // Limpar busca e atualizar a lista de usuários após redefinir senha
       setSearchTerm('');
-      await fetchProfiles({
-        role: roleFilter,
-        salon_id: salonFilter,
-        search: ''
-      });
+      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter, search: '' });
       setPassword("");
       setResetUser(null);
       handleCloseModal();
@@ -188,16 +184,16 @@ const GestaoUsuarios = () => {
 
       // Montar payload
       const payload = {
-        name: newUser.name.trim(),
+        nome: newUser.nome.trim(),
         email: newUser.email.trim(),
         password: newUser.password,
-        role: newUser.role.trim().toLowerCase(),
-        salon_id: newUser.role === 'cliente' ? null : (newUser.salon_id || null)
+        tipo: newUser.tipo.trim().toLowerCase(),
+        salao_id: newUser.tipo === 'cliente' ? null : (newUser.salao_id || null)
       };
       console.log("Payload enviado:", payload);
       // Chamada para Edge Function
       const response = await fetch(
-        "https://vymwodxwwdhjxxzobjha.supabase.co/functions/v1/create-user",
+        "https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-user",
         {
           method: "POST",
           headers: {
@@ -214,12 +210,12 @@ const GestaoUsuarios = () => {
       }
       toast({
         title: "Usuário cadastrado com sucesso!",
-        description: `O usuário ${newUser.name} foi criado.`
+        description: `O usuário ${newUser.nome} foi criado.`
       });
       setIsCreateOpen(false);
-      setNewUser({ name: '', email: '', password: '', role: 'admin', salon_id: '' });
+      setNewUser({ nome: '', email: '', password: '', tipo: 'admin', salao_id: '' });
       // Atualizar listagem
-      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
     } catch (error: any) {
       setCreateError(error.message || "Erro inesperado ao cadastrar usuário");
     } finally {
@@ -231,10 +227,10 @@ const GestaoUsuarios = () => {
   const handleOpenEdit = (user: any) => {
     setEditUser(user);
     setEditForm({
-      name: user.name || '',
+      name: user.nome || '',
       email: user.email || '',
-      phone: user.phone || '',
-      salon_id: user.salon_id || ''
+      phone: user.telefone || '',
+      salon_id: user.salao_id || ''
     });
     setEditError(null);
   };
@@ -246,18 +242,18 @@ const GestaoUsuarios = () => {
     setEditError(null);
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
-          name: editForm.name,
+          nome: editForm.name,
           email: editForm.email,
-          phone: editForm.phone,
-          salon_id: editForm.salon_id || null
+          telefone: editForm.phone,
+          salao_id: editForm.salon_id || null
         })
         .eq('id', editUser.id);
       if (error) throw error;
       toast({ title: 'Usuário atualizado com sucesso!' });
       setEditUser(null);
-      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
     } catch (error: any) {
       setEditError(error.message || 'Erro ao atualizar usuário');
     } finally {
@@ -271,13 +267,13 @@ const GestaoUsuarios = () => {
     setDeleteLoading(true);
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .delete()
         .eq('id', deleteUser.id);
       if (error) throw error;
       toast({ title: 'Usuário excluído com sucesso!' });
       setDeleteUser(null);
-      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
     } catch (error: any) {
       toast({
         title: 'Erro ao excluir usuário',
@@ -289,29 +285,29 @@ const GestaoUsuarios = () => {
     }
   };
 
-  // Função para abrir modal de alteração de role
+  // Função para abrir modal de alteração de tipo
   const handleOpenRole = (user: any) => {
     setRoleUser(user);
-    setNewRole(user.role);
+    setNewRole(user.tipo);
     setRoleError(null);
   };
 
-  // Função para salvar alteração de role
+  // Função para salvar alteração de tipo
   const handleChangeRole = async () => {
     if (!roleUser || !newRole) return;
     setRoleLoading(true);
     setRoleError(null);
     try {
       const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
+        .from('users')
+        .update({ tipo: newRole })
         .eq('id', roleUser.id);
       if (error) throw error;
-      toast({ title: 'Role atualizado com sucesso!' });
+      toast({ title: 'Tipo atualizado com sucesso!' });
       setRoleUser(null);
-      await fetchProfiles({ role: roleFilter, salon_id: salonFilter });
+      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
     } catch (error: any) {
-      setRoleError(error.message || 'Erro ao atualizar role');
+      setRoleError(error.message || 'Erro ao atualizar tipo');
     } finally {
       setRoleLoading(false);
     }
@@ -359,8 +355,8 @@ const GestaoUsuarios = () => {
                   <Label htmlFor="user-name">Nome</Label>
                   <Input
                     id="user-name"
-                    value={newUser.name}
-                    onChange={e => setNewUser(u => ({ ...u, name: e.target.value }))}
+                    value={newUser.nome}
+                    onChange={e => setNewUser(u => ({ ...u, nome: e.target.value }))}
                     placeholder="Nome completo"
                   />
                 </div>
@@ -385,27 +381,28 @@ const GestaoUsuarios = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-role">Role</Label>
-                  <Select value={newUser.role} onValueChange={value => setNewUser(u => ({ ...u, role: value }))}>
+                  <Label htmlFor="user-role">Tipo</Label>
+                  <Select value={newUser.tipo} onValueChange={value => setNewUser(u => ({ ...u, tipo: value }))}>
                     <SelectTrigger id="user-role" className="w-full">
-                      <SelectValue placeholder="Selecione o role" />
+                      <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="system_admin">SuperAdmin</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="profissional">Profissional</SelectItem>
+                      <SelectItem value="funcionario">Funcionário</SelectItem>
                       <SelectItem value="cliente">Cliente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="user-salon">Salão</Label>
-                  <Select value={newUser.salon_id} onValueChange={value => setNewUser(u => ({ ...u, salon_id: value }))} disabled={!isSalonRequired}>
+                  <Select value={newUser.salao_id} onValueChange={value => setNewUser(u => ({ ...u, salao_id: value }))} disabled={!isSalonRequired}>
                     <SelectTrigger id="user-salon" className="w-full" disabled={!isSalonRequired}>
                       <SelectValue placeholder="Selecione o salão" />
                     </SelectTrigger>
                     <SelectContent>
                       {salons.map(salon => (
-                        <SelectItem key={salon.id} value={salon.id}>{salon.name}</SelectItem>
+                        <SelectItem key={salon.id} value={salon.id}>{salon.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -442,7 +439,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profiles.filter(u => u.role === 'admin').length}
+                {profiles.filter(u => u.tipo === 'admin').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Gestores de salão
@@ -456,7 +453,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profiles.filter(u => u.role === 'profissional').length}
+                {profiles.filter(u => u.tipo === 'funcionario').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Prestadores de serviço
@@ -470,7 +467,7 @@ const GestaoUsuarios = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {profiles.filter(u => u.role === 'cliente').length}
+                {profiles.filter(u => u.tipo === 'cliente').length}
               </div>
               <p className="text-xs text-muted-foreground">
                 Usuários finais
@@ -496,10 +493,10 @@ const GestaoUsuarios = () => {
               <SelectValue placeholder="Filtrar por role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os roles</SelectItem>
-              <SelectItem value="superadmin">SuperAdmin</SelectItem>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="system_admin">SuperAdmin</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="profissional">Profissional</SelectItem>
+              <SelectItem value="funcionario">Funcionário</SelectItem>
               <SelectItem value="cliente">Cliente</SelectItem>
             </SelectContent>
           </Select>
@@ -512,7 +509,7 @@ const GestaoUsuarios = () => {
               <SelectItem value="all">Todos os salões</SelectItem>
               {salons.map((salon) => (
                 <SelectItem key={salon.id} value={salon.id}>
-                  {salon.name}
+                  {salon.nome}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -532,7 +529,7 @@ const GestaoUsuarios = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuário</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Salão</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Criado em</TableHead>
@@ -545,31 +542,31 @@ const GestaoUsuarios = () => {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url || ""} />
+                          <AvatarImage src={""} />
                           <AvatarFallback>
-                            {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            {(user.nome || '').split(' ').map(n => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{user.name}</div>
+                          <div className="font-medium">{user.nome}</div>
                           <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        {getRoleIcon(user.role)}
-                        {getRoleBadge(user.role)}
+                        {getRoleIcon(user.tipo)}
+                        {getRoleBadge(user.tipo)}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.salon_name || <span className="text-muted-foreground">-</span>}
+                      {user.salao_nome || <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
-                      {user.phone || <span className="text-muted-foreground">-</span>}
+                      {user.telefone || <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      {new Date(user.criado_em).toLocaleDateString('pt-BR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -609,7 +606,7 @@ const GestaoUsuarios = () => {
               <DialogHeader>
                 <DialogTitle>Redefinir senha</DialogTitle>
                 <DialogDescription>
-                  Defina uma nova senha para o usuário <b>{resetUser?.name}</b>.
+                  Defina uma nova senha para o usuário <b>{resetUser?.nome}</b>.
                 </DialogDescription>
               </DialogHeader>
               <input
@@ -707,23 +704,24 @@ const GestaoUsuarios = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          {/* Modal de alteração de role */}
+          {/* Modal de alteração de tipo */}
           <Dialog open={!!roleUser} onOpenChange={() => setRoleUser(null)}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Alterar Role</DialogTitle>
+                <DialogTitle>Alterar Tipo</DialogTitle>
                 <DialogDescription>
-                  Selecione o novo role para o usuário <b>{roleUser?.name}</b>.
+                  Selecione o novo tipo para o usuário <b>{roleUser?.nome}</b>.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 px-1">
                 <Select value={newRole} onValueChange={setNewRole}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o novo role" />
+                    <SelectValue placeholder="Selecione o novo tipo" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="system_admin">SuperAdmin</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="profissional">Profissional</SelectItem>
+                    <SelectItem value="funcionario">Funcionário</SelectItem>
                     <SelectItem value="cliente">Cliente</SelectItem>
                   </SelectContent>
                 </Select>
@@ -733,8 +731,8 @@ const GestaoUsuarios = () => {
                 <Button variant="outline" onClick={() => setRoleUser(null)} disabled={roleLoading}>
                   Cancelar
                 </Button>
-                <Button onClick={handleChangeRole} disabled={roleLoading || !newRole || newRole === roleUser?.role}>
-                  {roleLoading ? 'Salvando...' : 'Salvar novo role'}
+                <Button onClick={handleChangeRole} disabled={roleLoading || !newRole || newRole === roleUser?.tipo}>
+                  {roleLoading ? 'Salvando...' : 'Salvar novo tipo'}
                 </Button>
               </DialogFooter>
             </DialogContent>

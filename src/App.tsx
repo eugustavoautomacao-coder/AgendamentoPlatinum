@@ -44,7 +44,7 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+  if (allowedRoles && profile && !allowedRoles.includes(profile.tipo)) {
     return <Navigate to="/" replace />;
   }
 
@@ -61,45 +61,45 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to={
-        profile?.role === 'superadmin' ? '/superadmin'
-        : profile?.role === 'admin' ? '/admin'
-        : profile?.role === 'profissional' ? '/profissional'
+        profile?.tipo === 'system_admin' ? '/superadmin'
+        : profile?.tipo === 'admin' ? '/admin'
+        : profile?.tipo === 'funcionario' ? '/profissional'
         : '/'} replace /> : <Index />} />
       <Route path="/login" element={!user ? <Login /> : <Navigate to={
-        profile?.role === 'superadmin' ? '/superadmin'
-        : profile?.role === 'admin' ? '/admin'
-        : profile?.role === 'profissional' ? '/profissional'
+        profile?.tipo === 'system_admin' ? '/superadmin'
+        : profile?.tipo === 'admin' ? '/admin'
+        : profile?.tipo === 'funcionario' ? '/profissional'
         : '/'} replace />} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
       
       {/* SuperAdmin Routes */}
       <Route path="/superadmin" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <SuperAdminDashboard />
         </ProtectedRoute>
       } />
       <Route path="/superadmin/saloes" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <GestaoSaloes />
         </ProtectedRoute>
       } />
       <Route path="/superadmin/usuarios" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <GestaoUsuarios />
         </ProtectedRoute>
       } />
       <Route path="/superadmin/assinaturas" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <Assinaturas />
         </ProtectedRoute>
       } />
       <Route path="/superadmin/relatorios" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <SuperAdminRelatorios />
         </ProtectedRoute>
       } />
       <Route path="/superadmin/configuracoes" element={
-        <ProtectedRoute allowedRoles={['superadmin']}>
+        <ProtectedRoute allowedRoles={['system_admin']}>
           <SuperAdminConfiguracoes />
         </ProtectedRoute>
       } />
@@ -143,7 +143,7 @@ function AppRoutes() {
       
       {/* Profissional Routes */}
       <Route path="/profissional" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalDashboard />
         </ProtectedRoute>
       } />

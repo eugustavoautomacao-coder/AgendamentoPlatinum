@@ -35,13 +35,13 @@ serve(async (req) => {
       )
     }
 
-    // Verificar se é superadmin
+    // Verificar se é system_admin
     const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
+      .from('users')
+      .select('tipo')
       .eq('id', user.id)
       .single()
-    if (profileError || !profile || profile.role !== 'superadmin') {
+    if (profileError || !profile || profile.tipo !== 'system_admin') {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,14 +50,14 @@ serve(async (req) => {
 
     // Obter dados do request
     const requestBody = await req.json()
-    const { name, email, password, role, salon_id } = requestBody
-    if (!name || !email || !password || !role || (role !== 'cliente' && !salon_id)) {
+    const { nome, email, password, tipo, salao_id } = requestBody
+    if (!nome || !email || !password || !tipo || (tipo !== 'cliente' && !salao_id)) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-    if (role === 'superadmin') {
+    if (tipo === 'system_admin') {
       return new Response(
         JSON.stringify({ error: 'Cadastro de superadmin não permitido' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -86,9 +86,9 @@ serve(async (req) => {
       email,
       password,
       user_metadata: { 
-        name,
-        role,
-        salon_id: role === 'cliente' ? null : salon_id
+        nome,
+        tipo,
+        salao_id: tipo === 'cliente' ? null : salao_id
       },
       email_confirm: true
     })
@@ -106,68 +106,46 @@ serve(async (req) => {
       )
     }
 
-    // Atualizar perfil
-    const { error: profileError2 } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        name,
-        role,
-        salon_id: role === 'cliente' ? null : salon_id
+    // Criar registro na tabela users
+    const { error: userError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        id: authData.user.id,
+        nome,
+        tipo,
+        salao_id: tipo === 'cliente' ? null : salao_id,
+        email
       })
-      .eq('id', authData.user.id)
-    console.log('Profile update result:', { error: profileError2 });
-    if (profileError2) {
+
+    console.log('User insert result:', { error: userError });
+    if (userError) {
       // rollback
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-      console.log('Rollback after profile update error');
+      console.log('Rollback after user insert error');
       return new Response(
-        JSON.stringify({ error: `Failed to update profile: ${profileError2.message}` }),
+        JSON.stringify({ error: `Failed to create user record: ${userError.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Se for profissional, aguardar até o registro em profiles existir antes de inserir em professionals
-    if (role === 'profissional') {
-      let profileExists = false;
-      for (let i = 0; i < 10; i++) {
-        const { data: profileCheck, error: profileCheckError } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('id', authData.user.id)
-          .single();
-        console.log(`Tentativa ${i+1} de encontrar profile:`, { profileCheck, profileCheckError });
-        if (profileCheck && profileCheck.id) {
-          profileExists = true;
-          break;
-        }
-        await new Promise(res => setTimeout(res, 500));
-      }
-      if (!profileExists) {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-        console.log('Rollback after profile not found');
-        return new Response(
-          JSON.stringify({ error: 'Profile record not found after user creation. Tente novamente.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const { error: professionalError } = await supabaseAdmin
-        .from('professionals')
+    // Se for funcionário, criar registro na tabela employees
+    if (tipo === 'funcionario') {
+      const { error: employeeError } = await supabaseAdmin
+        .from('employees')
         .insert([{
-          id: authData.user.id,
-          salon_id: salon_id,
-          specialties: [],
-          schedule: {},
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          user_id: authData.user.id,
+          salao_id: salao_id,
+          nome,
+          email,
+          cargo: 'Funcionário'
         }]);
-      console.log('Professional insert result:', { error: professionalError });
-      if (professionalError) {
+      console.log('Employee insert result:', { error: employeeError });
+      if (employeeError) {
         // rollback
         await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-        console.log('Rollback after professional insert error');
+        console.log('Rollback after employee insert error');
         return new Response(
-          JSON.stringify({ error: `Failed to insert professional: ${professionalError.message}` }),
+          JSON.stringify({ error: `Failed to insert employee: ${employeeError.message}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -179,9 +157,9 @@ serve(async (req) => {
         user: {
           id: authData.user.id,
           email: authData.user.email,
-          name,
-          role,
-          salon_id: role === 'cliente' ? null : salon_id
+          nome,
+          tipo,
+          salao_id: tipo === 'cliente' ? null : salao_id
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -99,7 +99,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    // Checar explicitamente se o profile já existe
+    // Após criar o usuário, checar se o profile já existe
     const { data: profileCheck } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -110,6 +110,7 @@ serve(async (req) => {
       // Profile já existe, faça update
       const { error: updateError } = await supabaseAdmin.from('profiles').update({
         name,
+        email, // garantir atualização do email
         role: 'cliente',
         salon_id,
         phone,
@@ -128,6 +129,7 @@ serve(async (req) => {
       const { error: insertError } = await supabaseAdmin.from('profiles').insert({
         id: authData.user.id,
         name,
+        email, // garantir inserção do email
         role: 'cliente',
         salon_id,
         phone,

@@ -26,3 +26,6 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- Adicionar campo de horário de funcionamento na tabela salons
+ALTER TABLE public.salons ADD COLUMN IF NOT EXISTS working_hours JSONB DEFAULT '{}';
