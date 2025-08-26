@@ -85,6 +85,9 @@ export type Database = {
           nome: string
           cnpj: string | null
           email: string | null
+          telefone: string | null
+          endereco: string | null
+          working_hours: any | null
           created_at: string
         }
         Insert: {
@@ -92,6 +95,9 @@ export type Database = {
           nome: string
           cnpj?: string | null
           email?: string | null
+          telefone?: string | null
+          endereco?: string | null
+          working_hours?: any | null
           created_at?: string
         }
         Update: {
@@ -99,6 +105,9 @@ export type Database = {
           nome?: string
           cnpj?: string | null
           email?: string | null
+          telefone?: string | null
+          endereco?: string | null
+          working_hours?: any | null
           created_at?: string
         }
       }

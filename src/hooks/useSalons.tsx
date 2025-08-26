@@ -8,6 +8,9 @@ export interface Salon {
   nome: string;
   email?: string;
   cnpj?: string;
+  telefone?: string;
+  endereco?: string;
+  working_hours?: Record<string, { open: string; close: string; active: boolean }>;
   created_at: string;
   // Compat: alguns componentes ainda usam `name`
   name?: string;
@@ -30,7 +33,7 @@ export function useSalons() {
       setLoading(true);
       const { data, error } = await supabase
         .from('saloes')
-        .select('id, nome, email, cnpj, created_at')
+        .select('id, nome, email, cnpj, telefone, endereco, working_hours, created_at')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

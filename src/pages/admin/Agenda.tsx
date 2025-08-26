@@ -17,6 +17,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, addDays, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { AgendaSkeleton } from '@/components/AgendaSkeleton';
+import { useSearchParams } from 'react-router-dom';
 
 const SLOT_MINUTES = 60; // tamanho do slot (60 = 1h)
 const SLOT_HEIGHT = 72;  // altura visual de cada slot
@@ -52,11 +54,12 @@ const formatPhoneNumber = (phone: string) => {
 
 const Agenda = () => {
   const { salonInfo } = useSalonInfo();
-  const { professionals } = useProfessionals();
-  const { appointments, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments } = useAppointments();
+  const { professionals, loading: professionalsLoading } = useProfessionals();
+  const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
   const { clients } = useClients();
   const { services } = useServices();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ funcionario_id: '', cliente_id: '', servico_id: '', date: '', time: '' });
   const [saving, setSaving] = useState(false);
@@ -88,10 +91,23 @@ const Agenda = () => {
 
   // Horário de funcionamento baseado na data selecionada
   const getScheduleForDate = (date: Date) => {
-    if (!(salonInfo as any)?.working_hours) return { open: '08:00', close: '18:00', active: true } as any;
-    const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    if (!salonInfo?.working_hours) {
+      console.log('Horários de funcionamento não configurados, usando padrão');
+      return { open: '08:00', close: '18:00', active: true };
+    }
+    
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const key = days[date.getDay()];
-    return (salonInfo as any).working_hours[key] || { open: '08:00', close: '18:00', active: true };
+    const schedule = salonInfo.working_hours[key];
+    
+    console.log(`Horário para ${key} (${format(date, 'EEEE', { locale: ptBR })}):`, schedule);
+    
+    if (!schedule) {
+      console.log(`Horário não configurado para ${key}, usando padrão`);
+      return { open: '08:00', close: '18:00', active: true };
+    }
+    
+    return schedule;
   };
 
   const timeToMinutes = (t: string) => {
@@ -173,14 +189,14 @@ const Agenda = () => {
   };
 
   const selectedDay = selectedDate || new Date();
-  const appointmentsOfDay = appointments.filter(a => {
+  const appointmentsOfDay = Array.isArray(appointments) ? appointments.filter(a => {
     const aptDate = new Date(a.data_hora);
     return (
       aptDate.getFullYear() === selectedDay.getFullYear() &&
       aptDate.getMonth() === selectedDay.getMonth() &&
       aptDate.getDate() === selectedDay.getDate()
     );
-  });
+  }) : [];
 
   const goPrevDay = () => setSelectedDate(d => addDays(d || new Date(), -1));
   const goNextDay = () => setSelectedDate(d => addDays(d || new Date(), 1));
@@ -343,6 +359,28 @@ const Agenda = () => {
     setOpen(true);
   };
 
+  // Detectar parâmetro modal=new na URL e abrir modal automaticamente
+  useEffect(() => {
+    const modalParam = searchParams.get('modal');
+    if (modalParam === 'new') {
+      setOpen(true);
+      // Limpar o parâmetro da URL
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Mostrar skeleton enquanto carrega (aguarda profissionais e agendamentos)
+  if (loading || professionalsLoading) {
+    return (
+      <AdminLayout>
+        <AgendaSkeleton />
+      </AdminLayout>
+    );
+  }
+
+  // Verificar se o salão está funcionando no dia selecionado
+  const isSalonOpen = currentSchedule.active;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -479,7 +517,14 @@ const Agenda = () => {
                     onClick={handleCreate} 
                     disabled={saving || !form.funcionario_id || !form.cliente_id || !form.servico_id || !form.date || !form.time}
                   >
-                    {saving ? 'Salvando...' : 'Salvar'}
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar'
+                    )}
                   </Button>
                   <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
                 </DialogFooter>
@@ -508,6 +553,26 @@ const Agenda = () => {
           </Popover>
         </div>
 
+        {/* Mensagem quando salão não está funcionando */}
+        {!isSalonOpen && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-amber-800">Salão Fechado</h3>
+                <p className="text-sm text-amber-700">
+                  O salão não está funcionando na {format(selectedDay, "EEEE, dd/MM", { locale: ptBR })}. 
+                  {currentSchedule.open && currentSchedule.close && (
+                    <span> Horário configurado: {currentSchedule.open} às {currentSchedule.close}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Grade da agenda */}
         <div className="bg-card rounded-lg shadow-elegant overflow-auto border border-border">
           {/* Cabeçalho sticky dos profissionais */}
@@ -516,6 +581,12 @@ const Agenda = () => {
             <div className="p-4 border-r border-border text-left">
               <div className="text-xs text-muted-foreground leading-none">Dia</div>
               <div className="font-semibold text-foreground">{format(selectedDay, "EEEE, dd/MM", { locale: ptBR })}</div>
+              {isSalonOpen && currentSchedule.open && currentSchedule.close && (
+                <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {currentSchedule.open} - {currentSchedule.close}
+                </div>
+              )}
             </div>
             {professionals.map(prof => (
               <div key={prof.id} className="p-4 text-center border-r border-border last:border-r-0 flex flex-col items-center">
@@ -534,6 +605,21 @@ const Agenda = () => {
 
           {/* Corpo da grade */}
           <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `160px repeat(${professionals.length}, minmax(200px,1fr))` }}>
+            {hours.length === 0 ? (
+              // Mensagem quando não há horários disponíveis
+              <div className="col-span-full flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
+                    <Clock className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Nenhum horário disponível</h3>
+                  <p className="text-sm text-muted-foreground">
+                    O salão não está funcionando neste dia ou os horários não foram configurados.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
             {/* Coluna de horários (sticky à esquerda) */}
             <div className="sticky left-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-r border-border text-xs text-muted-foreground">
               {hours.map((hour) => (
@@ -624,7 +710,9 @@ const Agenda = () => {
                     </div>
                   );
                 })}
-              </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Legenda de status */}
@@ -750,6 +838,7 @@ const Agenda = () => {
               <Button
                 variant="destructive"
                 size="sm"
+                disabled={isDeleting}
                 onClick={async () => {
                   if (!selectedApt) return;
                   await deleteAppointment(selectedApt.id);
@@ -757,16 +846,26 @@ const Agenda = () => {
                 }}
                 className="flex items-center gap-1"
               >
-                <Trash2 className="h-3 w-3" />
-                <span>Excluir</span>
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3 w-3" />
+                    <span>Excluir</span>
+                  </>
+                )}
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setDetailOpen(false)}>
+                <Button variant="outline" size="sm" onClick={() => setDetailOpen(false)} disabled={isUpdating}>
                   <X className="h-3 w-3 mr-1" />
                   Cancelar
                 </Button>
                 <Button 
                   size="sm"
+                  disabled={isUpdating}
                   onClick={async () => {
                     if (!selectedApt) return;
                     await updateAppointment(selectedApt.id, {
@@ -777,8 +876,17 @@ const Agenda = () => {
                     setDetailOpen(false);
                   }}
                 >
-                  <Save className="h-3 w-3 mr-1" />
-                  Salvar alterações
+                  {isUpdating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-3 w-3 mr-1" />
+                      Salvar alterações
+                    </>
+                  )}
                 </Button>
               </div>
             </DialogFooter>

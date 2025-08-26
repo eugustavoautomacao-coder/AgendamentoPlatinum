@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -25,16 +26,21 @@ export interface Appointment {
 }
 
 export function useAppointments() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
   const { profile } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchAppointments = async () => {
-    if (!profile?.salao_id) return;
-    
-    try {
-      setLoading(true);
+  // Query para buscar agendamentos com cache
+  const {
+    data: appointments,
+    isLoading: loading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['appointments', profile?.salao_id],
+    queryFn: async (): Promise<Appointment[]> => {
+      if (!profile?.salao_id) return [];
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -66,138 +72,116 @@ export function useAppointments() {
         })
       );
 
-      setAppointments(appointmentsWithNames);
+      return appointmentsWithNames;
+    },
+    enabled: !!profile?.salao_id,
+    staleTime: 30000, // 30 segundos
+    cacheTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false,
+    retry: 2
+  });
 
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar agendamentos"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createAppointment = async (appointmentData: {
-    cliente_id: string;
-    funcionario_id: string;
-    servico_id: string;
-    data_hora: string;
-    motivo_cancelamento?: string;
-    observacoes?: string;
-  }) => {
-    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
-
-    try {
-      // Get service duration (optional for future calculations)
-      const { data: service, error: serviceError } = await supabase
-        .from('services')
-        .select('duracao_minutos')
-        .eq('id', appointmentData.servico_id)
-        .single();
-
-      if (serviceError) throw serviceError;
+  // Mutation para criar agendamento
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (appointmentData: {
+      cliente_id: string;
+      funcionario_id: string;
+      servico_id: string;
+      data_hora: string;
+      motivo_cancelamento?: string;
+      observacoes?: string;
+    }) => {
+      if (!profile?.salao_id) throw new Error('Salon ID não encontrado');
 
       const { data, error } = await supabase
         .from('appointments')
-        .insert([{
-          ...appointmentData,
-          salao_id: profile.salao_id,
-          status: 'pendente'
-        }])
+        .insert([{ ...appointmentData, salao_id: profile.salao_id }])
         .select()
         .single();
 
       if (error) throw error;
-      
-      await fetchAppointments();
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
       toast({
-        title: "Sucesso",
-        description: "Agendamento criado com sucesso"
+        title: 'Agendamento criado com sucesso!',
       });
-      
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error creating appointment:', error);
+    },
+    onError: (error: any) => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao criar agendamento"
+        description: error.message || 'Erro ao criar agendamento'
       });
-      return { data: null, error };
     }
-  };
+  });
 
-  const updateAppointment = async (id: string, appointmentData: Partial<Appointment>) => {
-    try {
+  // Mutation para atualizar agendamento
+  const updateAppointmentMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Appointment> }) => {
       const { data, error } = await supabase
         .from('appointments')
-        .update(appointmentData)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
-      
-      await fetchAppointments();
-      toast({
-        title: "Sucesso",
-        description: "Agendamento atualizado com sucesso"
-      });
-      
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error updating appointment:', error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
+    },
+    onError: (error: any) => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao atualizar agendamento"
+        description: error.message || 'Erro ao atualizar agendamento'
       });
-      return { data: null, error };
     }
-  };
+  });
 
-  const deleteAppointment = async (id: string) => {
-    try {
+  // Mutation para deletar agendamento
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('appointments')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      
-      await fetchAppointments();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
       toast({
-        title: "Sucesso",
-        description: "Agendamento cancelado com sucesso"
+        title: 'Agendamento excluído com sucesso!',
       });
-      
-      return { error: null };
-    } catch (error) {
-      console.error('Error deleting appointment:', error);
+    },
+    onError: (error: any) => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao cancelar agendamento"
+        description: error.message || 'Erro ao excluir agendamento'
       });
-      return { error };
     }
-  };
+  });
 
-  useEffect(() => {
-    if (profile?.salao_id) {
-      fetchAppointments();
-    }
-  }, [profile?.salao_id]);
+  // Funções wrapper para manter compatibilidade
+  const createAppointment = (data: any) => createAppointmentMutation.mutateAsync(data);
+  const updateAppointment = (id: string, updates: any) => updateAppointmentMutation.mutateAsync({ id, updates });
+  const deleteAppointment = (id: string) => deleteAppointmentMutation.mutateAsync(id);
 
   return {
-    appointments,
+    appointments: appointments || [],
     loading,
+    error,
+    refetch,
     createAppointment,
     updateAppointment,
     deleteAppointment,
-    refetch: fetchAppointments
+    isCreating: createAppointmentMutation.isPending,
+    isUpdating: updateAppointmentMutation.isPending,
+    isDeleting: deleteAppointmentMutation.isPending
   };
 }

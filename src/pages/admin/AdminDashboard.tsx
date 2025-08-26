@@ -119,7 +119,7 @@ const AdminDashboard = () => {
               <Calendar className="h-4 w-4 mr-2" />
               Hoje
             </Button>
-            <Button>
+            <Button onClick={() => navigate('/admin/agenda?modal=new')}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
             </Button>
@@ -161,7 +161,11 @@ const AdminDashboard = () => {
                       {nextAppointments.length} agendamentos programados
                     </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/admin/agenda')}
+                  >
                     Ver Todos
                   </Button>
                 </div>
@@ -212,7 +216,11 @@ const AdminDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full justify-start" variant="outline">
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => navigate('/admin/agenda?modal=new')}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Agendamento
                 </Button>

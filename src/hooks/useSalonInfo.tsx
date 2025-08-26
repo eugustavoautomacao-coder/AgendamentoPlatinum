@@ -7,6 +7,9 @@ interface SalonInfo {
   nome: string;
   email?: string;
   cnpj?: string;
+  telefone?: string;
+  endereco?: string;
+  working_hours?: Record<string, { open: string; close: string; active: boolean }>;
 }
 
 export function useSalonInfo() {
@@ -14,13 +17,14 @@ export function useSalonInfo() {
   const [loading, setLoading] = useState(false);
   const { profile } = useAuth();
 
-  const fetchSalonInfo = async () => {
+  const fetchSalonInfo = async (forceRefresh = false) => {
     if (!profile?.salao_id) {
       setSalonInfo(null);
       return;
     }
 
-      // Verificar cache local primeiro
+    // Se não for force refresh, verificar cache local primeiro
+    if (!forceRefresh) {
       const cachedSalon = localStorage.getItem(`salon_${profile.salao_id}`);
       if (cachedSalon) {
         try {
@@ -35,29 +39,34 @@ export function useSalonInfo() {
           // Cache inválido, continuar com fetch
         }
       }
+    }
 
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('saloes')
-          .select('id, nome, email, cnpj')
-          .eq('id', profile.salao_id)
-          .single();
+    try {
+      setLoading(true);
+      console.log('Buscando dados do salão:', profile.salao_id);
+      
+      const { data, error } = await supabase
+        .from('saloes')
+        .select('id, nome, email, cnpj, telefone, endereco, working_hours')
+        .eq('id', profile.salao_id)
+        .single();
 
-        if (error) throw error;
-        
-        // Salvar no cache local
-        localStorage.setItem(`salon_${profile.salao_id}`, JSON.stringify(data));
-        localStorage.setItem(`salon_${profile.salao_id}_time`, Date.now().toString());
-        
-        setSalonInfo(data);
-      } catch (error) {
-        console.error('Error fetching salon info:', error);
-        setSalonInfo(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+      if (error) throw error;
+      
+      console.log('Dados do salão carregados:', data);
+      
+      // Salvar no cache local
+      localStorage.setItem(`salon_${profile.salao_id}`, JSON.stringify(data));
+      localStorage.setItem(`salon_${profile.salao_id}_time`, Date.now().toString());
+      
+      setSalonInfo(data);
+    } catch (error) {
+      console.error('Error fetching salon info:', error);
+      setSalonInfo(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchSalonInfo();

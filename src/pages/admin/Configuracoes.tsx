@@ -1,4 +1,4 @@
-import { Settings, Save, Building, Clock, DollarSign, Mail, Phone } from "lucide-react";
+import { Settings, Save, Building, Clock, DollarSign, Mail, Phone, MapPin, Users, Bell, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,14 +32,17 @@ const Configuracoes = () => {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [cnpj, setCnpj] = useState('');
 
   // Preencher com valor salvo ao abrir
   useEffect(() => {
     if (salonInfo) {
-      setName(salonInfo.name || '');
-      setAddress(salonInfo.address || '');
-      setPhone(salonInfo.phone || '');
+      console.log('Atualizando formulário com dados do salão:', salonInfo);
+      setName(salonInfo.nome || '');
+      setAddress(salonInfo.endereco || '');
+      setPhone(salonInfo.telefone || '');
       setEmail(salonInfo.email || '');
+      setCnpj(salonInfo.cnpj || '');
     }
     if (salonInfo?.working_hours) {
       const wh = salonInfo.working_hours;
@@ -57,43 +60,104 @@ const Configuracoes = () => {
     setSchedule((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d));
   };
 
+  // Função para formatar CNPJ
+  const formatCNPJ = (value: string) => {
+    // Remove tudo que não é dígito
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara do CNPJ
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 5) return `${numbers.slice(0, 2)}.${numbers.slice(2)}`;
+    if (numbers.length <= 8) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`;
+    if (numbers.length <= 12) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`;
+    return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
+  };
+
+  const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCNPJ(e.target.value);
+    setCnpj(formatted);
+  };
+
   const handleSave = async () => {
-    if (!salonInfo?.id) return;
-    setSaving(true);
-    // Montar objeto working_hours
-    const working_hours = {};
-    schedule.forEach((d) => {
-      working_hours[d.key] = { open: d.open, close: d.close, active: d.active };
-    });
-    const { error } = await supabase.from('salons').update({
-      name,
-      address,
-      phone,
-      email,
-      working_hours
-    }).eq('id', salonInfo.id);
-    setSaving(false);
-    if (error) {
+    if (!salonInfo?.id) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao salvar',
-        description: error.message || 'Não foi possível salvar as alterações.'
+        title: 'Erro',
+        description: 'ID do salão não encontrado.'
       });
-    } else {
+      return;
+    }
+    
+    setSaving(true);
+    
+    try {
+      // Montar objeto working_hours
+      const working_hours = {};
+      schedule.forEach((d) => {
+        working_hours[d.key] = { open: d.open, close: d.close, active: d.active };
+      });
+      
+      console.log('Salvando dados do salão:', {
+        id: salonInfo.id,
+        nome: name,
+        endereco: address,
+        telefone: phone,
+        email,
+        cnpj,
+        working_hours
+      });
+      
+      const { data, error } = await supabase
+        .from('saloes')
+        .update({
+          nome: name,
+          endereco: address,
+          telefone: phone,
+          email,
+          cnpj,
+          working_hours
+        })
+        .eq('id', salonInfo.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Erro ao salvar:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao salvar',
+          description: error.message || 'Não foi possível salvar as alterações.'
+        });
+        return;
+      }
+      
+      console.log('Dados salvos com sucesso:', data);
+      
+      // Limpar cache local para forçar recarregamento
+      if (salonInfo.id) {
+        localStorage.removeItem(`salon_${salonInfo.id}`);
+        localStorage.removeItem(`salon_${salonInfo.id}_time`);
+      }
+      
       toast({
         title: 'Alterações salvas',
         description: 'As informações do salão foram atualizadas com sucesso.'
       });
+      
+      // Recarregar dados do salão forçando refresh
       if (refetchSalonInfo) {
-        await refetchSalonInfo();
-        // Atualizar os campos do formulário com os valores reais do banco
-        if (salonInfo) {
-          setName(salonInfo.name || '');
-          setAddress(salonInfo.address || '');
-          setPhone(salonInfo.phone || '');
-          setEmail(salonInfo.email || '');
-        }
+        await refetchSalonInfo(true);
       }
+      
+    } catch (error) {
+      console.error('Erro inesperado:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro inesperado',
+        description: 'Ocorreu um erro ao salvar as alterações.'
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -127,7 +191,10 @@ const Configuracoes = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="salon-name">Nome do Salão</Label>
+                <Label htmlFor="salon-name" className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-primary" />
+                  Nome do Salão
+                </Label>
                 <Input
                   id="salon-name"
                   placeholder="Beauty Salon"
@@ -137,7 +204,24 @@ const Configuracoes = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="salon-address">Endereço</Label>
+                <Label htmlFor="salon-cnpj" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  CNPJ
+                </Label>
+                <Input
+                  id="salon-cnpj"
+                  placeholder="00.000.000/0000-00"
+                  value={cnpj}
+                  onChange={handleCnpjChange}
+                  maxLength={18}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="salon-address" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Endereço
+                </Label>
                 <Textarea
                   id="salon-address"
                   placeholder="Endereço completo do salão"
@@ -149,7 +233,10 @@ const Configuracoes = () => {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="salon-phone">Telefone</Label>
+                  <Label htmlFor="salon-phone" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-primary" />
+                    Telefone
+                  </Label>
                   <Input
                     id="salon-phone"
                     placeholder="(11) 99999-9999"
@@ -159,7 +246,10 @@ const Configuracoes = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="salon-email">E-mail</Label>
+                  <Label htmlFor="salon-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    E-mail
+                  </Label>
                   <Input
                     id="salon-email"
                     type="email"
@@ -186,12 +276,13 @@ const Configuracoes = () => {
             <CardContent className="space-y-4">
               {schedule.map((schedule, idx) => (
                 <div key={schedule.day} className="flex items-center gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
-                    <Label htmlFor={schedule.day} className="min-w-[100px] text-sm">
-                      {schedule.day}
-                    </Label>
-                  </div>
+                                <div className="flex items-center space-x-2">
+                <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
+                <Label htmlFor={schedule.day} className="min-w-[100px] text-sm flex items-center gap-2">
+                  <Clock className="h-3 w-3 text-primary" />
+                  {schedule.day}
+                </Label>
+              </div>
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="time"
@@ -294,7 +385,10 @@ const Configuracoes = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Confirmação de Agendamentos</Label>
+                  <Label className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-primary" />
+                    Confirmação de Agendamentos
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Enviar confirmação automática por e-mail
                   </p>
@@ -306,7 +400,10 @@ const Configuracoes = () => {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Lembrete de Agendamentos</Label>
+                  <Label className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-primary" />
+                    Lembrete de Agendamentos
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Enviar lembrete 24h antes do agendamento
                   </p>
@@ -318,7 +415,10 @@ const Configuracoes = () => {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Relatórios Semanais</Label>
+                  <Label className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Relatórios Semanais
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Receber relatório semanal por e-mail
                   </p>
@@ -330,7 +430,10 @@ const Configuracoes = () => {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Notificações de Cancelamento</Label>
+                  <Label className="flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-primary" />
+                    Notificações de Cancelamento
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Notificar sobre cancelamentos de clientes
                   </p>
