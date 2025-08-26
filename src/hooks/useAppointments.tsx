@@ -14,8 +14,10 @@ export interface Appointment {
   motivo_cancelamento?: string;
   data_conclusao?: string;
   criado_em: string;
+  observacoes?: string;
   // Joined data
   cliente_nome?: string;
+  cliente_telefone?: string;
   funcionario_nome?: string;
   servico_nome?: string;
   servico_duracao?: number;
@@ -48,18 +50,19 @@ export function useAppointments() {
       const appointmentsWithNames = await Promise.all(
         (data || []).map(async (apt) => {
           const [clientData, professionalData] = await Promise.all([
-            supabase.from('users').select('nome').eq('id', apt.cliente_id).single(),
+            supabase.from('users').select('nome, telefone').eq('id', apt.cliente_id).single(),
             supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
           ]);
           
           return {
             ...apt,
             cliente_nome: clientData.data?.nome,
+            cliente_telefone: clientData.data?.telefone || undefined,
             funcionario_nome: professionalData.data?.nome,
             servico_nome: apt.servico?.nome,
             servico_duracao: apt.servico?.duracao_minutos,
             servico_preco: apt.servico?.preco
-          };
+          } as Appointment;
         })
       );
 
@@ -83,11 +86,12 @@ export function useAppointments() {
     servico_id: string;
     data_hora: string;
     motivo_cancelamento?: string;
+    observacoes?: string;
   }) => {
     if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
     try {
-      // Get service duration to calculate end_time
+      // Get service duration (optional for future calculations)
       const { data: service, error: serviceError } = await supabase
         .from('services')
         .select('duracao_minutos')

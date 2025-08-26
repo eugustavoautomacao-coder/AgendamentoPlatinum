@@ -1,4 +1,4 @@
-import { Scissors, Plus, Clock, DollarSign } from "lucide-react";
+import { Plus, Scissors, DollarSign, Clock, Edit, Trash2, Save, X, Package } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,38 +71,71 @@ const Servicos = () => {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editService ? 'Editar Serviço' : 'Novo Serviço'}</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                {editService ? (
+                  <>
+                    <Edit className="h-5 w-5 text-primary" />
+                    Editar Serviço
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-5 w-5 text-primary" />
+                    Novo Serviço
+                  </>
+                )}
+              </DialogTitle>
               <CardDescription className="mb-2">
                 Preencha os dados do serviço. Todos os campos são obrigatórios.
               </CardDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSave(); }}>
               <div>
-                <label className="block text-sm font-medium mb-1">Nome do Serviço *</label>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                  <Scissors className="h-4 w-4 text-primary" />
+                  Nome do Serviço *
+                </label>
                 <Input placeholder="Ex: Corte Feminino" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required />
               </div>
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">Duração (min) *</label>
+                  <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Duração (min) *
+                  </label>
                   <Input type="number" min={1} placeholder="Ex: 60" value={form.duracao_minutos} onChange={e => setForm(f => ({ ...f, duracao_minutos: Number(e.target.value) }))} required />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium mb-1">Preço (R$) *</label>
+                  <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    Preço (R$) *
+                  </label>
                   <Input type="number" min={0} step={0.01} placeholder="Ex: 45.00" value={form.preco} onChange={e => setForm(f => ({ ...f, preco: Number(e.target.value) }))} required />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Categoria</label>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  Categoria
+                </label>
                 <Input placeholder="Ex: Cabelo, Unhas, Barba" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                  <span className="text-primary">📝</span>
+                  Descrição
+                </label>
                 <Input placeholder="Ex: Serviço de corte de cabelo para mulheres" value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} />
               </div>
               <DialogFooter className="pt-2">
-                <Button type="submit" disabled={saving || !form.nome}>Salvar</Button>
+                <Button type="submit" disabled={saving || !form.nome}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salvar
+                </Button>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancelar</Button>
+                  <Button type="button" variant="outline">
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
                 </DialogClose>
               </DialogFooter>
             </form>

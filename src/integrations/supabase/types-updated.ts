@@ -187,3 +187,17 @@ export type Database = {
     }
   }
 }
+
+export interface Appointment {
+  id: string;
+  salao_id: string;
+  cliente_id: string;
+  funcionario_id: string;
+  servico_id: string;
+  data_hora: string;
+  status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
+  motivo_cancelamento?: string;
+  data_conclusao?: string;
+  criado_em: string;
+  observacoes?: string;
+}

@@ -1,4 +1,4 @@
-import { User, Plus, Clock, Star, Camera } from "lucide-react";
+import { User, Plus, Clock, Star, Camera, Users, UserPlus, Edit, Trash2, Save, X, Phone, Mail, Briefcase } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -368,31 +368,50 @@ const Profissionais = () => {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Novo Profissional</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                Novo Profissional
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Nome
+                </Label>
                 <Input id="name" name="nome" value={form.nome} onChange={handleChange} required disabled={submitting} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  E-mail
+                </Label>
                 <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} required disabled={submitting} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
+                  Telefone
+                </Label>
                 <Input id="phone" name="telefone" value={form.telefone} onChange={handleChange} disabled={submitting} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cargo">Cargo</Label>
+                <Label htmlFor="cargo" className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                  Cargo
+                </Label>
                 <Input id="cargo" name="cargo" value={form.cargo} onChange={handleChange} disabled={submitting} />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={submitting}>
+                  <Save className="h-4 w-4 mr-2" />
                   {submitting ? "Salvando..." : "Salvar"}
                 </Button>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline" disabled={submitting}>Cancelar</Button>
+                  <Button type="button" variant="outline" disabled={submitting}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
                 </DialogClose>
               </DialogFooter>
             </form>
@@ -403,15 +422,22 @@ const Profissionais = () => {
         <Dialog open={!!deleteId} onOpenChange={v => !deleteLoading && setDeleteId(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Confirmar exclusão</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Confirmar exclusão
+              </DialogTitle>
             </DialogHeader>
             <div className="py-4">Tem certeza que deseja excluir este profissional? Esta ação é reversível.</div>
             <DialogFooter>
               <Button variant="destructive" onClick={() => handleDelete(deleteId!)} disabled={deleteLoading}>
+                <Trash2 className="h-4 w-4 mr-2" />
                 {deleteLoading ? "Excluindo..." : "Excluir"}
               </Button>
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={deleteLoading}>Cancelar</Button>
+                <Button type="button" variant="outline" disabled={deleteLoading}>
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
@@ -421,7 +447,10 @@ const Profissionais = () => {
         <Dialog open={!!editId} onOpenChange={v => !editLoading && setEditId(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar Profissional</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5 text-primary" />
+                Editar Profissional
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleEdit} className="space-y-4">
               {/* Foto e ações no topo */}
@@ -475,23 +504,36 @@ const Profissionais = () => {
               </div>
               {/* Campos de texto */}
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Nome</Label>
+                <Label htmlFor="edit-name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Nome
+                </Label>
                 <Input id="edit-name" name="nome" value={editForm.nome} onChange={handleEditChange} required disabled={editLoading} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-phone">Telefone</Label>
+                <Label htmlFor="edit-phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
+                  Telefone
+                </Label>
                 <Input id="edit-phone" name="telefone" value={editForm.telefone} onChange={handleEditChange} disabled={editLoading} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-cargo">Cargo</Label>
+                <Label htmlFor="edit-cargo" className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                  Cargo
+                </Label>
                 <Input id="edit-cargo" name="cargo" value={editForm.cargo} onChange={handleEditChange} disabled={editLoading} />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={editLoading}>
+                  <Save className="h-4 w-4 mr-2" />
                   {editLoading ? "Salvando..." : "Salvar"}
                 </Button>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline" disabled={editLoading}>Cancelar</Button>
+                  <Button type="button" variant="outline" disabled={editLoading}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
                 </DialogClose>
               </DialogFooter>
             </form>

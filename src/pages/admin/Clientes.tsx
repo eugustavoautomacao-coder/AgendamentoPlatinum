@@ -1,4 +1,4 @@
-import { Users, Plus, Search, Mail, Phone } from "lucide-react";
+import { User, Plus, Phone, Mail, Users, UserPlus, Edit, Trash2, Save, X, Search, Calendar, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,7 +164,8 @@ const Clientes = () => {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
                 Total de Clientes
               </CardTitle>
             </CardHeader>
@@ -176,7 +177,8 @@ const Clientes = () => {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
                 Novos Esta Semana
               </CardTitle>
             </CardHeader>
@@ -188,7 +190,8 @@ const Clientes = () => {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
                 Novos Este Mês
               </CardTitle>
             </CardHeader>
@@ -269,29 +272,55 @@ const Clientes = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md relative">
               <button className="absolute top-2 right-2 text-muted-foreground" onClick={() => setModalOpen(false)}>&times;</button>
-              <h2 className="text-xl font-bold mb-4">{editId ? 'Editar Cliente' : 'Novo Cliente'}</h2>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                {editId ? (
+                  <>
+                    <Edit className="h-5 w-5 text-primary" />
+                    Editar Cliente
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-5 w-5 text-primary" />
+                    Novo Cliente
+                  </>
+                )}
+              </h2>
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="nome" className="text-sm">Nome</label>
+                  <label htmlFor="nome" className="text-sm flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    Nome
+                  </label>
                   <Input id="nome" name="nome" value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} required disabled={submitting} />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm">E-mail</label>
+                  <label htmlFor="email" className="text-sm flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    E-mail
+                  </label>
                   <Input id="email" name="email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required disabled={submitting || !!editId} />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="telefone" className="text-sm">Telefone</label>
+                  <label htmlFor="telefone" className="text-sm flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-primary" />
+                    Telefone
+                  </label>
                   <Input id="telefone" name="telefone" value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })} disabled={submitting} />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="observacoes" className="text-sm">Observações</label>
+                  <label htmlFor="observacoes" className="text-sm flex items-center gap-2">
+                    <span className="text-primary">📝</span>
+                    Observações
+                  </label>
                   <textarea id="observacoes" name="observacoes" value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} className="w-full rounded border border-border bg-background px-3 py-2 text-sm" rows={2} disabled={submitting} />
                 </div>
                 <div className="flex gap-2 justify-end pt-2">
                   <Button type="submit" disabled={submitting}>
+                    <Save className="h-4 w-4 mr-2" />
                     {submitting ? 'Salvando...' : 'Salvar'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={submitting}>
+                    <X className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
                 </div>
