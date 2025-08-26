@@ -48,6 +48,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Memoize items to avoid re-renders while typing elsewhere
   const menuItems = [
     {
       title: "Dashboard",
@@ -147,7 +148,7 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
             {!isCollapsed && (
-              <span className="font-medium animate-fade-in">{item.title}</span>
+              <span className="font-medium">{item.title}</span>
             )}
             {/* Tooltip for collapsed state */}
             {isCollapsed && (

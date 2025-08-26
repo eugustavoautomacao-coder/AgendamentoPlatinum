@@ -103,7 +103,7 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
             {!isCollapsed && (
-              <span className="font-medium animate-fade-in">{item.title}</span>
+              <span className="font-medium">{item.title}</span>
             )}
             {isCollapsed && (
               <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
