@@ -736,7 +736,9 @@ const Agenda = () => {
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" />Novo Agendamento</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogPortal>
+                <DialogOverlay className="z-[9998]" />
+                <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-[9999] w-[95vw] max-w-lg translate-x-[-50%] translate-y-[-50%] bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg">
                 {!clientModalOpen && !serviceModalOpen ? (
                   // Modal de Novo Agendamento
                   <>
@@ -1117,7 +1119,8 @@ const Agenda = () => {
                     </form>
                   </>
                 )}
-              </DialogContent>
+                </DialogPrimitive.Content>
+              </DialogPortal>
             </Dialog>
           </div>
         </div>
@@ -1352,7 +1355,9 @@ const Agenda = () => {
 
         {/* Modal de detalhes/edição */}
         <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogPortal>
+            <DialogOverlay className="z-[9998]" />
+            <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-[9999] w-[95vw] sm:max-w-[500px] max-h-[90vh] translate-x-[-50%] translate-y-[-50%] bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg overflow-y-auto">
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1520,21 +1525,24 @@ const Agenda = () => {
                 </Button>
               </div>
             </DialogFooter>
-          </DialogContent>
+            </DialogPrimitive.Content>
+          </DialogPortal>
         </Dialog>
 
         {/* Modal de Fotos do Processo */}
         <Dialog open={photosModalOpen} onOpenChange={setPhotosModalOpen}>
-          <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-primary" />
-                Fotos do Processo
-              </DialogTitle>
-              <DialogDescription>
-                Gerencie as fotos do processo: Antes, Durante e Depois
-              </DialogDescription>
-            </DialogHeader>
+          <DialogPortal>
+            <DialogOverlay className="z-[9998]" />
+            <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-[9999] w-[95vw] max-w-[800px] max-h-[90vh] translate-x-[-50%] translate-y-[-50%] bg-background p-4 sm:p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5 text-primary" />
+                  Fotos do Processo
+                </DialogTitle>
+                <DialogDescription>
+                  Gerencie as fotos do processo: Antes, Durante e Depois
+                </DialogDescription>
+              </DialogHeader>
 
             {selectedApt && (
               <div className="space-y-4 sm:space-y-6">
@@ -1749,7 +1757,8 @@ const Agenda = () => {
                 Fechar
               </Button>
             </DialogFooter>
-          </DialogContent>
+            </DialogPrimitive.Content>
+          </DialogPortal>
         </Dialog>
 
         {/* Modal de Filtros */}
@@ -1841,9 +1850,9 @@ const Agenda = () => {
         {/* Modal de Visualização Expandida */}
         <Dialog open={!!expandedPhoto} onOpenChange={() => setExpandedPhoto(null)}>
           <DialogPortal>
-            <DialogOverlay />
+            <DialogOverlay className="z-[9998]" />
             <DialogPrimitive.Content
-              className="fixed left-[50%] top-[50%] z-50 w-[95vw] h-[90vh] max-w-6xl translate-x-[-50%] translate-y-[-50%] bg-black/95 p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg"
+              className="fixed left-[50%] top-[50%] z-[9999] w-[95vw] h-[90vh] max-w-6xl translate-x-[-50%] translate-y-[-50%] bg-black/95 p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg"
             >
               <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 lg:p-6">
                 {expandedPhoto && (
