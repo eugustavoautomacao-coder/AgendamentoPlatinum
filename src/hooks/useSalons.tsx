@@ -10,11 +10,65 @@ export interface Salon {
   cnpj?: string;
   telefone?: string;
   endereco?: string;
-  working_hours?: Record<string, { open: string; close: string; active: boolean }>;
+  working_hours?: any;
   created_at: string;
   // Compat: alguns componentes ainda usam `name`
   name?: string;
 }
+
+// Lista de serviços padrão para salões de beleza
+export const DEFAULT_SERVICES = [
+  // Cabelo
+  { nome: 'Corte Feminino', descricao: 'Corte de cabelo para mulheres', duracao_minutos: 60, preco: 45.00, categoria: 'Cabelo', observacao: 'Inclui lavagem, corte e finalização' },
+  { nome: 'Corte Masculino', descricao: 'Corte de cabelo para homens', duracao_minutos: 45, preco: 35.00, categoria: 'Cabelo', observacao: 'Inclui lavagem, corte e finalização' },
+  { nome: 'Escova', descricao: 'Escova no cabelo', duracao_minutos: 60, preco: 40.00, categoria: 'Cabelo', observacao: 'Escova com produto de finalização' },
+  { nome: 'Escova Progressiva', descricao: 'Escova progressiva', duracao_minutos: 120, preco: 120.00, categoria: 'Cabelo', observacao: 'Tratamento alisante sem formol, durabilidade de até 3 meses' },
+  { nome: 'Escova Definida', descricao: 'Escova para cabelos crespos/cacheados', duracao_minutos: 90, preco: 80.00, categoria: 'Cabelo', observacao: 'Definição de cachos com produtos específicos' },
+  { nome: 'Hidratação', descricao: 'Tratamento hidratante', duracao_minutos: 60, preco: 50.00, categoria: 'Cabelo', observacao: 'Hidratação profunda com máscara capilar' },
+  { nome: 'Coloração', descricao: 'Coloração de cabelo', duracao_minutos: 120, preco: 100.00, categoria: 'Cabelo', observacao: 'Coloração completa com produto profissional' },
+  { nome: 'Mechas', descricao: 'Aplicação de mechas', duracao_minutos: 150, preco: 150.00, categoria: 'Cabelo', observacao: 'Mechas californianas ou tradicionais' },
+  { nome: 'Retoque de Raiz', descricao: 'Retoque de cor na raiz', duracao_minutos: 90, preco: 80.00, categoria: 'Cabelo', observacao: 'Apenas retoque na raiz, não inclui pontas' },
+  { nome: 'Pintura', descricao: 'Pintura completa do cabelo', duracao_minutos: 120, preco: 120.00, categoria: 'Cabelo', observacao: 'Pintura completa incluindo raiz e pontas' },
+  
+  // Unhas
+  { nome: 'Manicure', descricao: 'Manicure básica', duracao_minutos: 45, preco: 25.00, categoria: 'Unhas', observacao: 'Cutilagem, lixamento e esmaltação' },
+  { nome: 'Pedicure', descricao: 'Pedicure básica', duracao_minutos: 45, preco: 30.00, categoria: 'Unhas', observacao: 'Cutilagem, lixamento, esfoliação e esmaltação' },
+  { nome: 'Manicure + Pedicure', descricao: 'Manicure e pedicure', duracao_minutos: 90, preco: 50.00, categoria: 'Unhas', observacao: 'Combo completo de mãos e pés' },
+  { nome: 'Unha Postiça', descricao: 'Aplicação de unha postiça', duracao_minutos: 60, preco: 40.00, categoria: 'Unhas', observacao: 'Aplicação de unha postiça com cola especial' },
+  { nome: 'Alongamento de Unha', descricao: 'Alongamento com gel ou acrílico', duracao_minutos: 90, preco: 80.00, categoria: 'Unhas', observacao: 'Alongamento com gel UV ou acrílico' },
+  { nome: 'Manutenção de Unha', descricao: 'Manutenção de unha alongada', duracao_minutos: 60, preco: 50.00, categoria: 'Unhas', observacao: 'Manutenção de unhas alongadas (preenchimento)' },
+  { nome: 'Decoração de Unha', descricao: 'Decoração especial nas unhas', duracao_minutos: 30, preco: 20.00, categoria: 'Unhas', observacao: 'Decoração com strass, adesivos ou desenhos' },
+  
+  // Maquiagem
+  { nome: 'Maquiagem Social', descricao: 'Maquiagem para eventos sociais', duracao_minutos: 60, preco: 60.00, categoria: 'Maquiagem', observacao: 'Maquiagem completa para eventos sociais' },
+  { nome: 'Maquiagem Festa', descricao: 'Maquiagem para festas', duracao_minutos: 90, preco: 80.00, categoria: 'Maquiagem', observacao: 'Maquiagem glamour para festas e eventos especiais' },
+  { nome: 'Maquiagem Noiva', descricao: 'Maquiagem para noivas', duracao_minutos: 120, preco: 150.00, categoria: 'Maquiagem', observacao: 'Maquiagem especial para noivas com produtos à prova d\'água' },
+  { nome: 'Maquiagem Simples', descricao: 'Maquiagem básica', duracao_minutos: 30, preco: 35.00, categoria: 'Maquiagem', observacao: 'Maquiagem básica para o dia a dia' },
+  
+  // Depilação
+  { nome: 'Depilação Cera', descricao: 'Depilação com cera', duracao_minutos: 30, preco: 25.00, categoria: 'Depilação', observacao: 'Depilação com cera quente ou fria' },
+  { nome: 'Depilação Linha', descricao: 'Depilação da linha do biquíni', duracao_minutos: 20, preco: 20.00, categoria: 'Depilação', observacao: 'Depilação da linha do biquíni com linha' },
+  { nome: 'Depilação Axila', descricao: 'Depilação das axilas', duracao_minutos: 15, preco: 15.00, categoria: 'Depilação', observacao: 'Depilação das axilas com cera' },
+  { nome: 'Depilação Perna', descricao: 'Depilação das pernas', duracao_minutos: 45, preco: 40.00, categoria: 'Depilação', observacao: 'Depilação completa das pernas' },
+  { nome: 'Depilação Braço', descricao: 'Depilação dos braços', duracao_minutos: 30, preco: 25.00, categoria: 'Depilação', observacao: 'Depilação dos braços com cera' },
+  
+  // Tratamentos Faciais
+  { nome: 'Limpeza de Pele', descricao: 'Limpeza facial profunda', duracao_minutos: 60, preco: 70.00, categoria: 'Tratamento Facial', observacao: 'Limpeza profunda com extração de cravos e espinhas' },
+  { nome: 'Peeling', descricao: 'Tratamento de peeling', duracao_minutos: 45, preco: 60.00, categoria: 'Tratamento Facial', observacao: 'Peeling químico para renovação celular' },
+  { nome: 'Hidratação Facial', descricao: 'Hidratação da pele do rosto', duracao_minutos: 45, preco: 50.00, categoria: 'Tratamento Facial', observacao: 'Hidratação profunda com máscara facial' },
+  { nome: 'Máscara Facial', descricao: 'Aplicação de máscara facial', duracao_minutos: 30, preco: 40.00, categoria: 'Tratamento Facial', observacao: 'Aplicação de máscara facial específica para o tipo de pele' },
+  
+  // Sombrancelhas
+  { nome: 'Design de Sombrancelha', descricao: 'Design e modelagem de sombrancelha', duracao_minutos: 30, preco: 25.00, categoria: 'Sombrancelhas', observacao: 'Design e modelagem com pinça ou cera' },
+  { nome: 'Henna Sombrancelha', descricao: 'Aplicação de henna na sombrancelha', duracao_minutos: 45, preco: 35.00, categoria: 'Sombrancelhas', observacao: 'Henna para colorir e definir as sombrancelhas' },
+  { nome: 'Micropigmentação', descricao: 'Micropigmentação de sombrancelha', duracao_minutos: 120, preco: 200.00, categoria: 'Sombrancelhas', observacao: 'Micropigmentação fio a fio ou pó compacto' },
+  
+  // Outros
+  { nome: 'Penteado', descricao: 'Penteado para eventos', duracao_minutos: 60, preco: 50.00, categoria: 'Penteado', observacao: 'Penteado especial para eventos e festas' },
+  { nome: 'Penteado Noiva', descricao: 'Penteado para noivas', duracao_minutos: 90, preco: 120.00, categoria: 'Penteado', observacao: 'Penteado especial para noivas com acessórios' },
+  { nome: 'Lavagem', descricao: 'Lavagem e finalização', duracao_minutos: 30, preco: 25.00, categoria: 'Cabelo', observacao: 'Lavagem com shampoo e condicionador profissional' },
+  { nome: 'Secagem', descricao: 'Secagem e finalização', duracao_minutos: 30, preco: 20.00, categoria: 'Cabelo', observacao: 'Secagem com secador e finalização com produtos' }
+];
 
 export function useSalons() {
   const [salons, setSalons] = useState<Salon[]>([]);
@@ -53,6 +107,71 @@ export function useSalons() {
     }
   };
 
+  // Função para criar serviços padrão para um salão
+  const createDefaultServices = async (salonId: string) => {
+    try {
+      const servicesToInsert = DEFAULT_SERVICES.map(service => ({
+        ...service,
+        salao_id: salonId
+      }));
+
+      const { error } = await supabase
+        .from('services')
+        .insert(servicesToInsert);
+
+      if (error) {
+        console.error('Error creating default services:', error);
+        throw error;
+      }
+
+      console.log(`Created ${DEFAULT_SERVICES.length} default services for salon ${salonId}`);
+    } catch (error) {
+      console.error('Error in createDefaultServices:', error);
+      // Não vamos falhar a criação do salão se os serviços padrão falharem
+      // Apenas logamos o erro
+    }
+  };
+
+  // Função para adicionar serviços padrão a um salão existente
+  const addDefaultServicesToExistingSalon = async (salonId: string) => {
+    try {
+      // Verificar se já existem serviços para este salão
+      const { data: existingServices, error: checkError } = await supabase
+        .from('services')
+        .select('id')
+        .eq('salao_id', salonId)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingServices && existingServices.length > 0) {
+        toast({
+          title: "Aviso",
+          description: "Este salão já possui serviços cadastrados. Os serviços padrão não serão adicionados."
+        });
+        return { success: false, message: "Salão já possui serviços" };
+      }
+
+      // Adicionar serviços padrão
+      await createDefaultServices(salonId);
+      
+      toast({
+        title: "Sucesso",
+        description: `${DEFAULT_SERVICES.length} serviços padrão adicionados ao salão`
+      });
+      
+      return { success: true, message: `${DEFAULT_SERVICES.length} serviços adicionados` };
+    } catch (error) {
+      console.error('Error adding default services to existing salon:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao adicionar serviços padrão"
+      });
+      return { success: false, error };
+    }
+  };
+
   const createSalon = async (salonData: {
     nome: string;
     email?: string;
@@ -67,10 +186,15 @@ export function useSalons() {
 
       if (error) throw error;
       
+      // Criar serviços padrão para o novo salão
+      if (data) {
+        await createDefaultServices(data.id);
+      }
+      
       await fetchSalons();
       toast({
         title: "Sucesso",
-        description: "Salão criado com sucesso"
+        description: "Salão criado com sucesso com serviços padrão"
       });
       
       return { data, error: null };
@@ -116,76 +240,26 @@ export function useSalons() {
 
   const deleteSalon = async (id: string) => {
     try {
-      // Primeiro, verificar se há usuários vinculados ao salão
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, nome, tipo')
-        .eq('salao_id', id);
-
-      if (usersError) {
-        throw new Error('Erro ao verificar usuários vinculados');
-      }
-
-      if (users && users.length > 0) {
-        const userTypes = users.map(u => u.tipo).join(', ');
-        throw new Error(`Não é possível excluir o salão. Existem ${users.length} usuário(s) vinculado(s): ${userTypes}`);
-      }
-
-      // Verificar se há funcionários vinculados
-      const { data: employees, error: employeesError } = await supabase
-        .from('employees')
-        .select('id, nome')
-        .eq('salao_id', id);
-
-      if (employeesError) {
-        throw new Error('Erro ao verificar funcionários vinculados');
-      }
-
-      if (employees && employees.length > 0) {
-        throw new Error(`Não é possível excluir o salão. Existem ${employees.length} funcionário(s) vinculado(s)`);
-      }
-
-      // Verificar se há serviços vinculados
-      const { data: services, error: servicesError } = await supabase
-        .from('services')
-        .select('id, nome')
-        .eq('salao_id', id);
-
-      if (servicesError) {
-        throw new Error('Erro ao verificar serviços vinculados');
-      }
-
-      if (services && services.length > 0) {
-        throw new Error(`Não é possível excluir o salão. Existem ${services.length} serviço(s) vinculado(s)`);
-      }
-
-      // Se não há dependências, tentar excluir
       const { error } = await supabase
         .from('saloes')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        if (error.code === '23503') {
-          throw new Error('Não é possível excluir o salão. Existem registros vinculados.');
-        }
-        throw error;
-      }
-
+      if (error) throw error;
+      
       await fetchSalons();
       toast({
         title: "Sucesso",
         description: "Salão removido com sucesso"
       });
-
+      
       return { error: null };
     } catch (error) {
       console.error('Error deleting salon:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao remover salão';
       toast({
         variant: "destructive",
         title: "Erro",
-        description: errorMessage
+        description: "Erro ao remover salão"
       });
       return { error };
     }
@@ -198,44 +272,24 @@ export function useSalons() {
     phone?: string;
   }) => {
     try {
-      console.log('Creating salon admin:', { salonId, adminEmail: adminData.email });
-      
-      // Primeiro, criar o usuário através do signup normal
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      // Criar usuário no Auth
+      const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
         email: adminData.email,
         password: adminData.password,
-        options: {
-          data: {
-            name: adminData.name
-          }
-        }
+        user_metadata: {
+          name: adminData.name,
+          phone: adminData.phone
+        },
+        email_confirm: true
       });
 
-      console.log('SignUp result:', { signUpData, signUpError });
-
-      if (signUpError) {
-        console.error('SignUp error:', signUpError);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: `Erro ao criar usuário: ${signUpError.message}`
-        });
-        return { data: null, error: signUpError };
-      }
+      if (signUpError) throw signUpError;
 
       if (!signUpData.user) {
-        toast({
-          variant: "destructive", 
-          title: "Erro",
-          description: "Falha na criação do usuário"
-        });
-        return { data: null, error: new Error("User creation failed") };
+        throw new Error('User creation failed');
       }
 
-      // Aguardar para o trigger criar o perfil
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Verificar se o usuário foi criado, se não, criar manualmente
+      // Verificar se o usuário foi criado na tabela users pelo trigger
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -306,9 +360,6 @@ export function useSalons() {
   useEffect(() => {
     if (profile?.tipo === 'system_admin') {
       fetchSalons();
-    } else {
-      // Evita travar a tela de dashboard quando o perfil ainda não carregou
-      setLoading(false);
     }
   }, [profile?.tipo]);
 
@@ -319,6 +370,7 @@ export function useSalons() {
     updateSalon,
     deleteSalon,
     createSalonAdmin,
+    addDefaultServicesToExistingSalon,
     refetch: fetchSalons
   };
 }

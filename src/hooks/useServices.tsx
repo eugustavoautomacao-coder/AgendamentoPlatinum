@@ -11,6 +11,7 @@ export interface Service {
   duracao_minutos: number;
   preco: number;
   categoria?: string;
+  observacao?: string;
   criado_em: string;
 }
 

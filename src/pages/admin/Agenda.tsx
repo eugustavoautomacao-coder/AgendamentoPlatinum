@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +178,10 @@ const Agenda = () => {
   
   // estado para detectar coluna atual durante drag
   const [currentDragColumn, setCurrentDragColumn] = useState<string | null>(null);
+  
+  // Estados para bloqueio de horários
+  const [lockedSlots, setLockedSlots] = useState<Set<string>>(new Set());
+  const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
 
   // Horário de funcionamento baseado na data selecionada
   const getScheduleForDate = (date: Date) => {
@@ -565,6 +569,31 @@ const Agenda = () => {
     }));
     setOpen(true);
   };
+  
+  const handleSlotLock = (profId: string, hour: string) => {
+    const slotKey = `${profId}-${hour}`;
+    setLockedSlots(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(slotKey)) {
+        newSet.delete(slotKey);
+        toast({
+          title: "Horário desbloqueado",
+          description: `O horário ${hour} foi liberado para agendamentos`
+        });
+      } else {
+        newSet.add(slotKey);
+        toast({
+          title: "Horário bloqueado",
+          description: `O horário ${hour} foi bloqueado para agendamentos`
+        });
+      }
+      return newSet;
+    });
+  };
+  
+  const isSlotLocked = (profId: string, hour: string) => {
+    return lockedSlots.has(`${profId}-${hour}`);
+  };
 
   // Detectar parâmetro modal=new na URL e abrir modal automaticamente
   useEffect(() => {
@@ -750,111 +779,113 @@ const Agenda = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                   <div>
-                    <label className="block text-sm mb-1 flex items-center gap-2">
+                    <label className="block text-sm mb-1 flex items-center gap-2 mt-4">
                       <Users className="h-4 w-4 text-primary" />
                       Profissional
                     </label>
                     <Select value={form.funcionario_id} onValueChange={v => setForm(f => ({ ...f, funcionario_id: v }))}>
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[10001]">
                         {professionals.map(p => (<SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <label className="block text-sm mb-1 flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
-                      Cliente
-                    </label>
-                    <div className="flex gap-2">
-                      <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="flex-1 justify-between" onClick={() => setClientPopoverOpen(true)}>
-                            {form.cliente_id ? (clients.find(c => c.id === form.cliente_id)?.nome || 'Selecione') : 'Selecione'}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
-                          <Command>
-                            <CommandInput placeholder="Buscar cliente pelo nome..." />
-                            <CommandList>
-                              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                {clients.map((c) => (
-                                  <CommandItem
-                                    key={c.id}
-                                    value={c.nome}
-                                    onSelect={() => {
-                                      setForm(f => ({ ...f, cliente_id: c.id }));
-                                      setClientPopoverOpen(false);
-                                    }}
-                                  >
-                                    {c.nome}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setClientModalOpen(true)}
-                        className="h-10 w-10 flex-shrink-0"
-                        title="Cadastrar Novo Cliente"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1 flex items-center gap-2">
-                      <Scissors className="h-4 w-4 text-primary" />
-                      Serviço
-                    </label>
-                    <div className="flex gap-2">
-                      <Popover open={servicePopoverOpen} onOpenChange={setServicePopoverOpen}>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="flex-1 justify-between" onClick={() => setServicePopoverOpen(true)}>
-                            {form.servico_id ? (services.find(s => s.id === form.servico_id)?.nome || 'Selecione') : 'Selecione'}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
-                          <Command>
-                            <CommandInput placeholder="Buscar serviço pelo nome..." />
-                            <CommandList>
-                              <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
-                              <CommandGroup>
-                        {services.map(s => (
-                                <CommandItem
-                                  key={s.id}
-                                  value={s.nome}
-                                  onSelect={() => {
-                                    setForm(f => ({ ...f, servico_id: s.id }));
-                                    setServicePopoverOpen(false);
-                                  }}
-                                >
-                                  {s.nome}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setServiceModalOpen(true)}
-                      className="h-10 w-10 flex-shrink-0"
-                      title="Cadastrar Novo Serviço"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                                     <div>
+                     <label className="block text-sm mb-1 flex items-center gap-2">
+                       <Users className="h-4 w-4 text-primary" />
+                       Cliente
+                     </label>
+                     <div className="flex gap-2">
+                       <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                         <PopoverTrigger asChild>
+                           <Button type="button" variant="outline" className="flex-1 justify-between">
+                             {form.cliente_id ? (clients.find(c => c.id === form.cliente_id)?.nome || 'Selecione') : 'Selecione'}
+                             <ChevronDown className="h-4 w-4 opacity-50" />
+                           </Button>
+                         </PopoverTrigger>
+                         <PopoverContent className="z-[10001] p-0 w-[--radix-popover-trigger-width]">
+                           <Command>
+                             <CommandInput placeholder="Buscar cliente pelo nome..." />
+                             <CommandList>
+                               <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                               <CommandGroup>
+                                 {clients.map((c) => (
+                                   <CommandItem
+                                     key={c.id}
+                                     value={c.nome}
+                                     onSelect={() => {
+                                       setForm(f => ({ ...f, cliente_id: c.id }));
+                                       setClientPopoverOpen(false);
+                                     }}
+                                   >
+                                     {c.nome}
+                                   </CommandItem>
+                                 ))}
+                               </CommandGroup>
+                             </CommandList>
+                           </Command>
+                         </PopoverContent>
+                       </Popover>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="icon"
+                         onClick={() => setClientModalOpen(true)}
+                         className="h-10 w-10 flex-shrink-0"
+                         title="Cadastrar Novo Cliente"
+                       >
+                         <Plus className="h-4 w-4" />
+                       </Button>
+                     </div>
+                   </div>
+                   <div>
+                     <label className="block text-sm mb-1 flex items-center gap-2">
+                       <Scissors className="h-4 w-4 text-primary" />
+                       Serviço
+                     </label>
+                     <div className="flex gap-2">
+                       <Popover open={servicePopoverOpen} onOpenChange={setServicePopoverOpen}>
+                         <PopoverTrigger asChild>
+                           <Button type="button" variant="outline" className="flex-1 justify-between">
+                             {form.servico_id ? (services.find(s => s.id === form.servico_id)?.nome || 'Selecione') : 'Selecione'}
+                             <ChevronDown className="h-4 w-4 opacity-50" />
+                           </Button>
+                         </PopoverTrigger>
+                         <PopoverContent className="z-[10001] p-0 w-[--radix-popover-trigger-width]">
+                           <Command>
+                             <CommandInput placeholder="Buscar serviço pelo nome..." />
+                             <CommandList>
+                               <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
+                               <CommandGroup>
+                                 {services.map(s => (
+                                   <CommandItem
+                                     key={s.id}
+                                     value={s.nome}
+                                     onSelect={() => {
+                                       setForm(f => ({ ...f, servico_id: s.id }));
+                                       setServicePopoverOpen(false);
+                                     }}
+                                   >
+                                     {s.nome}
+                                   </CommandItem>
+                                 ))}
+                               </CommandGroup>
+                             </CommandList>
+                           </Command>
+                         </PopoverContent>
+                       </Popover>
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="icon"
+                         onClick={() => setServiceModalOpen(true)}
+                         className="h-10 w-10 flex-shrink-0"
+                         title="Cadastrar Novo Serviço"
+                       >
+                         <Plus className="h-4 w-4" />
+                       </Button>
+                     </div>
+                   </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label className="block text-sm mb-1 flex items-center gap-2">
@@ -867,19 +898,19 @@ const Agenda = () => {
                             {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : <span className="text-muted-foreground">Selecione a data</span>}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="start" className="p-0">
+                        <PopoverContent align="start" className="z-[10001] p-0">
                           <Calendar mode="single" selected={selectedDate} onSelect={date => { setSelectedDate(date || new Date()); setForm(f => ({ ...f, date: date ? format(date, 'yyyy-MM-dd') : '' })); }} locale={ptBR} fromDate={new Date()} />
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1" >
                       <label className="block text-sm mb-1 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-primary" />
                         Hora
                       </label>
                       <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[10001]">
                           {hours.map(h => (<SelectItem key={h} value={h}>{h}</SelectItem>))}
                         </SelectContent>
                       </Select>
@@ -1266,17 +1297,67 @@ const Agenda = () => {
                   {/* Slots vazios clicáveis */}
                   {hours.map((h, i) => {
                     const topPos = i * SLOT_HEIGHT;
+                    const slotKey = `${prof.id}-${h}`;
+                    const isLocked = isSlotLocked(prof.id, h);
+                    const isHovered = hoveredSlot === slotKey;
+                    
                     return (
-                      <button
+                      <div
                         key={`slot-${prof.id}-${h}`}
-                        type="button"
-                        className={`group absolute left-1 right-1 rounded-md border border-transparent transition-colors ${dragging ? 'pointer-events-none' : 'hover:border-border/60 hover:bg-primary/5'}`}
+                        className={`group absolute left-1 right-1 rounded-md border border-transparent transition-colors ${
+                          isLocked 
+                            ? 'bg-muted/50 border-muted-foreground/30' 
+                            : dragging 
+                              ? 'pointer-events-none' 
+                              : 'hover:border-border/60 hover:bg-primary/5'
+                        }`}
                         style={{ top: topPos, height: SLOT_HEIGHT }}
-                        onClick={() => handleEmptySlotClick(prof.id, h)}
-                        aria-label={`Adicionar agendamento às ${h} com ${prof.nome}`}
+                        onMouseEnter={() => setHoveredSlot(slotKey)}
+                        onMouseLeave={() => setHoveredSlot(null)}
                       >
-                        <span className={`pointer-events-none transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-medium ml-2 mt-2 shadow-sm ${dragging ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>+</span>
-                      </button>
+                                                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
+                           <button
+                             type="button"
+                             className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm ${
+                               dragging || isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                             }`}
+                             onClick={() => handleEmptySlotClick(prof.id, h)}
+                             disabled={isLocked}
+                             aria-label={`Adicionar agendamento às ${h} com ${prof.nome}`}
+                           >
+                             +
+                           </button>
+                           
+                           {/* Botão de bloqueio/desbloqueio */}
+                           <button
+                             type="button"
+                             className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                               isLocked 
+                                 ? 'bg-amber-500 text-amber-foreground' 
+                                 : 'bg-muted text-muted-foreground'
+                             } shadow-sm ${
+                               isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                             }`}
+                             onClick={() => handleSlotLock(prof.id, h)}
+                             aria-label={isLocked ? `Desbloquear horário ${h}` : `Bloquear horário ${h}`}
+                           >
+                             {isLocked ? (
+                               <Lock className="h-3 w-3" />
+                             ) : (
+                               <Unlock className="h-3 w-3" />
+                             )}
+                           </button>
+                         </div>
+                        
+                        {/* Indicador visual de bloqueio */}
+                        {isLocked && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-muted/80 text-muted-foreground text-xs font-medium px-2 py-1 rounded">
+                              BLOQUEADO
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
 
@@ -1286,8 +1367,9 @@ const Agenda = () => {
                     const startMinutes = start.getHours() * 60 + start.getMinutes();
                     const minutesFromOpen = Math.max(0, startMinutes - openMinutes);
                     const top = (minutesFromOpen / SLOT_MINUTES) * SLOT_HEIGHT;
+                    // Sempre ocupar exatamente 1 bloco do grid, independente da duração do serviço
                     const duration = Math.max(30, (apt.servico_duracao || 60));
-                    const height = (duration / SLOT_MINUTES) * SLOT_HEIGHT;
+                    const height = SLOT_HEIGHT;
 
                     const isDragging = dragging?.id === apt.id;
                     const topStyle = isDragging ? dragging.currentTop : top;
@@ -1388,10 +1470,10 @@ const Agenda = () => {
                 </div>
               </div>
             </DialogHeader>
-            {selectedApt && (
-              <div className="space-y-4">
-                {/* Informações do Agendamento */}
-                <div className="bg-muted/30 rounded-lg p-3 space-y-3">
+                         {selectedApt && (
+               <div className="space-y-4">
+                 {/* Informações do Agendamento */}
+                 <div className="bg-muted/30 rounded-lg p-3 space-y-3 mt-4">
                   <h3 className="text-sm font-medium text-muted-foreground">Informações do Agendamento</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
