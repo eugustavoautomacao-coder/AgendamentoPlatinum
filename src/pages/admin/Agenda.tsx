@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { useSalonInfo } from '@/hooks/useSalonInfo';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useAppointments } from '@/hooks/useAppointments';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useClients } from '@/hooks/useClients';
 import { useServices } from '@/hooks/useServices';
@@ -20,6 +21,7 @@ import { ptBR } from 'date-fns/locale/pt-BR';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AgendaSkeleton } from '@/components/AgendaSkeleton';
 import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const SLOT_MINUTES = 60; // tamanho do slot (60 = 1h)
 const SLOT_HEIGHT = 72;  // altura visual de cada slot
@@ -53,6 +55,8 @@ const formatPhoneNumber = (phone: string) => {
   return phone;
 };
 
+
+
 const Agenda = () => {
   const { salonInfo } = useSalonInfo();
   const { professionals, loading: professionalsLoading } = useProfessionals();
@@ -72,6 +76,24 @@ const Agenda = () => {
   const [editForm, setEditForm] = useState<{ servico_id?: string; status?: string; observacoes?: string }>({});
   const [dragStartTime, setDragStartTime] = useState<number>(0);
   const [hasDragged, setHasDragged] = useState(false);
+
+  // Estados para fotos do processo
+  const [photosModalOpen, setPhotosModalOpen] = useState(false);
+  const [processPhotos, setProcessPhotos] = useState<{
+    antes: string[];
+    durante: string[];
+    depois: string[];
+  }>({
+    antes: [],
+    durante: [],
+    depois: []
+  });
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [expandedPhoto, setExpandedPhoto] = useState<{
+    url: string;
+    phase: string;
+    index: number;
+  } | null>(null);
   const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
   const [servicePopoverOpen, setServicePopoverOpen] = useState(false);
 
@@ -563,6 +585,121 @@ const Agenda = () => {
   useEffect(() => {
     setCurrentProfIndex(0);
   }, [selectedProfessionalFilter]);
+
+  // Função para fazer upload de fotos do processo
+  const uploadProcessPhoto = async (file: File, appointmentId: string, phase: 'antes' | 'durante' | 'depois'): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${appointmentId}-${phase}-${Date.now()}.${fileExt}`;
+      const filePath = `process-photos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('process-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('process-photos')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading process photo:', error);
+      toast({
+        title: "Erro ao fazer upload da foto",
+        description: "Tente novamente",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  // Função para carregar fotos do processo
+  const loadProcessPhotos = async (appointmentId: string) => {
+    try {
+      const { data: photos, error } = await supabase
+        .from('appointment_photos')
+        .select('*')
+        .eq('appointment_id', appointmentId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const organizedPhotos = {
+        antes: photos.filter(p => p.phase === 'antes').map(p => p.photo_url),
+        durante: photos.filter(p => p.phase === 'durante').map(p => p.photo_url),
+        depois: photos.filter(p => p.phase === 'depois').map(p => p.photo_url)
+      };
+
+      setProcessPhotos(organizedPhotos);
+    } catch (error) {
+      console.error('Error loading process photos:', error);
+    }
+  };
+
+  // Função para salvar foto no banco
+  const savePhotoToDatabase = async (appointmentId: string, photoUrl: string, phase: 'antes' | 'durante' | 'depois') => {
+    try {
+      const { error } = await supabase
+        .from('appointment_photos')
+        .insert({
+          appointment_id: appointmentId,
+          photo_url: photoUrl,
+          phase: phase
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving photo to database:', error);
+      throw error;
+    }
+  };
+
+  // Função para deletar foto
+  const deleteProcessPhoto = async (photoUrl: string, appointmentId: string, phase: 'antes' | 'durante' | 'depois') => {
+    try {
+      // Extrair caminho do arquivo da URL
+      const urlParts = photoUrl.split('/');
+      const filePath = urlParts.slice(-2).join('/');
+
+      // Deletar do storage
+      await supabase.storage
+        .from('process-photos')
+        .remove([filePath]);
+
+      // Deletar do banco
+      await supabase
+        .from('appointment_photos')
+        .delete()
+        .eq('appointment_id', appointmentId)
+        .eq('photo_url', photoUrl)
+        .eq('phase', phase);
+
+      // Atualizar estado local
+      setProcessPhotos(prev => ({
+        ...prev,
+        [phase]: prev[phase].filter(url => url !== photoUrl)
+      }));
+
+      toast({
+        title: "Foto removida com sucesso",
+        description: "A foto foi deletada do sistema"
+      });
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast({
+        title: "Erro ao deletar foto",
+        description: "Tente novamente",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Função para abrir foto expandida
+  const openExpandedPhoto = (url: string, phase: string, index: number) => {
+    setExpandedPhoto({ url, phase, index });
+  };
 
   // Mostrar skeleton enquanto carrega (aguarda profissionais e agendamentos)
   if (loading || professionalsLoading) {
@@ -1228,6 +1365,21 @@ const Agenda = () => {
                       {selectedApt && format(new Date(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (selectedApt) {
+                        loadProcessPhotos(selectedApt.id);
+                        setPhotosModalOpen(true);
+                      }
+                    }}
+                    className="ml-20"
+                  >
+                    <Camera className="h-4 w-4 mr-1" />
+                    Fotos
+                  </Button>
                 </div>
               </div>
             </DialogHeader>
@@ -1371,6 +1523,235 @@ const Agenda = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Modal de Fotos do Processo */}
+        <Dialog open={photosModalOpen} onOpenChange={setPhotosModalOpen}>
+          <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                Fotos do Processo
+              </DialogTitle>
+              <DialogDescription>
+                Gerencie as fotos do processo: Antes, Durante e Depois
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedApt && (
+              <div className="space-y-4 sm:space-y-6">
+                {/* Seção Antes */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
+                      Antes
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file && selectedApt) {
+                            setUploadingPhotos(true);
+                            const photoUrl = await uploadProcessPhoto(file, selectedApt.id, 'antes');
+                            if (photoUrl) {
+                              await savePhotoToDatabase(selectedApt.id, photoUrl, 'antes');
+                              await loadProcessPhotos(selectedApt.id);
+                              toast({
+                                title: "Foto adicionada com sucesso",
+                                description: "A foto foi salva no sistema"
+                              });
+                            }
+                            setUploadingPhotos(false);
+                          }
+                        };
+                        input.click();
+                      }}
+                      disabled={uploadingPhotos}
+                    >
+                      <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      Adicionar Foto
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                    {processPhotos.antes.map((photoUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photoUrl}
+                          alt={`Antes ${index + 1}`}
+                          className="w-full h-24 sm:h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => openExpandedPhoto(photoUrl, 'antes', index)}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteProcessPhoto(photoUrl, selectedApt.id, 'antes');
+                          }}
+                          className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {processPhotos.antes.length === 0 && (
+                      <div className="col-span-full text-center py-4 sm:py-8 text-muted-foreground text-sm sm:text-base">
+                        Nenhuma foto adicionada
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Seção Durante */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full"></div>
+                      Durante
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file && selectedApt) {
+                            setUploadingPhotos(true);
+                            const photoUrl = await uploadProcessPhoto(file, selectedApt.id, 'durante');
+                            if (photoUrl) {
+                              await savePhotoToDatabase(selectedApt.id, photoUrl, 'durante');
+                              await loadProcessPhotos(selectedApt.id);
+                              toast({
+                                title: "Foto adicionada com sucesso",
+                                description: "A foto foi salva no sistema"
+                              });
+                            }
+                            setUploadingPhotos(false);
+                          }
+                        };
+                        input.click();
+                      }}
+                      disabled={uploadingPhotos}
+                    >
+                      <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      Adicionar Foto
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                    {processPhotos.durante.map((photoUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photoUrl}
+                          alt={`Durante ${index + 1}`}
+                          className="w-full h-24 sm:h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => openExpandedPhoto(photoUrl, 'durante', index)}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteProcessPhoto(photoUrl, selectedApt.id, 'durante');
+                          }}
+                          className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {processPhotos.durante.length === 0 && (
+                      <div className="col-span-full text-center py-4 sm:py-8 text-muted-foreground text-sm sm:text-base">
+                        Nenhuma foto adicionada
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Seção Depois */}
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <h3 className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                      <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
+                      Depois
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file && selectedApt) {
+                            setUploadingPhotos(true);
+                            const photoUrl = await uploadProcessPhoto(file, selectedApt.id, 'depois');
+                            if (photoUrl) {
+                              await savePhotoToDatabase(selectedApt.id, photoUrl, 'depois');
+                              await loadProcessPhotos(selectedApt.id);
+                              toast({
+                                title: "Foto adicionada com sucesso",
+                                description: "A foto foi salva no sistema"
+                              });
+                            }
+                            setUploadingPhotos(false);
+                          }
+                        };
+                        input.click();
+                      }}
+                      disabled={uploadingPhotos}
+                    >
+                      <Upload className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      Adicionar Foto
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                    {processPhotos.depois.map((photoUrl, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photoUrl}
+                          alt={`Depois ${index + 1}`}
+                          className="w-full h-24 sm:h-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => openExpandedPhoto(photoUrl, 'depois', index)}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteProcessPhoto(photoUrl, selectedApt.id, 'depois');
+                          }}
+                          className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {processPhotos.depois.length === 0 && (
+                      <div className="col-span-full text-center py-4 sm:py-8 text-muted-foreground text-sm sm:text-base">
+                        Nenhuma foto adicionada
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="pt-4 sm:pt-6">
+              <Button 
+                onClick={() => setPhotosModalOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Fechar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Modal de Filtros */}
         {filterModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -1456,6 +1837,41 @@ const Agenda = () => {
             </div>
           </div>
         )}
+
+        {/* Modal de Visualização Expandida */}
+        <Dialog open={!!expandedPhoto} onOpenChange={() => setExpandedPhoto(null)}>
+          <DialogPortal>
+            <DialogOverlay />
+            <DialogPrimitive.Content
+              className="fixed left-[50%] top-[50%] z-50 w-[95vw] h-[90vh] max-w-6xl translate-x-[-50%] translate-y-[-50%] bg-black/95 p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg"
+            >
+              <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4 lg:p-6">
+                {expandedPhoto && (
+                  <>
+                    <img
+                      src={expandedPhoto.url}
+                      alt={`Foto ${expandedPhoto.phase} ${expandedPhoto.index + 1}`}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                      style={{
+                        maxWidth: 'min(calc(100vw - 1rem), 1200px)',
+                        maxHeight: 'min(calc(90vh - 1rem), 800px)'
+                      }}
+                    />
+                    <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-medium backdrop-blur-sm">
+                      {expandedPhoto.phase.charAt(0).toUpperCase() + expandedPhoto.phase.slice(1)} - Foto {expandedPhoto.index + 1}
+                    </div>
+                    <button
+                      onClick={() => setExpandedPhoto(null)}
+                      className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/70 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/90 transition-colors backdrop-blur-sm"
+                    >
+                      <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </DialogPrimitive.Content>
+          </DialogPortal>
+        </Dialog>
 
       </div>
     </AdminLayout>
