@@ -1,12 +1,13 @@
-import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useSalonInfo } from '@/hooks/useSalonInfo';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useAppointments } from '@/hooks/useAppointments';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useClients } from '@/hooks/useClients';
 import { useServices } from '@/hooks/useServices';
@@ -56,8 +57,8 @@ const Agenda = () => {
   const { salonInfo } = useSalonInfo();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
-  const { clients } = useClients();
-  const { services } = useServices();
+  const { clients, createClient, refetch: refetchClients } = useClients();
+  const { services, createService, refetch: refetchServices } = useServices();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -71,6 +72,31 @@ const Agenda = () => {
   const [hasDragged, setHasDragged] = useState(false);
   const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
   const [servicePopoverOpen, setServicePopoverOpen] = useState(false);
+
+  // Estados para modal de novo cliente
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [clientForm, setClientForm] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    observacoes: ''
+  });
+  const [creatingClient, setCreatingClient] = useState(false);
+
+  // Estados para modal de novo serviço
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [serviceForm, setServiceForm] = useState({
+    nome: '',
+    descricao: '',
+    preco: '',
+    duracao_minutos: '',
+    categoria: ''
+  });
+  const [creatingService, setCreatingService] = useState(false);
+
+  // Estados para navegação horizontal dos profissionais
+  const [currentProfIndex, setCurrentProfIndex] = useState(0);
+  const professionalsPerView = 3; // Número de profissionais visíveis por vez
 
   // refs das colunas para detectar drop
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -188,6 +214,108 @@ const Agenda = () => {
     refetchAppointments();
   };
 
+  const handleCreateClient = async () => {
+    if (!clientForm.nome || !clientForm.email) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nome e email são obrigatórios"
+      });
+      return;
+    }
+
+    setCreatingClient(true);
+    try {
+      // Criar cliente usando o hook useClients
+      const result = await createClient(clientForm);
+      
+      if (result && result.data) {
+        // Limpar formulário de cliente
+        setClientForm({ nome: '', email: '', telefone: '', observacoes: '' });
+        
+        // Selecionar automaticamente o novo cliente no formulário de agendamento
+        setForm(f => ({ ...f, cliente_id: result.data.id }));
+        
+        // Fechar popover de cliente se estiver aberto
+        setClientPopoverOpen(false);
+        
+        // Voltar ao modal de agendamento
+        setClientModalOpen(false);
+        
+        toast({
+          title: "Cliente criado com sucesso!",
+          description: "Cliente selecionado automaticamente no agendamento."
+        });
+        
+        // Refetch clients para atualizar a lista
+        refetchClients();
+      }
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao criar cliente"
+      });
+    } finally {
+      setCreatingClient(false);
+    }
+  };
+
+  const handleCreateService = async () => {
+    if (!serviceForm.nome || !serviceForm.preco || !serviceForm.duracao_minutos) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Nome, preço e duração são obrigatórios"
+      });
+      return;
+    }
+
+    setCreatingService(true);
+    try {
+      // Criar serviço usando o hook useServices
+      const result = await createService({
+        nome: serviceForm.nome,
+        descricao: serviceForm.descricao,
+        preco: parseFloat(serviceForm.preco),
+        duracao_minutos: parseInt(serviceForm.duracao_minutos),
+        categoria: serviceForm.categoria
+      });
+      
+      if (result && result.data) {
+        // Limpar formulário de serviço
+        setServiceForm({ nome: '', descricao: '', preco: '', duracao_minutos: '', categoria: '' });
+        
+        // Selecionar automaticamente o novo serviço no formulário de agendamento
+        setForm(f => ({ ...f, servico_id: result.data.id }));
+        
+        // Fechar popover de serviço se estiver aberto
+        setServicePopoverOpen(false);
+        
+        // Voltar ao modal de agendamento
+        setServiceModalOpen(false);
+        
+        toast({
+          title: "Serviço criado com sucesso!",
+          description: "Serviço selecionado automaticamente no agendamento."
+        });
+        
+        // Refetch services para atualizar a lista
+        refetchServices();
+      }
+    } catch (error) {
+      console.error('Erro ao criar serviço:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao criar serviço"
+      });
+    } finally {
+      setCreatingService(false);
+    }
+  };
+
   const selectedDay = selectedDate || new Date();
   const appointmentsOfDay = Array.isArray(appointments) ? appointments.filter(a => {
     const aptDate = new Date(a.data_hora);
@@ -201,6 +329,21 @@ const Agenda = () => {
   const goPrevDay = () => setSelectedDate(d => addDays(d || new Date(), -1));
   const goNextDay = () => setSelectedDate(d => addDays(d || new Date(), 1));
   const goToday   = () => setSelectedDate(new Date());
+
+  // Funções para navegação horizontal dos profissionais
+  const goPrevProfessionals = () => {
+    setCurrentProfIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const goNextProfessionals = () => {
+    const maxIndex = Math.max(0, professionals.length - professionalsPerView);
+    setCurrentProfIndex(prev => Math.min(maxIndex, prev + 1));
+  };
+
+  // Calcular profissionais visíveis
+  const visibleProfessionals = professionals.slice(currentProfIndex, currentProfIndex + professionalsPerView);
+  const canGoPrev = currentProfIndex > 0;
+  const canGoNext = currentProfIndex + professionalsPerView < professionals.length;
 
   // drag handlers
   const onMouseMove = (e: MouseEvent) => {
@@ -369,6 +512,11 @@ const Agenda = () => {
     }
   }, [searchParams, setSearchParams]);
 
+  // Resetar índice de profissionais quando mudar de data
+  useEffect(() => {
+    setCurrentProfIndex(0);
+  }, [selectedDate]);
+
   // Mostrar skeleton enquanto carrega (aguarda profissionais e agendamentos)
   if (loading || professionalsLoading) {
     return (
@@ -397,8 +545,16 @@ const Agenda = () => {
                 <Button><Plus className="h-4 w-4 mr-2" />Novo Agendamento</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Novo Agendamento</DialogTitle></DialogHeader>
-                <div className="space-y-4">
+                {!clientModalOpen && !serviceModalOpen ? (
+                  // Modal de Novo Agendamento
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <CalendarIcon className="h-5 w-5 text-primary" />
+                        Novo Agendamento
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
                   <div>
                     <label className="block text-sm mb-1 flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary" />
@@ -416,53 +572,66 @@ const Agenda = () => {
                       <Users className="h-4 w-4 text-primary" />
                       Cliente
                     </label>
-                    <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between" onClick={() => setClientPopoverOpen(true)}>
-                          {form.cliente_id ? (clients.find(c => c.id === form.cliente_id)?.nome || 'Selecione') : 'Selecione'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
-                        <Command>
-                          <CommandInput placeholder="Buscar cliente pelo nome..." />
-                          <CommandList>
-                            <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {clients.map((c) => (
-                                <CommandItem
-                                  key={c.id}
-                                  value={c.nome}
-                                  onSelect={() => {
-                                    setForm(f => ({ ...f, cliente_id: c.id }));
-                                    setClientPopoverOpen(false);
-                                  }}
-                                >
-                                  {c.nome}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <div className="flex gap-2">
+                      <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex-1 justify-between" onClick={() => setClientPopoverOpen(true)}>
+                            {form.cliente_id ? (clients.find(c => c.id === form.cliente_id)?.nome || 'Selecione') : 'Selecione'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
+                          <Command>
+                            <CommandInput placeholder="Buscar cliente pelo nome..." />
+                            <CommandList>
+                              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {clients.map((c) => (
+                                  <CommandItem
+                                    key={c.id}
+                                    value={c.nome}
+                                    onSelect={() => {
+                                      setForm(f => ({ ...f, cliente_id: c.id }));
+                                      setClientPopoverOpen(false);
+                                    }}
+                                  >
+                                    {c.nome}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setClientModalOpen(true)}
+                        className="h-10 w-10 flex-shrink-0"
+                        title="Cadastrar Novo Cliente"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm mb-1 flex items-center gap-2">
                       <Scissors className="h-4 w-4 text-primary" />
                       Serviço
                     </label>
-                    <Popover open={servicePopoverOpen} onOpenChange={setServicePopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between" onClick={() => setServicePopoverOpen(true)}>
-                          {form.servico_id ? (services.find(s => s.id === form.servico_id)?.nome || 'Selecione') : 'Selecione'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
-                        <Command>
-                          <CommandInput placeholder="Buscar serviço pelo nome..." />
-                          <CommandList>
-                            <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
-                            <CommandGroup>
+                    <div className="flex gap-2">
+                      <Popover open={servicePopoverOpen} onOpenChange={setServicePopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex-1 justify-between" onClick={() => setServicePopoverOpen(true)}>
+                            {form.servico_id ? (services.find(s => s.id === form.servico_id)?.nome || 'Selecione') : 'Selecione'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
+                          <Command>
+                            <CommandInput placeholder="Buscar serviço pelo nome..." />
+                            <CommandList>
+                              <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
+                              <CommandGroup>
                         {services.map(s => (
                                 <CommandItem
                                   key={s.id}
@@ -480,7 +649,18 @@ const Agenda = () => {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setServiceModalOpen(true)}
+                      className="h-10 w-10 flex-shrink-0"
+                      title="Cadastrar Novo Serviço"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
+                </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label className="block text-sm mb-1 flex items-center gap-2">
@@ -528,6 +708,223 @@ const Agenda = () => {
                   </Button>
                   <DialogClose asChild><Button variant="outline">Cancelar</Button></DialogClose>
                 </DialogFooter>
+                  </>
+                ) : clientModalOpen ? (
+                  // Modal de Cadastro de Cliente
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <UserPlus className="h-5 w-5 text-primary" />
+                        Novo Cliente
+                      </DialogTitle>
+                      <DialogDescription>
+                        Cadastre um novo cliente para continuar com o agendamento
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-4">
+                      <div className="space-y-2">
+                        <label htmlFor="client-nome" className="text-sm flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          Nome
+                        </label>
+                        <Input 
+                          id="client-nome" 
+                          value={clientForm.nome} 
+                          onChange={e => setClientForm({ ...clientForm, nome: e.target.value })} 
+                          required 
+                          disabled={creatingClient} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="client-email" className="text-sm flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-primary" />
+                          E-mail
+                        </label>
+                        <Input 
+                          id="client-email" 
+                          type="email" 
+                          value={clientForm.email} 
+                          onChange={e => setClientForm({ ...clientForm, email: e.target.value })} 
+                          required 
+                          disabled={creatingClient} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="client-telefone" className="text-sm flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-primary" />
+                          Telefone (Opcional)
+                        </label>
+                        <Input 
+                          id="client-telefone" 
+                          value={clientForm.telefone} 
+                          onChange={e => setClientForm({ ...clientForm, telefone: e.target.value })} 
+                          disabled={creatingClient} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="client-observacoes" className="text-sm flex items-center gap-2">
+                          <span className="text-primary">📝</span>
+                          Observações (Opcional)
+                        </label>
+                        <textarea 
+                          id="client-observacoes" 
+                          value={clientForm.observacoes} 
+                          onChange={e => setClientForm({ ...clientForm, observacoes: e.target.value })} 
+                          className="w-full rounded border border-border bg-background px-3 py-2 text-sm" 
+                          rows={2} 
+                          disabled={creatingClient} 
+                        />
+                      </div>
+                      
+                      <DialogFooter className="flex gap-2 justify-end pt-4">
+                        <Button type="submit" disabled={creatingClient}>
+                          {creatingClient ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Criando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Criar Cliente
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setClientModalOpen(false)} 
+                          disabled={creatingClient}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancelar
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </>
+                ) : (
+                  // Modal de Cadastro de Serviço
+                  <>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Scissors className="h-5 w-5 text-primary" />
+                        Novo Serviço
+                      </DialogTitle>
+                      <DialogDescription>
+                        Cadastre um novo serviço para continuar com o agendamento
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <form onSubmit={(e) => { e.preventDefault(); handleCreateService(); }} className="space-y-4">
+                      <div className="space-y-2">
+                        <label htmlFor="service-nome" className="text-sm flex items-center gap-2">
+                          <Scissors className="h-4 w-4 text-primary" />
+                          Nome do Serviço
+                        </label>
+                        <Input 
+                          id="service-nome" 
+                          value={serviceForm.nome} 
+                          onChange={e => setServiceForm({ ...serviceForm, nome: e.target.value })} 
+                          required 
+                          disabled={creatingService} 
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="service-descricao" className="text-sm flex items-center gap-2">
+                          <span className="text-primary">📝</span>
+                          Descrição (Opcional)
+                        </label>
+                        <textarea 
+                          id="service-descricao" 
+                          value={serviceForm.descricao} 
+                          onChange={e => setServiceForm({ ...serviceForm, descricao: e.target.value })} 
+                          className="w-full rounded border border-border bg-background px-3 py-2 text-sm" 
+                          rows={2} 
+                          disabled={creatingService} 
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label htmlFor="service-preco" className="text-sm flex items-center gap-2">
+                            <span className="text-primary">💰</span>
+                            Preço (R$)
+                          </label>
+                          <Input 
+                            id="service-preco" 
+                            type="number" 
+                            step="0.01" 
+                            min="0"
+                            value={serviceForm.preco} 
+                            onChange={e => setServiceForm({ ...serviceForm, preco: e.target.value })} 
+                            required 
+                            disabled={creatingService} 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label htmlFor="service-duracao" className="text-sm flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-primary" />
+                            Duração (min)
+                          </label>
+                          <Input 
+                            id="service-duracao" 
+                            type="number" 
+                            min="1"
+                            value={serviceForm.duracao_minutos} 
+                            onChange={e => setServiceForm({ ...serviceForm, duracao_minutos: e.target.value })} 
+                            required 
+                            disabled={creatingService} 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="service-categoria" className="text-sm flex items-center gap-2">
+                          <span className="text-primary">🏷️</span>
+                          Categoria (Opcional)
+                        </label>
+                        <Input 
+                          id="service-categoria" 
+                          value={serviceForm.categoria} 
+                          onChange={e => setServiceForm({ ...serviceForm, categoria: e.target.value })} 
+                          placeholder="Ex: Cabelo, Unha, Maquiagem..."
+                          disabled={creatingService} 
+                        />
+                      </div>
+                      
+                      <DialogFooter className="flex gap-2 justify-end pt-4">
+                        <Button type="submit" disabled={creatingService}>
+                          {creatingService ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Criando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Criar Serviço
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setServiceModalOpen(false)} 
+                          disabled={creatingService}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Cancelar
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </>
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -539,6 +936,32 @@ const Agenda = () => {
             <Button variant="outline" size="icon" onClick={goPrevDay} aria-label="Dia anterior"><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="outline" onClick={goToday}>Hoje</Button>
             <Button variant="outline" size="icon" onClick={goNextDay} aria-label="Próximo dia"><ChevronRight className="h-4 w-4" /></Button>
+            {/* Navegação de profissionais */}
+            {professionals.length > professionalsPerView && (
+              <div className="flex items-center gap-2 ml-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goPrevProfessionals}
+                  disabled={!canGoPrev}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {currentProfIndex + 1}-{Math.min(currentProfIndex + professionalsPerView, professionals.length)} de {professionals.length}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goNextProfessionals}
+                  disabled={!canGoNext}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
           <Popover>
             <PopoverTrigger asChild>
@@ -576,7 +999,7 @@ const Agenda = () => {
         {/* Grade da agenda */}
         <div className="bg-card rounded-lg shadow-elegant overflow-auto border border-border">
           {/* Cabeçalho sticky dos profissionais */}
-          <div className="sticky top-0 z-10 grid bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75" style={{ gridTemplateColumns: `160px repeat(${professionals.length}, minmax(200px,1fr))` }}>
+          <div className="sticky top-0 z-10 grid bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75" style={{ gridTemplateColumns: `160px repeat(${visibleProfessionals.length}, minmax(200px,1fr))` }}>
             {/* Célula da data */}
             <div className="p-4 border-r border-border text-left">
               <div className="text-xs text-muted-foreground leading-none">Dia</div>
@@ -588,7 +1011,7 @@ const Agenda = () => {
                 </div>
               )}
             </div>
-            {professionals.map(prof => (
+            {visibleProfessionals.map(prof => (
               <div key={prof.id} className="p-4 text-center border-r border-border last:border-r-0 flex flex-col items-center">
                 {prof.avatar_url ? (
                   <img src={prof.avatar_url} alt={prof.nome} className="w-12 h-12 rounded-full mb-2 object-cover border-2 border-primary" />
@@ -604,7 +1027,7 @@ const Agenda = () => {
           </div>
 
           {/* Corpo da grade */}
-          <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `160px repeat(${professionals.length}, minmax(200px,1fr))` }}>
+          <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `160px repeat(${visibleProfessionals.length}, minmax(200px,1fr))` }}>
             {hours.length === 0 ? (
               // Mensagem quando não há horários disponíveis
               <div className="col-span-full flex items-center justify-center py-12">
@@ -623,14 +1046,14 @@ const Agenda = () => {
             {/* Coluna de horários (sticky à esquerda) */}
             <div className="sticky left-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-r border-border text-xs text-muted-foreground">
               {hours.map((hour) => (
-                <div key={hour} className="flex items-start justify-center pt-1 border-t border-border" style={{ height: SLOT_HEIGHT }}>
+                <div key={hour} className="flex items-center justify-center border-t border-border" style={{ height: SLOT_HEIGHT }}>
                   <span>{hour}</span>
                 </div>
               ))}
             </div>
 
             {/* Colunas dos profissionais */}
-            {professionals.map(prof => {
+            {visibleProfessionals.map(prof => {
               const profAppointments = appointmentsOfDay.filter(a => a.funcionario_id === prof.id);
               const isDragTarget = dragging && currentDragColumn === prof.id && currentDragColumn !== dragging.profId;
               return (
@@ -892,6 +1315,8 @@ const Agenda = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+
       </div>
     </AdminLayout>
   );

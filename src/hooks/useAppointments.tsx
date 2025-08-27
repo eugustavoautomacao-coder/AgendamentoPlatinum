@@ -90,12 +90,17 @@ export function useAppointments() {
       data_hora: string;
       motivo_cancelamento?: string;
       observacoes?: string;
+      status?: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
     }) => {
       if (!profile?.salao_id) throw new Error('Salon ID não encontrado');
 
       const { data, error } = await supabase
         .from('appointments')
-        .insert([{ ...appointmentData, salao_id: profile.salao_id }])
+        .insert([{ 
+          ...appointmentData, 
+          salao_id: profile.salao_id,
+          status: appointmentData.status || 'pendente' // Usa o status fornecido ou padrão
+        }])
         .select()
         .single();
 

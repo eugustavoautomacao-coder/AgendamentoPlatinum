@@ -1,4 +1,4 @@
-import { User, Plus, Phone, Mail, Users, UserPlus, Edit, Trash2, Save, X, Search, Calendar, TrendingUp } from "lucide-react";
+import { User, Plus, Phone, Mail, Users, UserPlus, Edit, Trash2, Save, X, Search, Calendar, TrendingUp, History, Clock, Scissors } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { useClients } from '@/hooks/useClients';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Clientes = () => {
   const { clients, loading, createClient, updateClient, deleteClient, refetch } = useClients();
@@ -24,6 +25,12 @@ const Clientes = () => {
   const [searchInput, setSearchInput] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
+  
+  // Estados para histórico do cliente
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [clientHistory, setClientHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Verificar se deve abrir o modal automaticamente
   useEffect(() => {
@@ -95,6 +102,53 @@ const Clientes = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const loadClientHistory = async (clientId: string) => {
+    setLoadingHistory(true);
+    try {
+      // Buscar agendamentos do cliente
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          servico:servico_id(nome, preco),
+          funcionario:funcionario_id(nome)
+        `)
+        .eq('cliente_id', clientId)
+        .order('data_hora', { ascending: false });
+
+      if (error) throw error;
+
+      // Formatar dados do histórico
+      const history = (appointments || []).map(apt => ({
+        id: apt.id,
+        tipo: 'agendamento',
+        data: apt.data_hora,
+        status: apt.status,
+        servico: apt.servico?.nome,
+        funcionario: apt.funcionario?.nome,
+        preco: apt.servico?.preco,
+        observacoes: apt.observacoes
+      }));
+
+      setClientHistory(history);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao carregar histórico do cliente"
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const openHistory = async (client: any) => {
+    setSelectedClient(client);
+    setHistoryModalOpen(true);
+    await loadClientHistory(client.id);
   };
 
   const handleDelete = async (id: string) => {
@@ -258,6 +312,10 @@ const Clientes = () => {
                     )}
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openHistory(client)}>
+                      <History className="h-4 w-4 mr-1" />
+                      Histórico
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => openEdit(client)}>Editar</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(client.id)}>Excluir</Button>
                   </div>
@@ -339,6 +397,145 @@ const Clientes = () => {
               <div className="flex gap-2 justify-end">
                 <Button variant="destructive" onClick={async () => { await handleDelete(deletingId); setDeletingId(null); }}>Confirmar</Button>
                 <Button variant="outline" onClick={() => setDeletingId(null)}>Cancelar</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Histórico do Cliente */}
+        {historyModalOpen && selectedClient && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden relative">
+              <button className="absolute top-4 right-4 text-muted-foreground hover:text-foreground" onClick={() => setHistoryModalOpen(false)}>
+                <X className="h-5 w-5" />
+              </button>
+              
+              {/* Header do Modal */}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <History className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Histórico do Cliente</h2>
+                    <p className="text-muted-foreground">Todos os agendamentos e atividades</p>
+                  </div>
+                </div>
+                
+                {/* Informações do Cliente */}
+                <div className="bg-muted/30 rounded-lg p-4 mt-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarFallback className="bg-primary-soft text-primary text-lg">
+                        {selectedClient.nome?.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-4 w-4" />
+                          {selectedClient.email}
+                        </div>
+                        {selectedClient.telefone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-4 w-4" />
+                            {selectedClient.telefone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conteúdo do Histórico */}
+              <div className="overflow-y-auto max-h-[60vh]">
+                {loadingHistory ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-muted-foreground">Carregando histórico...</p>
+                    </div>
+                  </div>
+                ) : clientHistory.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
+                      <History className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-semibold mb-1">Nenhum histórico encontrado</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Este cliente ainda não possui agendamentos registrados.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {clientHistory.map((item) => (
+                      <div key={item.id} className="bg-card border border-border rounded-lg p-4 hover:shadow-soft transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                              <Scissors className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">{item.servico || 'Serviço'}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Profissional: {item.funcionario || 'Não informado'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              item.status === 'concluido' ? 'bg-emerald-500/10 text-emerald-700' :
+                              item.status === 'confirmado' ? 'bg-blue-500/10 text-blue-700' :
+                              item.status === 'pendente' ? 'bg-amber-500/10 text-amber-700' :
+                              'bg-rose-500/10 text-rose-700'
+                            }`}>
+                              {item.status?.toUpperCase() || 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Data:</span>
+                            <span>{new Date(item.data).toLocaleDateString('pt-BR')}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Horário:</span>
+                            <span>{new Date(item.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          {item.preco && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">Valor:</span>
+                              <span className="font-semibold">R$ {item.preco.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {item.observacoes && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-sm">
+                              <span className="font-semibold text-muted-foreground">Observações:</span> {item.observacoes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer do Modal */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>Total de agendamentos: {clientHistory.length}</span>
+                  <Button variant="outline" onClick={() => setHistoryModalOpen(false)}>
+                    Fechar
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
