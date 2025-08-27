@@ -11,7 +11,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useClients } from '@/hooks/useClients';
 import { useServices } from '@/hooks/useServices';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -57,6 +57,8 @@ const Agenda = () => {
   const { salonInfo } = useSalonInfo();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
+
+
   const { clients, createClient, refetch: refetchClients } = useClients();
   const { services, createService, refetch: refetchServices } = useServices();
   const { toast } = useToast();
@@ -97,6 +99,46 @@ const Agenda = () => {
   // Estados para navegação horizontal dos profissionais
   const [currentProfIndex, setCurrentProfIndex] = useState(0);
   const professionalsPerView = 3; // Número de profissionais visíveis por vez
+
+  // Estados para filtros
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [selectedProfessionalFilter, setSelectedProfessionalFilter] = useState<string>('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
+
+  // Detectar parâmetros da URL para filtro automático
+  useEffect(() => {
+    const filterType = searchParams.get('filter');
+    const filterId = searchParams.get('id');
+    
+    if (filterType === 'professional' && filterId) {
+      setSelectedProfessionalFilter(filterId);
+      // Limpar os parâmetros da URL após aplicar o filtro
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Filtrar profissionais baseado no filtro selecionado
+  const filteredProfessionals = useMemo(() => {
+    if (selectedProfessionalFilter === 'all') return professionals;
+    return professionals.filter(prof => prof.id === selectedProfessionalFilter);
+  }, [professionals, selectedProfessionalFilter]);
+
+  // Filtrar agendamentos baseado nos filtros selecionados
+  const filteredAppointments = useMemo(() => {
+    if (!Array.isArray(appointments)) return [];
+    
+    let filtered = appointments;
+    
+    if (selectedProfessionalFilter !== 'all') {
+      filtered = filtered.filter(apt => apt.funcionario_id === selectedProfessionalFilter);
+    }
+    
+    if (selectedStatusFilter !== 'all') {
+      filtered = filtered.filter(apt => apt.status === selectedStatusFilter);
+    }
+    
+    return filtered;
+  }, [appointments, selectedProfessionalFilter, selectedStatusFilter]);
 
   // refs das colunas para detectar drop
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -317,7 +359,7 @@ const Agenda = () => {
   };
 
   const selectedDay = selectedDate || new Date();
-  const appointmentsOfDay = Array.isArray(appointments) ? appointments.filter(a => {
+  const appointmentsOfDay = Array.isArray(filteredAppointments) ? filteredAppointments.filter(a => {
     const aptDate = new Date(a.data_hora);
     return (
       aptDate.getFullYear() === selectedDay.getFullYear() &&
@@ -341,9 +383,9 @@ const Agenda = () => {
   };
 
   // Calcular profissionais visíveis
-  const visibleProfessionals = professionals.slice(currentProfIndex, currentProfIndex + professionalsPerView);
+  const visibleProfessionals = filteredProfessionals.slice(currentProfIndex, currentProfIndex + professionalsPerView);
   const canGoPrev = currentProfIndex > 0;
-  const canGoNext = currentProfIndex + professionalsPerView < professionals.length;
+  const canGoNext = currentProfIndex + professionalsPerView < filteredProfessionals.length;
 
   // drag handlers
   const onMouseMove = (e: MouseEvent) => {
@@ -517,6 +559,11 @@ const Agenda = () => {
     setCurrentProfIndex(0);
   }, [selectedDate]);
 
+  // Resetar índice de profissionais quando o filtro de profissional mudar
+  useEffect(() => {
+    setCurrentProfIndex(0);
+  }, [selectedProfessionalFilter]);
+
   // Mostrar skeleton enquanto carrega (aguarda profissionais e agendamentos)
   if (loading || professionalsLoading) {
     return (
@@ -539,7 +586,15 @@ const Agenda = () => {
             <p className="text-muted-foreground">Gerencie todos os agendamentos do salão</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline"><Filter className="h-4 w-4 mr-2" />Filtros</Button>
+            <Button variant="outline" onClick={() => setFilterModalOpen(true)}>
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+              {(selectedProfessionalFilter !== 'all' || selectedStatusFilter !== 'all') && (
+                <span className="ml-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                  {(selectedProfessionalFilter !== 'all' ? 1 : 0) + (selectedStatusFilter !== 'all' ? 1 : 0)}
+                </span>
+              )}
+            </Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" />Novo Agendamento</Button>
@@ -767,7 +822,7 @@ const Agenda = () => {
                       
                       <div className="space-y-2">
                         <label htmlFor="client-observacoes" className="text-sm flex items-center gap-2">
-                          <span className="text-primary">📝</span>
+                          <MessageSquare className="h-4 w-4 text-primary" />
                           Observações (Opcional)
                         </label>
                         <textarea 
@@ -836,7 +891,7 @@ const Agenda = () => {
                       
                       <div className="space-y-2">
                         <label htmlFor="service-descricao" className="text-sm flex items-center gap-2">
-                          <span className="text-primary">📝</span>
+                          <MessageSquare className="h-4 w-4 text-primary" />
                           Descrição (Opcional)
                         </label>
                         <textarea 
@@ -852,7 +907,7 @@ const Agenda = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label htmlFor="service-preco" className="text-sm flex items-center gap-2">
-                            <span className="text-primary">💰</span>
+                            <span className="text-primary">R$</span>
                             Preço (R$)
                           </label>
                           <Input 
@@ -884,11 +939,11 @@ const Agenda = () => {
                         </div>
                       </div>
                       
-                      <div className="space-y-2">
-                        <label htmlFor="service-categoria" className="text-sm flex items-center gap-2">
-                          <span className="text-primary">🏷️</span>
-                          Categoria (Opcional)
-                        </label>
+                                              <div className="space-y-2">
+                          <label htmlFor="service-categoria" className="text-sm flex items-center gap-2">
+                            <span className="text-primary">#</span>
+                            Categoria (Opcional)
+                          </label>
                         <Input 
                           id="service-categoria" 
                           value={serviceForm.categoria} 
@@ -937,7 +992,7 @@ const Agenda = () => {
             <Button variant="outline" onClick={goToday}>Hoje</Button>
             <Button variant="outline" size="icon" onClick={goNextDay} aria-label="Próximo dia"><ChevronRight className="h-4 w-4" /></Button>
             {/* Navegação de profissionais */}
-            {professionals.length > professionalsPerView && (
+            {filteredProfessionals.length > professionalsPerView && (
               <div className="flex items-center gap-2 ml-2">
                 <Button
                   variant="outline"
@@ -949,7 +1004,7 @@ const Agenda = () => {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground">
-                  {currentProfIndex + 1}-{Math.min(currentProfIndex + professionalsPerView, professionals.length)} de {professionals.length}
+                  {currentProfIndex + 1}-{Math.min(currentProfIndex + professionalsPerView, filteredProfessionals.length)} de {filteredProfessionals.length}
                 </span>
                 <Button
                   variant="outline"
@@ -1316,6 +1371,91 @@ const Agenda = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Modal de Filtros */}
+        {filterModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md relative">
+              <button 
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground" 
+                onClick={() => setFilterModalOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              <div className="mb-6">
+                <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  Filtros da Agenda
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Filtre os agendamentos por profissional e status
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Profissional
+                  </label>
+                  <Select 
+                    value={selectedProfessionalFilter} 
+                    onValueChange={setSelectedProfessionalFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os profissionais" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os profissionais</SelectItem>
+                      {professionals.map(prof => (
+                        <SelectItem key={prof.id} value={prof.id}>
+                          {prof.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    Status
+                  </label>
+                  <Select 
+                    value={selectedStatusFilter} 
+                    onValueChange={setSelectedStatusFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Todos os status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="confirmado">Confirmado</SelectItem>
+                      <SelectItem value="cancelado">Cancelado</SelectItem>
+                      <SelectItem value="concluido">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSelectedProfessionalFilter('all');
+                    setSelectedStatusFilter('all');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+                <Button onClick={() => setFilterModalOpen(false)}>
+                  Aplicar Filtros
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </AdminLayout>

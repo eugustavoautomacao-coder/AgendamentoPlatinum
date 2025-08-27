@@ -10,10 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
 
 const Profissionais = () => {
+  const navigate = useNavigate();
   const { professionals, loading, createProfessional, deleteProfessional, updateProfessional } = useProfessionals();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -345,7 +347,12 @@ const Profissionais = () => {
                           </div>
                         </div>
                         <div className="flex gap-2 w-full">
-                          <Button size="sm" variant="outline" className="flex-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => navigate(`/admin/agenda?filter=professional&id=${professional.id}`)}
+                          >
                             Ver Agenda
                           </Button>
                           <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(professional)}>
