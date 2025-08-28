@@ -1582,7 +1582,7 @@ const Agenda = () => {
                       </label>
                       <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[10001]" position="popper" side="bottom" align="start">
                           <SelectItem value="pendente">Pendente</SelectItem>
                           <SelectItem value="confirmado">Confirmado</SelectItem>
                           <SelectItem value="cancelado">Cancelado</SelectItem>
@@ -1597,7 +1597,7 @@ const Agenda = () => {
                       </label>
                       <Select value={editForm.servico_id} onValueChange={v => setEditForm(f => ({ ...f, servico_id: v }))}>
                         <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[10001] max-h-[200px] overflow-y-auto" position="popper" side="bottom" align="start">
                           {services.map(s => (<SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>))}
                         </SelectContent>
                       </Select>
