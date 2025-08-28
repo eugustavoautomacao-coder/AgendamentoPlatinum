@@ -260,7 +260,7 @@ const Assinaturas = () => {
                     <ul className="space-y-2">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-center space-x-2">
-                          <Check className="h-4 w-4 text-green-600" />
+                          <Check className="h-4 w-4 text-primary" />
                           <span className="text-sm">{feature}</span>
                         </li>
                       ))}

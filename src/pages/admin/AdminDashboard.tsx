@@ -19,11 +19,12 @@ const AdminDashboard = () => {
   const { services, loading: servicesLoading } = useServices();
 
   // Calculate stats from real data
-  const todayAppointments = appointments.filter(apt => 
+  const appointmentsArray = Array.isArray(appointments) ? appointments : [];
+  const todayAppointments = appointmentsArray.filter(apt => 
     isToday(new Date(apt.data_hora))
   );
   
-  const thisMonthRevenue = appointments
+  const thisMonthRevenue = appointmentsArray
     .filter(apt => apt.status === 'concluido' && apt.servico_preco)
     .reduce((sum, apt) => sum + (apt.servico_preco || 0), 0);
 
@@ -59,7 +60,7 @@ const AdminDashboard = () => {
   ];
 
   // Get next appointments (today and tomorrow)
-  const nextAppointments = appointments
+  const nextAppointments = appointmentsArray
     .filter(apt => 
       (isToday(new Date(apt.data_hora)) || isTomorrow(new Date(apt.data_hora))) &&
       apt.status !== 'cancelado'
@@ -78,14 +79,22 @@ const AdminDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmado':
-        return 'bg-success text-success-foreground';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'pendente':
-        return 'bg-warning text-warning-foreground';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
+      case 'concluido':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+      case 'cancelado':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
       case 'reagendamento':
-        return 'bg-secondary-accent text-secondary-foreground';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800';
     }
+  };
+
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
   const loading = appointmentsLoading || clientsLoading || professionalsLoading || servicesLoading;
@@ -134,7 +143,7 @@ const AdminDashboard = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                <stat.icon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -175,7 +184,8 @@ const AdminDashboard = () => {
                   {nextAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
-                      className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
+                      className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                      onClick={() => navigate(`/admin/agenda?appointment=${appointment.id}`)}
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div className="text-center">
@@ -196,7 +206,7 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
+                        {capitalizeFirstLetter(appointment.status)}
                       </Badge>
                     </div>
                   ))}
@@ -217,27 +227,27 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/agenda?modal=new')}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2 text-primary" />
                   Novo Agendamento
                 </Button>
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/clientes?modal=new')}
                 >
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="h-4 w-4 mr-2 text-primary" />
                   Cadastrar Cliente
                 </Button>
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/servicos')}
                 >
-                  <Scissors className="h-4 w-4 mr-2" />
+                  <Scissors className="h-4 w-4 mr-2 text-primary" />
                   Gerenciar Serviços
                 </Button>
               </CardContent>
@@ -247,14 +257,14 @@ const AdminDashboard = () => {
             <Card className="shadow-elegant">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-warning" />
+                  <AlertCircle className="h-5 w-5 text-primary" />
                   Alertas
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-warning" />
+                    <Clock className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-warning-foreground">
                       2 confirmações pendentes
                     </span>

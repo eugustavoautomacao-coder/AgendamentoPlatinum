@@ -250,6 +250,39 @@
     @apply bg-muted-foreground/50;
   }
   
+  /* Scrollbar discreta para modais */
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+  
+  /* Estilização global dos spinners de input number */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  input[type="number"] {
+    -moz-appearance: textfield;
+    padding-right: 2.5rem; /* Espaço para evitar que o texto fique muito próximo da borda */
+  }
+  
+
+
   /* Animação wiggle para o cadeado */
   @keyframes wiggle {
     0%, 100% { transform: rotate(0deg); }

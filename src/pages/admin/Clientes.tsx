@@ -118,7 +118,7 @@ const Clientes = () => {
     try {
       if (editId) {
         await updateClient(editId, form);
-      } else {
+    } else {
         await createClient(form);
       }
       setModalOpen(false);
@@ -284,65 +284,65 @@ const Clientes = () => {
 
         <Card className="shadow-elegant">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
               Base de Clientes
-            </CardTitle>
-            <CardDescription>
+                </CardTitle>
+                <CardDescription>
               Todos os clientes cadastrados no sistema
-            </CardDescription>
+                </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 mb-4">
               <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
+                  <Input
                 placeholder="Buscar por nome, email ou telefone..."
-                value={searchInput}
+                    value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="max-w-sm"
-              />
-            </div>
+                  />
+                </div>
             <div className="space-y-4">
               {filteredClients.map((client) => (
                 <div
                   key={client.id}
                   className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
                 >
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary-soft text-primary">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="bg-primary-soft text-primary">
                       {client.nome?.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-foreground">
                         {client.nome}
                       </h3>
-                    </div>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {client.email}
                       </div>
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {client.email}
+                        </div>
                       {client.telefone && (
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
                           {formatPhoneNumber(client.telefone)}
                         </div>
                       )}
-                    </div>
-                    {client.observacoes && (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        <span className="font-semibold">Obs:</span> {client.observacoes}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
+                      {client.observacoes && (
+                      <div className="text-sm text-muted-foreground mt-2">
+                          <span className="font-semibold">Obs:</span> {client.observacoes}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openHistory(client)}>
                       <History className="h-4 w-4 mr-1" />
                       Histórico
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => openEdit(client)}>Editar</Button>
+                          <Button size="sm" variant="outline" onClick={() => openEdit(client)}>Editar</Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(client.id)}>Excluir</Button>
                   </div>
                 </div>
@@ -524,12 +524,12 @@ const Clientes = () => {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                           <div className="flex items-center gap-1 sm:gap-2">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                             <span className="text-muted-foreground">Data:</span>
                             <span className="truncate">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                             <span className="text-muted-foreground">Horário:</span>
                             <span className="truncate">{new Date(item.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>

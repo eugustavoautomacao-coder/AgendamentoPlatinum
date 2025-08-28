@@ -13,7 +13,7 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Servicos = () => {
-  const { services, loading, createService, updateService, deleteService, refetch } = useServices();
+  const { services, loading: isLoading, createService, updateService, deleteService, refetch } = useServices();
   const { addDefaultServicesToExistingSalon } = useSalons();
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
@@ -323,14 +323,14 @@ const Servicos = () => {
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               Serviços
-              {!loading && hasActiveFilters && (
+              {!isLoading && hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
                   {filteredServices.length} de {services.length}
                 </Badge>
               )}
             </CardTitle>
             <CardDescription>
-              {loading ? (
+              {isLoading ? (
                 "Carregando serviços..."
               ) : hasActiveFilters ? (
                 `${filteredServices.length} serviço${filteredServices.length !== 1 ? 's' : ''} encontrado${filteredServices.length !== 1 ? 's' : ''}`
@@ -341,7 +341,7 @@ const Servicos = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {loading ? (
+              {isLoading ? (
                 // Skeleton Loading
                 [...Array(6)].map((_, i) => (
                   <div

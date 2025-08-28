@@ -69,13 +69,17 @@ const ProfissionalDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmado':
-        return 'bg-success text-success-foreground';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'pendente':
-        return 'bg-warning text-warning-foreground';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
+      case 'concluido':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+      case 'cancelado':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
       case 'reagendamento':
-        return 'bg-secondary-accent text-secondary-foreground';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800';
     }
   };
 
@@ -120,7 +124,7 @@ const ProfissionalDashboard = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                <stat.icon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -156,14 +160,14 @@ const ProfissionalDashboard = () => {
         <Card className="shadow-elegant">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
+              <AlertCircle className="h-5 w-5 text-primary" />
               Alertas
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-warning" />
+                <Clock className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-warning-foreground">
                   {todayAppointments.filter(apt => apt.status === 'pendente').length} confirmações pendentes
                 </span>

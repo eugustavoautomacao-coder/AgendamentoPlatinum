@@ -328,7 +328,7 @@ const Profissionais = () => {
                             {professional.nome}
                           </h3>
                           <div className="flex items-center justify-center gap-1 mt-1">
-                            <Star className="h-4 w-4 fill-warning text-warning" />
+                            <Star className="h-4 w-4 fill-primary text-primary" />
                             <span className="text-sm text-muted-foreground">
                               4.8
                             </span>

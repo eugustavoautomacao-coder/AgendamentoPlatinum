@@ -25,7 +25,6 @@ const Produtos = () => {
   const [form, setForm] = useState<CreateProductData>({
     codigo_interno: "",
     nome: "",
-    descricao: "",
     categoria: "",
     marca: "",
     preco_custo: 0,
@@ -35,7 +34,7 @@ const Produtos = () => {
     unidade_medida: "unidade",
     codigo_barras: "",
     fornecedor: "",
-    observacoes: "",
+    descricao: "",
     ativo: true
   });
 
@@ -58,7 +57,6 @@ const Produtos = () => {
     setForm({
       codigo_interno: "",
       nome: "",
-      descricao: "",
       categoria: "",
       marca: "",
       preco_custo: 0,
@@ -68,7 +66,7 @@ const Produtos = () => {
       unidade_medida: "unidade",
       codigo_barras: "",
       fornecedor: "",
-      observacoes: "",
+      descricao: "",
       ativo: true
     });
     setEditingProduct(null);
@@ -85,7 +83,6 @@ const Produtos = () => {
     setForm({
       codigo_interno: product.codigo_interno || "",
       nome: product.nome,
-      descricao: product.descricao || "",
       categoria: product.categoria || "",
       marca: product.marca || "",
       preco_custo: product.preco_custo,
@@ -95,7 +92,7 @@ const Produtos = () => {
       unidade_medida: product.unidade_medida,
       codigo_barras: product.codigo_barras || "",
       fornecedor: product.fornecedor || "",
-      observacoes: product.observacoes || "",
+      descricao: product.descricao || "",
       ativo: product.ativo
     });
     setEditingProduct(product);
@@ -200,7 +197,7 @@ const Produtos = () => {
               Novo Produto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto modal-scrollbar">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? "Editar Produto" : "Novo Produto"}
@@ -254,20 +251,7 @@ const Produtos = () => {
                 </div>
               </div>
 
-              {/* Descrição */}
-              <div className="grid gap-2">
-                <Label htmlFor="descricao" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Descrição
-                </Label>
-                <Textarea
-                  id="descricao"
-                  value={form.descricao}
-                  onChange={(e) => setForm(f => ({ ...f, descricao: e.target.value }))}
-                  placeholder="Descrição do produto..."
-                  rows={3}
-                />
-              </div>
+
 
               {/* Categoria e Marca */}
               <div className="grid grid-cols-2 gap-4">
@@ -395,17 +379,17 @@ const Produtos = () => {
                 />
               </div>
 
-              {/* Observações */}
+              {/* Descrição */}
               <div className="grid gap-2">
-                <Label htmlFor="observacoes" className="flex items-center gap-2">
+                <Label htmlFor="descricao" className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  Observações
+                  Descrição
                 </Label>
                 <Textarea
-                  id="observacoes"
-                  value={form.observacoes}
-                  onChange={(e) => setForm(f => ({ ...f, observacoes: e.target.value }))}
-                  placeholder="Observações adicionais..."
+                  id="descricao"
+                  value={form.descricao}
+                  onChange={(e) => setForm(f => ({ ...f, descricao: e.target.value }))}
+                  placeholder="Descrição do produto..."
                   rows={3}
                 />
               </div>

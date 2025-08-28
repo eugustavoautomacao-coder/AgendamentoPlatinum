@@ -26,7 +26,6 @@ export interface Product {
 export interface CreateProductData {
   codigo_interno: string;
   nome: string;
-  descricao?: string;
   categoria?: string;
   marca?: string;
   preco_custo: number;
@@ -36,7 +35,7 @@ export interface CreateProductData {
   unidade_medida: string;
   codigo_barras?: string;
   fornecedor?: string;
-  observacoes?: string;
+  descricao?: string;
   ativo?: boolean;
 }
 

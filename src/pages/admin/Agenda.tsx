@@ -257,6 +257,11 @@ const Agenda = () => {
     }
   };
 
+  // Função para capitalizar a primeira letra
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   const getStripColorByStatus = (status: string) => {
     switch (status) {
       case 'confirmado':
@@ -631,6 +636,30 @@ const Agenda = () => {
     }
   }, [searchParams, setSearchParams]);
 
+  // Detectar parâmetro appointment na URL e abrir modal de detalhes
+  useEffect(() => {
+    const appointmentId = searchParams.get('appointment');
+    if (appointmentId && appointments && Array.isArray(appointments)) {
+      // Encontrar o agendamento específico
+      const appointment = (appointments as any[]).find((apt: any) => apt.id === appointmentId);
+      if (appointment) {
+        // Definir a data do agendamento
+        setSelectedDate(new Date(appointment.data_hora));
+        // Inicializar o formulário de edição com os dados do agendamento
+        setEditForm({ 
+          servico_id: appointment.servico_id, 
+          status: appointment.status, 
+          observacoes: appointment.observacoes || '' 
+        });
+        // Abrir modal de detalhes
+        setSelectedApt(appointment);
+        setDetailOpen(true);
+        // Limpar o parâmetro da URL
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, appointments]);
+
   // Resetar índice de profissionais quando mudar de data
   useEffect(() => {
     setCurrentProfIndex(0);
@@ -758,7 +787,7 @@ const Agenda = () => {
 
   // Mostrar skeleton enquanto carrega (aguarda profissionais e agendamentos)
   if (loading || professionalsLoading) {
-    return (
+  return (
       <AdminLayout>
         <AgendaSkeleton />
       </AdminLayout>
@@ -770,8 +799,8 @@ const Agenda = () => {
 
   return (
     <TooltipProvider delayDuration={1000}>
-      <AdminLayout>
-        <div className="space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -798,13 +827,13 @@ const Agenda = () => {
                 {!clientModalOpen && !serviceModalOpen ? (
                   // Modal de Novo Agendamento
                   <>
-                    <DialogHeader>
+                <DialogHeader>
                       <DialogTitle className="flex items-center gap-2">
                         <CalendarIcon className="h-5 w-5 text-primary" />
                         Novo Agendamento
                       </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
+                </DialogHeader>
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm mb-1 flex items-center gap-2 mt-4">
                       <Users className="h-4 w-4 text-primary" />
@@ -817,7 +846,7 @@ const Agenda = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                                     <div>
+                  <div>
                      <label className="block text-sm mb-1 flex items-center gap-2">
                        <Users className="h-4 w-4 text-primary" />
                        Cliente
@@ -864,8 +893,8 @@ const Agenda = () => {
                          <Plus className="h-4 w-4" />
                        </Button>
                      </div>
-                   </div>
-                   <div>
+                  </div>
+                  <div>
                      <label className="block text-sm mb-1 flex items-center gap-2">
                        <Scissors className="h-4 w-4 text-primary" />
                        Serviço
@@ -884,7 +913,7 @@ const Agenda = () => {
                              <CommandList>
                                <CommandEmpty>Nenhum serviço encontrado.</CommandEmpty>
                                <CommandGroup>
-                                 {services.map(s => (
+                        {services.map(s => (
                                    <CommandItem
                                      key={s.id}
                                      value={s.nome}
@@ -912,7 +941,7 @@ const Agenda = () => {
                          <Plus className="h-4 w-4" />
                        </Button>
                      </div>
-                   </div>
+                  </div>
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <label className="block text-sm mb-1 flex items-center gap-2">
@@ -935,26 +964,26 @@ const Agenda = () => {
                          <Clock className="h-4 w-4 text-primary" />
                          Hora
                        </label>
-                       <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
-                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                          <SelectContent className="z-[10001]">
                            {form.funcionario_id ? (
                              getAvailableHours(form.funcionario_id).map(h => (
-                               <SelectItem key={h} value={h}>{h}</SelectItem>
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
                              ))
                            ) : (
                              allHours.map(h => (
                                <SelectItem key={h} value={h}>{h}</SelectItem>
                              ))
                            )}
-                         </SelectContent>
-                       </Select>
+                        </SelectContent>
+                      </Select>
                        {form.funcionario_id && getAvailableHours(form.funcionario_id).length === 0 && (
                          <p className="text-xs text-muted-foreground mt-1">
                            Nenhum horário disponível para este profissional
                          </p>
                        )}
-                     </div>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -1000,7 +1029,7 @@ const Agenda = () => {
                           required 
                           disabled={creatingClient} 
                         />
-                      </div>
+          </div>
                       
                       <div className="space-y-2">
                         <label htmlFor="client-email" className="text-sm flex items-center gap-2">
@@ -1015,8 +1044,8 @@ const Agenda = () => {
                           required 
                           disabled={creatingClient} 
                         />
-                      </div>
-                      
+        </div>
+
                       <div className="space-y-2">
                         <label htmlFor="client-telefone" className="text-sm flex items-center gap-2">
                           <Phone className="h-4 w-4 text-primary" />
@@ -1097,8 +1126,8 @@ const Agenda = () => {
                           required 
                           disabled={creatingService} 
                         />
-                      </div>
-                      
+        </div>
+
                       <div className="space-y-2">
                         <label htmlFor="service-descricao" className="text-sm flex items-center gap-2">
                           <MessageSquare className="h-4 w-4 text-primary" />
@@ -1233,7 +1262,7 @@ const Agenda = () => {
             <PopoverTrigger asChild>
               <Button variant="outline" className="justify-start">
                 <CalendarIcon className="h-4 w-4 mr-2" />
-                {format(selectedDay, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {capitalizeFirstLetter(format(selectedDay, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="p-0">
@@ -1247,12 +1276,12 @@ const Agenda = () => {
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg">
-                <Clock className="h-5 w-5 text-amber-600" />
+                <Clock className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h3 className="font-semibold text-amber-800">Salão Fechado</h3>
                 <p className="text-sm text-amber-700">
-                  O salão não está funcionando na {format(selectedDay, "EEEE, dd/MM", { locale: ptBR })}. 
+                  O salão não está funcionando na {capitalizeFirstLetter(format(selectedDay, "EEEE, dd/MM", { locale: ptBR }))}. 
                   {currentSchedule.open && currentSchedule.close && (
                     <span> Horário configurado: {currentSchedule.open} às {currentSchedule.close}</span>
                   )}
@@ -1269,7 +1298,7 @@ const Agenda = () => {
             {/* Célula da data */}
             <div className="p-4 border-r border-border text-left">
               <div className="text-xs text-muted-foreground leading-none">Dia</div>
-              <div className="font-semibold text-foreground">{format(selectedDay, "EEEE, dd/MM", { locale: ptBR })}</div>
+              <div className="font-semibold text-foreground">{capitalizeFirstLetter(format(selectedDay, "EEEE, dd/MM", { locale: ptBR }))}</div>
               {isSalonOpen && currentSchedule.open && currentSchedule.close && (
                 <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -1299,7 +1328,7 @@ const Agenda = () => {
               <div className="col-span-full flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
-                    <Clock className="h-6 w-6 text-muted-foreground" />
+                    <Clock className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold text-foreground mb-1">Nenhum horário disponível</h3>
                   <p className="text-sm text-muted-foreground">
@@ -1322,7 +1351,7 @@ const Agenda = () => {
             {visibleProfessionals.map(prof => {
               const profAppointments = appointmentsOfDay.filter(a => a.funcionario_id === prof.id);
               const isDragTarget = dragging && currentDragColumn === prof.id && currentDragColumn !== dragging.profId;
-              return (
+                  return (
                 <div 
                   key={prof.id} 
                   ref={(el) => (columnRefs.current[prof.id] = el)} 
@@ -1423,11 +1452,11 @@ const Agenda = () => {
                             <div className="bg-muted/80 text-muted-foreground text-xs font-medium px-2 py-1 rounded">
                               BLOQUEADO
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                   {/* Agendamentos posicionados por horário e duração */}
                   {profAppointments.map(apt => {
@@ -1517,7 +1546,7 @@ const Agenda = () => {
                   <div>
                     <DialogTitle className="text-lg font-semibold">Detalhes do Agendamento</DialogTitle>
                     <p className="text-xs text-muted-foreground">
-                      {selectedApt && format(new Date(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      {selectedApt && capitalizeFirstLetter(format(new Date(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }))}
                     </p>
                   </div>
                   <Button
@@ -1753,14 +1782,14 @@ const Agenda = () => {
                         >
                           <X className="h-2 w-2 sm:h-3 sm:w-3" />
                         </button>
-                      </div>
-                    ))}
+              </div>
+            ))}
                     {processPhotos.antes.length === 0 && (
                       <div className="col-span-full text-center py-4 sm:py-8 text-muted-foreground text-sm sm:text-base">
                         Nenhuma foto adicionada
-                      </div>
+          </div>
                     )}
-                  </div>
+        </div>
                 </div>
 
                 {/* Seção Durante */}
@@ -2032,10 +2061,10 @@ const Agenda = () => {
           </DialogPortal>
         </Dialog>
 
-             </div>
-     </AdminLayout>
+      </div>
+    </AdminLayout>
     </TooltipProvider>
-   );
- };
+  );
+};
 
 export default Agenda;
