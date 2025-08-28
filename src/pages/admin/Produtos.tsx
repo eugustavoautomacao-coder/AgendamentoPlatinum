@@ -29,12 +29,14 @@ const Produtos = () => {
     marca: "",
     preco_custo: 0,
     preco_venda: 0,
+    preco_profissional: 0,
     estoque_atual: 0,
     estoque_minimo: 0,
     unidade_medida: "unidade",
     codigo_barras: "",
     fornecedor: "",
     descricao: "",
+    para_revenda: true,
     ativo: true
   });
 
@@ -61,12 +63,14 @@ const Produtos = () => {
       marca: "",
       preco_custo: 0,
       preco_venda: 0,
+      preco_profissional: 0,
       estoque_atual: 0,
       estoque_minimo: 0,
       unidade_medida: "unidade",
       codigo_barras: "",
       fornecedor: "",
       descricao: "",
+      para_revenda: true,
       ativo: true
     });
     setEditingProduct(null);
@@ -87,16 +91,36 @@ const Produtos = () => {
       marca: product.marca || "",
       preco_custo: product.preco_custo,
       preco_venda: product.preco_venda,
+      preco_profissional: product.preco_profissional || 0,
       estoque_atual: product.estoque_atual,
       estoque_minimo: product.estoque_minimo,
       unidade_medida: product.unidade_medida,
       codigo_barras: product.codigo_barras || "",
       fornecedor: product.fornecedor || "",
       descricao: product.descricao || "",
+      para_revenda: product.para_revenda !== undefined ? product.para_revenda : true,
       ativo: product.ativo
     });
     setEditingProduct(product);
     setModalOpen(true);
+  };
+
+  // Função para lidar com mudanças no campo "Para Revenda"
+  const handleParaRevendaChange = (value: boolean) => {
+    setForm(prev => {
+      const newForm = { ...prev, para_revenda: value };
+      
+      if (!value) {
+        // Se não é para revenda, setar categoria como "Consumo" e limpar preço de venda
+        newForm.categoria = "Consumo";
+        newForm.preco_venda = 0;
+      } else {
+        // Se é para revenda, limpar a categoria para permitir digitação livre
+        newForm.categoria = "";
+      }
+      
+      return newForm;
+    });
   };
 
   // Salvar produto
@@ -208,18 +232,59 @@ const Produtos = () => {
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              {/* Nome */}
-              <div className="grid gap-2">
-                <Label htmlFor="nome" className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-primary" />
-                  Nome do Produto *
-                </Label>
-                <Input
-                  id="nome"
-                  value={form.nome}
-                  onChange={(e) => setForm(f => ({ ...f, nome: e.target.value }))}
-                  placeholder="Ex: Shampoo Hidratante"
-                />
+              {/* Nome do Produto e Para Revenda */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Nome do Produto */}
+                <div className="grid gap-2">
+                  <Label htmlFor="nome" className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-primary" />
+                    Nome do Produto *
+                  </Label>
+                  <Input
+                    id="nome"
+                    value={form.nome}
+                    onChange={(e) => setForm(f => ({ ...f, nome: e.target.value }))}
+                    placeholder="Ex: Shampoo Hidratante"
+                  />
+                </div>
+
+                {/* Para Revenda */}
+                <div className="grid gap-2">
+                  <Label className="flex items-center gap-2">
+                    <Package2 className="h-4 w-4 text-primary" />
+                    Para Revenda?
+                  </Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="para_revenda_sim"
+                        name="para_revenda"
+                        checked={form.para_revenda === true}
+                        onChange={() => handleParaRevendaChange(true)}
+                        className="h-4 w-4 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-2 border-gray-300"
+                        style={{
+                          accentColor: 'hsl(var(--primary))'
+                        }}
+                      />
+                      <Label htmlFor="para_revenda_sim" className="text-sm font-normal">Sim</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="para_revenda_nao"
+                        name="para_revenda"
+                        checked={form.para_revenda === false}
+                        onChange={() => handleParaRevendaChange(false)}
+                        className="h-4 w-4 text-primary focus:ring-primary focus:ring-2 focus:ring-offset-2 border-gray-300"
+                        style={{
+                          accentColor: 'hsl(var(--primary))'
+                        }}
+                      />
+                      <Label htmlFor="para_revenda_nao" className="text-sm font-normal">Não</Label>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Código Interno e Código de Barras */}
@@ -253,7 +318,7 @@ const Produtos = () => {
 
 
 
-              {/* Categoria e Marca */}
+              {/* Categoria e Preço de Venda */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="categoria" className="flex items-center gap-2">
@@ -267,51 +332,58 @@ const Produtos = () => {
                     placeholder="Ex: Cabelo, Unhas"
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="marca" className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-primary" />
-                    Marca
-                  </Label>
-                  <Input
-                    id="marca"
-                    value={form.marca}
-                    onChange={(e) => setForm(f => ({ ...f, marca: e.target.value }))}
-                    placeholder="Ex: L'Oréal"
-                  />
-                </div>
+                {form.para_revenda && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="preco_venda" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      Preço de Venda *
+                    </Label>
+                    <Input
+                      id="preco_venda"
+                      type="number"
+                      step="0.01"
+                      value={form.preco_venda}
+                      onChange={(e) => setForm(f => ({ ...f, preco_venda: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Preços */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="preco_custo" className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-primary" />
-                    Preço de Custo *
-                  </Label>
-                  <Input
-                    id="preco_custo"
-                    type="number"
-                    step="0.01"
-                    value={form.preco_custo}
-                    onChange={(e) => setForm(f => ({ ...f, preco_custo: parseFloat(e.target.value) || 0 }))}
-                    placeholder="0.00"
-                  />
+              {/* Preço de Custo e Preço Para Profissional - aparece apenas quando é para revenda */}
+              {form.para_revenda && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="preco_custo" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      Preço de Custo *
+                    </Label>
+                    <Input
+                      id="preco_custo"
+                      type="number"
+                      step="0.01"
+                      value={form.preco_custo}
+                      onChange={(e) => setForm(f => ({ ...f, preco_custo: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="preco_profissional" className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      Preço Para Profissional
+                    </Label>
+                    <Input
+                      id="preco_profissional"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={form.preco_profissional}
+                      onChange={(e) => setForm(f => ({ ...f, preco_profissional: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="preco_venda" className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-primary" />
-                    Preço de Venda *
-                  </Label>
-                  <Input
-                    id="preco_venda"
-                    type="number"
-                    step="0.01"
-                    value={form.preco_venda}
-                    onChange={(e) => setForm(f => ({ ...f, preco_venda: parseFloat(e.target.value) || 0 }))}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Estoque */}
               <div className="grid grid-cols-2 gap-4">
@@ -365,18 +437,32 @@ const Produtos = () => {
                 </Select>
               </div>
 
-              {/* Fornecedor */}
-              <div className="grid gap-2">
-                <Label htmlFor="fornecedor" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  Fornecedor
-                </Label>
-                <Input
-                  id="fornecedor"
-                  value={form.fornecedor}
-                  onChange={(e) => setForm(f => ({ ...f, fornecedor: e.target.value }))}
-                  placeholder="Nome do fornecedor"
-                />
+              {/* Marca e Fornecedor */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="marca" className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-primary" />
+                    Marca
+                  </Label>
+                  <Input
+                    id="marca"
+                    value={form.marca}
+                    onChange={(e) => setForm(f => ({ ...f, marca: e.target.value }))}
+                    placeholder="Ex: L'Oréal"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="fornecedor" className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    Fornecedor
+                  </Label>
+                  <Input
+                    id="fornecedor"
+                    value={form.fornecedor}
+                    onChange={(e) => setForm(f => ({ ...f, fornecedor: e.target.value }))}
+                    placeholder="Nome do fornecedor"
+                  />
+                </div>
               </div>
 
               {/* Descrição */}
@@ -393,6 +479,8 @@ const Produtos = () => {
                   rows={3}
                 />
               </div>
+
+
             </div>
 
             <DialogFooter>

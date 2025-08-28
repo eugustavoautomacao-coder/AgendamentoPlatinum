@@ -30,12 +30,14 @@ export interface CreateProductData {
   marca?: string;
   preco_custo: number;
   preco_venda: number;
+  preco_profissional?: number;
   estoque_atual: number;
   estoque_minimo: number;
   unidade_medida: string;
   codigo_barras?: string;
   fornecedor?: string;
   descricao?: string;
+  para_revenda: boolean;
   ativo?: boolean;
 }
 
