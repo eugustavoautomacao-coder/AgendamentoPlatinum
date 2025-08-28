@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { HeaderProfile } from "./HeaderProfile";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProfissionalSidebar from "./ProfissionalSidebar";
@@ -60,6 +61,7 @@ const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
         </div>
         <div className="flex items-center gap-2 pr-4">
           <ThemeToggle size="sm" />
+          <HeaderProfile />
         </div>
       </header>
       

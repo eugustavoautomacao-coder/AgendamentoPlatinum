@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -7,18 +7,14 @@ import {
   Scissors,
   BarChart3,
   Settings,
-  LogOut,
   Menu,
   X,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/useAuth";
 import { useSalonInfo } from "@/hooks/useSalonInfo";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/profissional", exact: true },
@@ -33,7 +29,6 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
-  const { signOut, profile } = useAuth();
   const { salonName } = useSalonInfo();
 
   useEffect(() => {
@@ -113,48 +108,7 @@ const ProfissionalSidebar = ({ isCollapsed = false, setIsCollapsed }) => {
           </NavLink>
         ))}
       </nav>
-      <Separator />
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'}`}>
-        <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="h-10 w-10 cursor-pointer">
-                <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="bg-primary-soft text-primary">
-                  {profile?.nome?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/perfil">Meu Perfil</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={signOut} className="text-destructive">
-                Sair
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">{profile?.nome || 'Usuário'}</p>
-              <p className="text-sm text-muted-foreground truncate">{profile?.role}</p>
-            </div>
-          )}
-        </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
-          onClick={signOut}
-        >
-          {!isCollapsed && (
-            <>
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="text-xs">Sair</span>
-            </>
-          )}
-        </Button>
-      </div>
+
     </div>
   );
 

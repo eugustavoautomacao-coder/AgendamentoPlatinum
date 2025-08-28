@@ -1,6 +1,7 @@
 import React from 'react';
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { HeaderProfile } from "./HeaderProfile";
 import { SuperAdminSidebar } from './SuperAdminSidebar';
 
 interface SuperAdminLayoutProps {
@@ -24,6 +25,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
             </div>
             <div className="flex items-center gap-2 pr-4">
               <ThemeToggle size="sm" />
+              <HeaderProfile />
             </div>
           </header>
           

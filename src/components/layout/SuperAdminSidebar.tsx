@@ -5,10 +5,9 @@ import {
   CreditCard, 
   BarChart3, 
   Settings,
-  Crown,
-  LogOut
+  Crown
 } from "lucide-react";
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -20,10 +19,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const menuItems = [
   {
@@ -62,7 +57,6 @@ const menuItems = [
 export function SuperAdminSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
   const collapsed = state === "collapsed";
 
   const isActive = (path: string, exact = false) => {
@@ -118,53 +112,7 @@ export function SuperAdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User Profile */}
-        <div className="mt-auto p-4 border-t">
-          <div className="flex items-center gap-3 mb-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback className="bg-primary-soft text-primary text-xs">
-                    {profile?.nome?.charAt(0) || 'SA'}
-                  </AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/perfil">Meu Perfil</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate text-sm">
-                  {profile?.nome || 'SuperAdmin'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {profile?.role || 'superadmin'}
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={signOut}
-          >
-            {!collapsed && (
-              <>
-                <LogOut className="h-4 w-4 mr-2" />
-                <span className="text-xs">Sair</span>
-              </>
-            )}
-          </Button>
-        </div>
+
       </SidebarContent>
     </Sidebar>
   );
