@@ -1,4 +1,5 @@
 import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -222,8 +223,13 @@ const Agenda = () => {
   }
 
   const currentSchedule = getScheduleForDate(selectedDate || new Date());
-  const hours = currentSchedule.active ? generateHours(currentSchedule.open, currentSchedule.close) : [];
+  const allHours = currentSchedule.active ? generateHours(currentSchedule.open, currentSchedule.close) : [];
   const openMinutes = timeToMinutes(currentSchedule.open);
+  
+  // Filtrar horários disponíveis baseado nos slots bloqueados
+  const getAvailableHours = (profId: string) => {
+    return allHours.filter(hour => !isSlotLocked(profId, hour));
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -559,7 +565,27 @@ const Agenda = () => {
     }
   }, [open]);
 
+  // Limpar horário selecionado se estiver bloqueado quando mudar o profissional
+  useEffect(() => {
+    if (form.funcionario_id && form.time) {
+      const availableHours = getAvailableHours(form.funcionario_id);
+      if (!availableHours.includes(form.time)) {
+        setForm(prev => ({ ...prev, time: '' }));
+      }
+    }
+  }, [form.funcionario_id, lockedSlots]);
+
   const handleEmptySlotClick = (profId: string, hour: string) => {
+    // Verificar se o horário não está bloqueado
+    if (isSlotLocked(profId, hour)) {
+      toast({
+        title: "Horário bloqueado",
+        description: `O horário ${hour} está bloqueado para agendamentos`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const dateStr = format(selectedDay, 'yyyy-MM-dd');
     setForm(prev => ({
       ...prev,
@@ -743,8 +769,9 @@ const Agenda = () => {
   const isSalonOpen = currentSchedule.active;
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <TooltipProvider delayDuration={1000}>
+      <AdminLayout>
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -903,18 +930,31 @@ const Agenda = () => {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="flex-1" >
-                      <label className="block text-sm mb-1 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-primary" />
-                        Hora
-                      </label>
-                      <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent className="z-[10001]">
-                          {hours.map(h => (<SelectItem key={h} value={h}>{h}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                                         <div className="flex-1" >
+                       <label className="block text-sm mb-1 flex items-center gap-2">
+                         <Clock className="h-4 w-4 text-primary" />
+                         Hora
+                       </label>
+                       <Select value={form.time} onValueChange={v => setForm(f => ({ ...f, time: v }))}>
+                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                         <SelectContent className="z-[10001]">
+                           {form.funcionario_id ? (
+                             getAvailableHours(form.funcionario_id).map(h => (
+                               <SelectItem key={h} value={h}>{h}</SelectItem>
+                             ))
+                           ) : (
+                             allHours.map(h => (
+                               <SelectItem key={h} value={h}>{h}</SelectItem>
+                             ))
+                           )}
+                         </SelectContent>
+                       </Select>
+                       {form.funcionario_id && getAvailableHours(form.funcionario_id).length === 0 && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           Nenhum horário disponível para este profissional
+                         </p>
+                       )}
+                     </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -1252,9 +1292,9 @@ const Agenda = () => {
             ))}
           </div>
 
-          {/* Corpo da grade */}
-          <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `160px repeat(${visibleProfessionals.length}, minmax(200px,1fr))` }}>
-            {hours.length === 0 ? (
+                     {/* Corpo da grade */}
+           <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: `160px repeat(${visibleProfessionals.length}, minmax(200px,1fr))` }}>
+             {allHours.length === 0 ? (
               // Mensagem quando não há horários disponíveis
               <div className="col-span-full flex items-center justify-center py-12">
                 <div className="text-center">
@@ -1269,9 +1309,9 @@ const Agenda = () => {
               </div>
             ) : (
               <>
-            {/* Coluna de horários (sticky à esquerda) */}
-            <div className="sticky left-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-r border-border text-xs text-muted-foreground">
-              {hours.map((hour) => (
+                         {/* Coluna de horários (sticky à esquerda) */}
+             <div className="sticky left-0 z-10 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 border-r border-border text-xs text-muted-foreground">
+               {allHours.map((hour) => (
                 <div key={hour} className="flex items-center justify-center border-t border-border" style={{ height: SLOT_HEIGHT }}>
                   <span>{hour}</span>
                 </div>
@@ -1286,16 +1326,16 @@ const Agenda = () => {
                 <div 
                   key={prof.id} 
                   ref={(el) => (columnRefs.current[prof.id] = el)} 
-                  className={`relative border-l border-border transition-colors duration-200 ${isDragTarget ? 'bg-primary/5 border-primary/40' : ''}`} 
-                  style={{ height: hours.length * SLOT_HEIGHT }}
+                                     className={`relative border-l border-border transition-colors duration-200 ${isDragTarget ? 'bg-primary/5 border-primary/40' : ''}`} 
+                   style={{ height: allHours.length * SLOT_HEIGHT }}
                 >
                   {/* Linhas de hora de fundo */}
-                  {hours.map((h, i) => (
+                  {allHours.map((h, i) => (
                     <div key={h} className="absolute left-0 right-0 border-t border-border" style={{ top: i * SLOT_HEIGHT }} />
                   ))}
 
                   {/* Slots vazios clicáveis */}
-                  {hours.map((h, i) => {
+                  {allHours.map((h, i) => {
                     const topPos = i * SLOT_HEIGHT;
                     const slotKey = `${prof.id}-${h}`;
                     const isLocked = isSlotLocked(prof.id, h);
@@ -1315,39 +1355,67 @@ const Agenda = () => {
                         onMouseEnter={() => setHoveredSlot(slotKey)}
                         onMouseLeave={() => setHoveredSlot(null)}
                       >
-                                                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-                           <button
-                             type="button"
-                             className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm ${
-                               dragging || isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
-                             }`}
-                             onClick={() => handleEmptySlotClick(prof.id, h)}
-                             disabled={isLocked}
-                             aria-label={`Adicionar agendamento às ${h} com ${prof.nome}`}
-                           >
-                             +
-                           </button>
-                           
-                           {/* Botão de bloqueio/desbloqueio */}
-                           <button
-                             type="button"
-                             className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full ${
-                               isLocked 
-                                 ? 'bg-amber-500 text-amber-foreground' 
-                                 : 'bg-muted text-muted-foreground'
-                             } shadow-sm ${
-                               isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                             }`}
-                             onClick={() => handleSlotLock(prof.id, h)}
-                             aria-label={isLocked ? `Desbloquear horário ${h}` : `Bloquear horário ${h}`}
-                           >
-                             {isLocked ? (
-                               <Lock className="h-3 w-3" />
-                             ) : (
-                               <Unlock className="h-3 w-3" />
-                             )}
-                           </button>
-                         </div>
+                                                                          {/* Botões do centro - só aparecem quando NÃO está bloqueado */}
+                         {!isLocked && (
+                           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
+                              {/* Botão de adicionar agendamento */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm ${
+                                      dragging ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                                    }`}
+                                    onClick={() => handleEmptySlotClick(prof.id, h)}
+                                    aria-label={`Adicionar agendamento às ${h} com ${prof.nome}`}
+                                  >
+                                    +
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Adicionar agendamento às {h}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              {/* Botão de bloqueio */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground shadow-sm hover:scale-110 transition-all duration-200 ${
+                                      isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                    }`}
+                                    onClick={() => handleSlotLock(prof.id, h)}
+                                    aria-label={`Bloquear horário ${h}`}
+                                  >
+                                    <Unlock className="h-3 w-3 group-hover:animate-[wiggle_0.3s_ease-in-out]" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Bloquear horário {h}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                         )}
+                         
+                         {/* Botão de desbloqueio adicional quando bloqueado - no canto superior direito */}
+                         {isLocked && (
+                           <Tooltip>
+                             <TooltipTrigger asChild>
+                               <button
+                                 type="button"
+                                 className="absolute top-2 right-2 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-amber-foreground shadow-sm hover:scale-110 transition-all duration-200 opacity-100"
+                                 onClick={() => handleSlotLock(prof.id, h)}
+                                 aria-label={`Desbloquear horário ${h}`}
+                               >
+                                 <Lock className="h-3 w-3 hover:animate-[wiggle_0.3s_ease-in-out]" />
+                               </button>
+                             </TooltipTrigger>
+                             <TooltipContent>
+                               <p>Desbloquear horário {h}</p>
+                             </TooltipContent>
+                           </Tooltip>
+                         )}
                         
                         {/* Indicador visual de bloqueio */}
                         {isLocked && (
@@ -1964,9 +2032,10 @@ const Agenda = () => {
           </DialogPortal>
         </Dialog>
 
-      </div>
-    </AdminLayout>
-  );
-};
+             </div>
+     </AdminLayout>
+    </TooltipProvider>
+   );
+ };
 
 export default Agenda;
