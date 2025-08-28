@@ -11,6 +11,7 @@ import Agenda from "./pages/admin/Agenda";
 import Clientes from "./pages/admin/Clientes";
 import Profissionais from "./pages/admin/Profissionais";
 import Servicos from "./pages/admin/Servicos";
+import Produtos from "./pages/admin/Produtos";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
@@ -25,6 +26,7 @@ import ProfissionalDashboard from "./pages/profissional/ProfissionalDashboard";
 import ProfissionalAgenda from "./pages/profissional/Agenda";
 import ProfissionalClientes from "./pages/profissional/Clientes";
 import ProfissionalServicos from "./pages/profissional/Servicos";
+import ProfissionalProdutos from "./pages/profissional/Produtos";
 import ProfissionalRelatorios from "./pages/profissional/Relatorios";
 import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
 import Perfil from "./pages/Perfil";
@@ -130,6 +132,11 @@ function AppRoutes() {
           <Servicos />
         </ProtectedRoute>
       } />
+      <Route path="/admin/produtos" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Produtos />
+        </ProtectedRoute>
+      } />
       <Route path="/admin/relatorios" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Relatorios />
@@ -160,6 +167,11 @@ function AppRoutes() {
       <Route path="/profissional/servicos" element={
         <ProtectedRoute allowedRoles={['profissional']}>
           <ProfissionalServicos />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/produtos" element={
+        <ProtectedRoute allowedRoles={['profissional']}>
+          <ProfissionalProdutos />
         </ProtectedRoute>
       } />
       <Route path="/profissional/relatorios" element={

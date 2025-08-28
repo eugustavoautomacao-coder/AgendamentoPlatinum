@@ -9,6 +9,7 @@ import {
   Settings,
   User,
   Sparkles,
+  Package,
   Menu,
   X,
   ChevronLeft,
@@ -70,6 +71,11 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
       title: "Serviços",
       icon: Scissors,
       href: "/admin/servicos"
+    },
+    {
+      title: "Produtos",
+      icon: Package,
+      href: "/admin/produtos"
     },
     {
       title: "Relatórios",

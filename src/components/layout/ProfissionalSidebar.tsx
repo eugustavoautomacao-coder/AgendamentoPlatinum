@@ -7,6 +7,7 @@ import {
   Scissors,
   BarChart3,
   Settings,
+  Package,
   Menu,
   X,
   ChevronLeft,
@@ -21,6 +22,7 @@ const menuItems = [
   { title: "Agenda", icon: Calendar, href: "/profissional/agenda" },
   { title: "Clientes", icon: Users, href: "/profissional/clientes" },
   { title: "Serviços", icon: Scissors, href: "/profissional/servicos" },
+  { title: "Produtos", icon: Package, href: "/profissional/produtos" },
   { title: "Relatórios", icon: BarChart3, href: "/profissional/relatorios" },
   { title: "Configurações", icon: Settings, href: "/profissional/configuracoes" }
 ];

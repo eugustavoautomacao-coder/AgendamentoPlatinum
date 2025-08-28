@@ -13,7 +13,7 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Servicos = () => {
-  const { services, createService, updateService, deleteService, refetch } = useServices();
+  const { services, loading, createService, updateService, deleteService, refetch } = useServices();
   const { addDefaultServicesToExistingSalon } = useSalons();
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
@@ -323,22 +323,57 @@ const Servicos = () => {
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               Serviços
-              {hasActiveFilters && (
+              {!loading && hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
                   {filteredServices.length} de {services.length}
                 </Badge>
               )}
             </CardTitle>
             <CardDescription>
-              {hasActiveFilters 
-                ? `${filteredServices.length} serviço${filteredServices.length !== 1 ? 's' : ''} encontrado${filteredServices.length !== 1 ? 's' : ''}`
-                : `Total de ${services.length} serviço${services.length !== 1 ? 's' : ''}`
-              }
+              {loading ? (
+                "Carregando serviços..."
+              ) : hasActiveFilters ? (
+                `${filteredServices.length} serviço${filteredServices.length !== 1 ? 's' : ''} encontrado${filteredServices.length !== 1 ? 's' : ''}`
+              ) : (
+                `Total de ${services.length} serviço${services.length !== 1 ? 's' : ''}`
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredServices.length === 0 ? (
+              {loading ? (
+                // Skeleton Loading
+                [...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 p-4 bg-gradient-card rounded-lg border border-border animate-pulse"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-5 bg-muted rounded w-48"></div>
+                        <div className="h-5 bg-muted rounded w-20"></div>
+                      </div>
+                      
+                      <div className="flex items-center gap-6 mb-2">
+                        <div className="h-4 bg-muted rounded w-16"></div>
+                        <div className="h-4 bg-muted rounded w-24"></div>
+                      </div>
+
+                      <div className="h-4 bg-muted rounded w-full max-w-md"></div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="h-6 bg-muted rounded w-20 mb-1"></div>
+                      <div className="h-3 bg-muted rounded w-16"></div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-muted rounded w-16"></div>
+                      <div className="h-8 bg-muted rounded w-16"></div>
+                    </div>
+                  </div>
+                ))
+              ) : filteredServices.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   {hasActiveFilters ? (
                     <>
