@@ -12,8 +12,10 @@ import Clientes from "./pages/admin/Clientes";
 import Profissionais from "./pages/admin/Profissionais";
 import Servicos from "./pages/admin/Servicos";
 import Produtos from "./pages/admin/Produtos";
+import SolicitacoesAgendamento from "./pages/admin/SolicitacoesAgendamento";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
+import SalaoPublico from "./pages/SalaoPublico";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import GestaoSaloes from "./pages/superadmin/GestaoSaloes";
 import GestaoUsuarios from "./pages/superadmin/GestaoUsuarios";
@@ -30,6 +32,8 @@ import ProfissionalProdutos from "./pages/profissional/Produtos";
 import ProfissionalRelatorios from "./pages/profissional/Relatorios";
 import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
 import Perfil from "./pages/Perfil";
+import Agendar from "./pages/Agendar";
+import AgendamentoConfirmado from "./pages/AgendamentoConfirmado";
 import AdminLayout from "@/components/layout/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -137,6 +141,11 @@ function AppRoutes() {
           <Produtos />
         </ProtectedRoute>
       } />
+      <Route path="/admin/solicitacoes-agendamento" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <SolicitacoesAgendamento />
+        </ProtectedRoute>
+      } />
       <Route path="/admin/relatorios" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Relatorios />
@@ -184,6 +193,9 @@ function AppRoutes() {
           <ProfissionalConfiguracoes />
         </ProtectedRoute>
       } />
+      
+      {/* Public Routes - Autoatendimento */}
+      <Route path="/salao/:salaoId" element={<SalaoPublico />} />
       
       {/* 404 Route */}
       <Route path="*" element={<NotFound />} />

@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  MessageSquare,
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,11 @@ const AdminSidebar = ({ isCollapsed = false, setIsCollapsed }: AdminSidebarProps
       title: "Produtos",
       icon: Package,
       href: "/admin/produtos"
+    },
+    {
+      title: "Solicitações",
+      icon: MessageSquare,
+      href: "/admin/solicitacoes-agendamento"
     },
     {
       title: "Relatórios",
