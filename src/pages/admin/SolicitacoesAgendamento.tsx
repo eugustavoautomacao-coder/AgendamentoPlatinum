@@ -440,72 +440,146 @@ export default function SolicitacoesAgendamento() {
                               Ver
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="max-w-2xl">
+                          <AlertDialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Detalhes da Solicitação</AlertDialogTitle>
+                              <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+                                <MessageSquare className="h-5 w-5 text-primary" />
+                                Detalhes da Solicitação
+                              </AlertDialogTitle>
                             </AlertDialogHeader>
                             <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="font-semibold">Cliente</Label>
-                                  <p className="text-gray-600">{request.cliente_nome}</p>
-                                </div>
-                                <div>
-                                  <Label className="font-semibold">Telefone</Label>
-                                  <p className="text-gray-600">{request.cliente_telefone}</p>
-                                </div>
-                                <div>
-                                  <Label className="font-semibold">E-mail</Label>
-                                  <p className="text-gray-600">{request.cliente_email || 'Não informado'}</p>
-                                </div>
-                                <div>
-                                  <Label className="font-semibold">Status</Label>
-                                  <div>{getStatusBadge(request.status)}</div>
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <Label className="font-semibold">Serviço</Label>
-                                <p className="text-gray-600">{request.servico?.nome}</p>
-                                <p className="text-sm text-gray-500">
-                                  Duração: {request.servico?.duracao_minutos} min • 
-                                  Preço: R$ {request.servico?.preco?.toFixed(2)}
-                                </p>
-                              </div>
-                              
-                              <div>
-                                <Label className="font-semibold">Profissional</Label>
-                                <p className="text-gray-600">{request.funcionario?.nome || 'Não definido'}</p>
-                              </div>
-                              
-                              <div>
-                                <Label className="font-semibold">Data e Horário</Label>
-                                <p className="text-gray-600">{date} às {time}</p>
-                              </div>
-                              
+                              {/* Informações do Cliente */}
+                              <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
+                                <CardHeader className="pb-2 px-4 pt-4">
+                                  <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                                    <User className="h-4 w-4 text-primary" />
+                                    Informações do Cliente
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3 px-4 pb-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="font-semibold text-foreground text-sm">Nome</Label>
+                                      <p className="text-muted-foreground text-sm">{request.cliente_nome}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-semibold text-foreground text-sm">Telefone</Label>
+                                      <p className="text-muted-foreground text-sm">{request.cliente_telefone}</p>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                      <Label className="font-semibold text-foreground text-sm">E-mail</Label>
+                                      <p className="text-muted-foreground text-sm break-all">{request.cliente_email || 'Não informado'}</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Status */}
+                              <Card className="border-border">
+                                <CardContent className="pt-4 px-4 pb-4">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="font-semibold text-foreground">Status da Solicitação</Label>
+                                    {getStatusBadge(request.status)}
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Detalhes do Serviço */}
+                              <Card className="border-border">
+                                <CardHeader className="pb-2 px-4 pt-4">
+                                  <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                                    <Scissors className="h-4 w-4 text-primary" />
+                                    Serviço Solicitado
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                  <div>
+                                    <Label className="font-semibold text-foreground">Nome do Serviço</Label>
+                                    <p className="text-muted-foreground">{request.servico?.nome}</p>
+                                  </div>
+                                  <div className="flex gap-4 text-sm">
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-4 w-4 text-primary" />
+                                      <span className="text-muted-foreground">
+                                        {request.servico?.duracao_minutos} min
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-muted-foreground">
+                                        R$ {request.servico?.preco?.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Profissional e Horário */}
+                              <Card className="border-border">
+                                <CardHeader className="pb-2 px-4 pt-4">
+                                  <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                                    <Calendar className="h-4 w-4 text-primary" />
+                                    Agendamento
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3 px-4 pb-4">
+                                  <div>
+                                    <Label className="font-semibold text-foreground">Profissional</Label>
+                                    <p className="text-muted-foreground">{request.funcionario?.nome || 'Não definido'}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="font-semibold text-foreground">Data e Horário</Label>
+                                    <p className="text-muted-foreground">{date} às {time}</p>
+                                  </div>
+                                </CardContent>
+                              </Card>
+
+                              {/* Observações */}
                               {request.observacoes && (
-                                <div>
-                                  <Label className="font-semibold">Observações</Label>
-                                  <p className="text-gray-600">{request.observacoes}</p>
-                                </div>
+                                <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                                  <CardHeader className="pb-2 px-4 pt-4">
+                                    <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                                      <MessageSquare className="h-4 w-4" />
+                                      Observações
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="px-4 pb-4">
+                                    <p className="text-amber-700 dark:text-amber-300">{request.observacoes}</p>
+                                  </CardContent>
+                                </Card>
                               )}
-                              
+
+                              {/* Motivo da Rejeição */}
                               {request.motivo_rejeicao && (
-                                <div>
-                                  <Label className="font-semibold">Motivo da Rejeição</Label>
-                                  <p className="text-red-600">{request.motivo_rejeicao}</p>
-                                </div>
+                                <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+                                  <CardHeader className="pb-2 px-4 pt-4">
+                                    <CardTitle className="text-base flex items-center gap-2 text-red-800 dark:text-red-200">
+                                      <XCircle className="h-4 w-4" />
+                                      Motivo da Rejeição
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="px-4 pb-4">
+                                    <p className="text-red-700 dark:text-red-300">{request.motivo_rejeicao}</p>
+                                  </CardContent>
+                                </Card>
                               )}
-                              
-                              <div>
-                                <Label className="font-semibold">Data da Solicitação</Label>
-                                <p className="text-gray-600">
-                                  {new Date(request.criado_em).toLocaleString('pt-BR')}
-                                </p>
-                              </div>
+
+                              {/* Data da Solicitação */}
+                              <Card className="border-border bg-muted/30">
+                                <CardContent className="pt-4 px-4 pb-4">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
+                                    <Label className="font-semibold text-foreground">Data da Solicitação</Label>
+                                  </div>
+                                  <p className="text-muted-foreground mt-1">
+                                    {new Date(request.criado_em).toLocaleString('pt-BR')}
+                                  </p>
+                                </CardContent>
+                              </Card>
                             </div>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Fechar</AlertDialogCancel>
+                              <AlertDialogCancel className="border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                                Fechar
+                              </AlertDialogCancel>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

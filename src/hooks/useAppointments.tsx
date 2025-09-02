@@ -50,57 +50,43 @@ export function useAppointments() {
         .eq('salao_id', profile.salao_id)
         .order('data_hora', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar agendamentos:', error);
+        throw error;
+      }
 
-      // Get client and professional names separately
+      // Processar dados para incluir nomes dos clientes e funcionários
       const appointmentsWithNames = await Promise.all(
         (data || []).map(async (apt) => {
+          if (apt.cliente_nome) { // Use direct client data if available
+            const professionalData = await supabase
+              .from('employees')
+              .select('nome')
+              .eq('id', apt.funcionario_id)
+              .single();
+            return { ...apt, funcionario_nome: professionalData.data?.nome, servico_nome: apt.servico?.nome, servico_duracao: apt.servico?.duracao_minutos, servico_preco: apt.servico?.preco } as Appointment;
+          }
+          // Fallback to fetching from users table if client_id is present
           const [clientData, professionalData] = await Promise.all([
             supabase.from('users').select('nome, telefone').eq('id', apt.cliente_id).single(),
             supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
           ]);
-          
-          return {
-            ...apt,
-            cliente_nome: clientData.data?.nome,
-            cliente_telefone: clientData.data?.telefone || undefined,
-            funcionario_nome: professionalData.data?.nome,
-            servico_nome: apt.servico?.nome,
-            servico_duracao: apt.servico?.duracao_minutos,
-            servico_preco: apt.servico?.preco
-          } as Appointment;
+          return { ...apt, cliente_nome: clientData.data?.nome, cliente_telefone: clientData.data?.telefone || undefined, funcionario_nome: professionalData.data?.nome, servico_nome: apt.servico?.nome, servico_duracao: apt.servico?.duracao_minutos, servico_preco: apt.servico?.preco } as Appointment;
         })
       );
 
       return appointmentsWithNames;
     },
     enabled: !!profile?.salao_id,
-    staleTime: 30000, // 30 segundos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: false,
-    retry: 2
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
   // Mutation para criar agendamento
   const createAppointmentMutation = useMutation({
-    mutationFn: async (appointmentData: {
-      cliente_id: string;
-      funcionario_id: string;
-      servico_id: string;
-      data_hora: string;
-      motivo_cancelamento?: string;
-      observacoes?: string;
-      status?: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
-    }) => {
-      if (!profile?.salao_id) throw new Error('Salon ID não encontrado');
-
+    mutationFn: async (appointmentData: any) => {
       const { data, error } = await supabase
         .from('appointments')
-        .insert([{ 
-          ...appointmentData, 
-          salao_id: profile.salao_id,
-          status: appointmentData.status || 'pendente' // Usa o status fornecido ou padrão
-        }])
+        .insert([appointmentData])
         .select()
         .single();
 
@@ -108,23 +94,25 @@ export function useAppointments() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
-        title: 'Agendamento criado com sucesso!',
+        title: "Sucesso",
+        description: "Agendamento criado com sucesso!",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      console.error('Erro ao criar agendamento:', error);
       toast({
-        variant: "destructive",
         title: "Erro",
-        description: error.message || 'Erro ao criar agendamento'
+        description: "Erro ao criar agendamento. Tente novamente.",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Mutation para atualizar agendamento
   const updateAppointmentMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Appointment> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       const { data, error } = await supabase
         .from('appointments')
         .update(updates)
@@ -136,15 +124,20 @@ export function useAppointments() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
-    },
-    onError: (error: any) => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
-        variant: "destructive",
-        title: "Erro",
-        description: error.message || 'Erro ao atualizar agendamento'
+        title: "Sucesso",
+        description: "Agendamento atualizado com sucesso!",
       });
-    }
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar agendamento:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar agendamento. Tente novamente.",
+        variant: "destructive",
+      });
+    },
   });
 
   // Mutation para deletar agendamento
@@ -158,18 +151,20 @@ export function useAppointments() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', profile?.salao_id] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast({
-        title: 'Agendamento excluído com sucesso!',
+        title: "Sucesso",
+        description: "Agendamento deletado com sucesso!",
       });
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      console.error('Erro ao deletar agendamento:', error);
       toast({
-        variant: "destructive",
         title: "Erro",
-        description: error.message || 'Erro ao excluir agendamento'
+        description: "Erro ao deletar agendamento. Tente novamente.",
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Funções wrapper para manter compatibilidade

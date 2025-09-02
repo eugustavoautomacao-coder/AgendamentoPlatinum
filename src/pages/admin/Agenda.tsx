@@ -8,6 +8,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import { useSalonInfo } from '@/hooks/useSalonInfo';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useAppointments } from '@/hooks/useAppointments';
+import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription, DialogPortal, DialogOverlay } from '@/components/ui/dialog';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
@@ -62,6 +63,7 @@ const Agenda = () => {
   const { salonInfo } = useSalonInfo();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
+  const { profile } = useAuth();
 
 
   const { clients, createClient, refetch: refetchClients } = useClients();
@@ -184,6 +186,36 @@ const Agenda = () => {
   const [lockedSlots, setLockedSlots] = useState<Set<string>>(new Set());
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
 
+  // Função para carregar horários bloqueados do banco
+  const loadBlockedSlots = async (date: Date) => {
+    try {
+      console.log('loadBlockedSlots chamado:', { date: format(date, 'yyyy-MM-dd'), salonInfoId: salonInfo?.id });
+      
+      const { data, error } = await supabase
+        .from('blocked_slots')
+        .select('funcionario_id, hora_inicio')
+        .eq('salao_id', salonInfo?.id)
+        .eq('data', format(date, 'yyyy-MM-dd'));
+
+      if (error) throw error;
+
+      console.log('Dados carregados do banco:', data);
+
+      // Converter para o formato do estado local
+      const blockedSet = new Set<string>();
+      data?.forEach(slot => {
+        blockedSet.add(`${slot.funcionario_id}-${slot.hora_inicio}`);
+      });
+
+      console.log('Estado local atualizado:', Array.from(blockedSet));
+      setLockedSlots(blockedSet);
+    } catch (error) {
+      console.error('Erro ao carregar horários bloqueados:', error);
+      // Se a tabela não existir, continuar sem bloqueios
+      setLockedSlots(new Set());
+    }
+  };
+
   // Horário de funcionamento baseado na data selecionada
   const getScheduleForDate = (date: Date) => {
     if (!salonInfo?.working_hours) {
@@ -303,10 +335,34 @@ const Agenda = () => {
       return;
     }
 
+    // Garantir que telefone tenha pelo menos um valor
+    if (!clientForm.telefone || clientForm.telefone.trim() === '') {
+      setClientForm(prev => ({ ...prev, telefone: 'Não informado' }));
+    }
+
     setCreatingClient(true);
     try {
+      // Gerar senha temporária (6 dígitos)
+      const senhaTemporaria = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Verificar se temos o salao_id
+      if (!salonInfo?.id) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Informações do salão não encontradas"
+        });
+        return;
+      }
+
       // Criar cliente usando o hook useClients
-      const result = await createClient(clientForm);
+      const result = await createClient({
+        nome: clientForm.nome,
+        email: clientForm.email,
+        telefone: clientForm.telefone || 'Não informado',
+        salao_id: salonInfo.id,
+        senha_hash: senhaTemporaria // Em produção, isso deveria ser um hash
+      } as any);
       
       if (result && result.data) {
         // Limpar formulário de cliente
@@ -323,7 +379,7 @@ const Agenda = () => {
         
         toast({
           title: "Cliente criado com sucesso!",
-          description: "Cliente selecionado automaticamente no agendamento."
+          description: `Cliente selecionado automaticamente. Senha temporária: ${senhaTemporaria}`,
         });
         
         // Refetch clients para atualizar a lista
@@ -601,25 +657,87 @@ const Agenda = () => {
     setOpen(true);
   };
   
-  const handleSlotLock = (profId: string, hour: string) => {
+  const handleSlotLock = async (profId: string, hour: string) => {
     const slotKey = `${profId}-${hour}`;
+    const isCurrentlyLocked = lockedSlots.has(slotKey);
+    
+    console.log('handleSlotLock chamado:', { profId, hour, slotKey, isCurrentlyLocked, salonInfoId: salonInfo?.id, profileId: profile?.id });
+    
+    try {
+      if (isCurrentlyLocked) {
+        // Desbloquear horário - remover do banco
+        console.log('Desbloqueando horário:', { profId, hour, data: format(selectedDate || new Date(), 'yyyy-MM-dd') });
+        
+        const { error } = await supabase
+          .from('blocked_slots')
+          .delete()
+          .eq('funcionario_id', profId)
+          .eq('data', format(selectedDate || new Date(), 'yyyy-MM-dd'))
+          .eq('hora_inicio', hour);
+
+        if (error) throw error;
+
+        console.log('Horário desbloqueado no banco com sucesso');
+
+        // Remover do estado local
     setLockedSlots(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(slotKey)) {
         newSet.delete(slotKey);
+          return newSet;
+        });
+
         toast({
           title: "Horário desbloqueado",
           description: `O horário ${hour} foi liberado para agendamentos`
         });
       } else {
+        // Bloquear horário - inserir no banco
+        const endHour = addMinutes(new Date(`2000-01-01T${hour}:00`), SLOT_MINUTES).toTimeString().slice(0, 5);
+        
+        console.log('Bloqueando horário:', { 
+          salao_id: salonInfo?.id, 
+          funcionario_id: profId, 
+          data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+          hora_inicio: hour,
+          hora_fim: endHour,
+          criado_por: profile?.id
+        });
+        
+        const { error } = await supabase
+          .from('blocked_slots')
+          .insert([{
+            salao_id: salonInfo?.id,
+            funcionario_id: profId,
+            data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
+            hora_inicio: hour,
+            hora_fim: endHour,
+            criado_por: profile?.id
+          }]);
+
+        if (error) throw error;
+
+        console.log('Horário bloqueado no banco com sucesso');
+
+        // Adicionar ao estado local
+        setLockedSlots(prev => {
+          const newSet = new Set(prev);
         newSet.add(slotKey);
+          return newSet;
+        });
+
         toast({
           title: "Horário bloqueado",
           description: `O horário ${hour} foi bloqueado para agendamentos`
         });
       }
-      return newSet;
-    });
+    } catch (error) {
+      console.error('Erro ao gerenciar bloqueio:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao gerenciar bloqueio do horário",
+        variant: "destructive"
+      });
+    }
   };
   
   const isSlotLocked = (profId: string, hour: string) => {
@@ -664,6 +782,14 @@ const Agenda = () => {
   useEffect(() => {
     setCurrentProfIndex(0);
   }, [selectedDate]);
+
+  // Carregar horários bloqueados quando mudar de data
+  useEffect(() => {
+    console.log('useEffect loadBlockedSlots:', { selectedDate, salonInfoId: salonInfo?.id, salonInfo });
+    if (selectedDate && salonInfo?.id) {
+      loadBlockedSlots(selectedDate);
+    }
+  }, [selectedDate, salonInfo?.id]);
 
   // Resetar índice de profissionais quando o filtro de profissional mudar
   useEffect(() => {

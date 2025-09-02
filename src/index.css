@@ -281,7 +281,100 @@
     padding-right: 2.5rem; /* Espaço para evitar que o texto fique muito próximo da borda */
   }
   
+  /* Estilização do ícone do calendário em inputs de data */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0) hue-rotate(320deg) saturate(3) brightness(1.5) contrast(1.2);
+    cursor: pointer;
+    opacity: 1;
+    background: transparent;
+  }
+  
+  /* Para modo escuro */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) hue-rotate(320deg) saturate(3) brightness(2) contrast(1.5);
+    opacity: 1;
+    background: transparent;
+  }
+  
+  /* Fallback para navegadores que não suportam filtros */
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(0) hue-rotate(320deg) saturate(3) brightness(2) contrast(1.5);
+  }
 
+  /* Estilização do calendário shadcn/ui */
+  .rdp {
+    --rdp-cell-size: 2.25rem;
+    --rdp-accent-color: hsl(var(--primary));
+    --rdp-background-color: hsl(var(--background));
+    --rdp-outline: 2px solid hsl(var(--primary));
+    --rdp-outline-selected: 2px solid hsl(var(--primary));
+    --rdp-selected-color: hsl(var(--primary-foreground));
+    --rdp-text-color: hsl(var(--foreground));
+    --rdp-accent-color-dark: hsl(var(--primary));
+    --rdp-background-color-dark: hsl(var(--background));
+    --rdp-outline-dark: 2px solid hsl(var(--primary));
+    --rdp-outline-selected-dark: 2px solid hsl(var(--primary));
+    --rdp-selected-color-dark: hsl(var(--primary-foreground));
+    --rdp-text-color-dark: hsl(var(--foreground));
+  }
+
+  /* Botões de navegação do calendário */
+  .rdp-button_reset {
+    color: hsl(var(--foreground));
+  }
+
+  .rdp-button_reset:hover {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+  }
+
+  /* Cabeçalho do calendário */
+  .rdp-caption_label {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+
+  /* Dias da semana */
+  .rdp-head_cell {
+    color: hsl(var(--muted-foreground));
+    font-weight: 500;
+  }
+
+  /* Dia selecionado */
+  .rdp-day_selected {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  .rdp-day_selected:hover {
+    background-color: hsl(var(--primary) / 0.9) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  /* Dia de hoje */
+  .rdp-day_today {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-weight: 600;
+  }
+
+  /* Hover nos dias */
+  .rdp-day:hover:not(.rdp-day_selected):not(.rdp-day_disabled) {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+  }
+
+  /* Dias desabilitados */
+  .rdp-day_disabled {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+  }
+
+  /* Dias de outros meses */
+  .rdp-day_outside {
+    color: hsl(var(--muted-foreground));
+    opacity: 0.5;
+  }
 
   /* Animação wiggle para o cadeado */
   @keyframes wiggle {

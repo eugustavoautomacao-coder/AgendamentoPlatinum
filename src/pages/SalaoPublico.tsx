@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User, Phone, Mail, MapPin, Star, CheckCircle, Search } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Phone, Mail, MapPin, Star, CheckCircle, Search, LogIn, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { ClienteLoginModal } from '@/components/ClienteLoginModal';
 
 interface Salon {
   id: string;
@@ -40,21 +41,130 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface Cliente {
+  id: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  salao_id: string;
+}
+
 export default function SalaoPublico() {
   const { salaoId } = useParams<{ salaoId: string }>();
   const navigate = useNavigate();
   const { createAppointmentRequest, isLoading } = useAppointmentRequests();
+  
+  // Estado para cliente logado
+  const [clienteLogado, setClienteLogado] = useState<Cliente | null>(null);
+  const [verificandoCliente, setVerificandoCliente] = useState(true);
+  
+  // Helper function para obter data de hoje no formato correto
+  const getTodayDate = () => {
+    const today = new Date();
+    // Ajustar para fuso horário local
+    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+    const result = localDate.toISOString().split('T')[0];
+    return result;
+  };
   
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDate());
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [step, setStep] = useState<'services' | 'professional' | 'schedule' | 'form' | 'success'>('services');
   const [serviceSearchTerm, setServiceSearchTerm] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [senhaTemporaria, setSenhaTemporaria] = useState<string>('');
+  const [clienteEmail, setClienteEmail] = useState<string>('');
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  
+  // Verificar se há cliente logado no localStorage
+  useEffect(() => {
+    const checkClienteLogado = () => {
+      try {
+        const storedCliente = localStorage.getItem('cliente_auth');
+        if (storedCliente) {
+          const clienteData = JSON.parse(storedCliente);
+          // Verificar se o cliente é do salão atual
+          if (clienteData.salao_id === salaoId) {
+            setClienteLogado(clienteData);
+            // Pré-preencher o formulário apenas se não estiver vazio
+            setFormData(prev => ({
+              ...prev,
+              cliente_nome: clienteData.nome || '',
+              cliente_telefone: clienteData.telefone || '',
+              cliente_email: clienteData.email || ''
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar cliente armazenado:', error);
+        localStorage.removeItem('cliente_auth');
+      } finally {
+        setVerificandoCliente(false);
+      }
+    };
+
+    if (salaoId) {
+      checkClienteLogado();
+    }
+  }, [salaoId]);
+
+  // Função para fazer logout do cliente
+  const handleClienteLogout = () => {
+    localStorage.removeItem('cliente_auth');
+    setClienteLogado(null);
+    // Limpar formulário
+    setFormData({
+      cliente_nome: '',
+      cliente_telefone: '',
+      cliente_email: '',
+      observacoes: ''
+    });
+    toast.success('Logout realizado com sucesso!');
+    // Redirecionar para a página de login do cliente
+    navigate(`/cliente/${salaoId}/login`);
+  };
+
+  // Função para atualizar estado após login bem-sucedido
+  const handleLoginSuccess = (clienteData: Cliente) => {
+    setClienteLogado(clienteData);
+    // Pré-preencher o formulário apenas se os campos estiverem vazios
+    setFormData(prev => ({
+      ...prev,
+      cliente_nome: prev.cliente_nome || clienteData.nome,
+      cliente_telefone: prev.cliente_telefone || clienteData.telefone,
+      cliente_email: prev.cliente_email || clienteData.email
+    }));
+    setShowLoginModal(false);
+    // Não redirecionar aqui, o modal faz isso diretamente
+  };
+  
+  // Helper function para formatar data
+  const formatDate = (dateString: string) => {
+    try {
+      // Criar data no fuso horário local
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day); // month - 1 porque getMonth() retorna 0-11
+      
+      const formattedDate = date.toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      // Capitalizar primeira letra do dia da semana
+      return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return dateString; // Retorna a string original se houver erro
+    }
+  };
   
   // Form data
   const [formData, setFormData] = useState({
@@ -69,6 +179,21 @@ export default function SalaoPublico() {
       fetchSalonData();
     }
   }, [salaoId]);
+
+  // Garantir que a data atual seja sempre correta
+  useEffect(() => {
+    const today = getTodayDate();
+    if (selectedDate !== today) {
+      setSelectedDate(today);
+    }
+  }, []);
+
+  // Carregar horários disponíveis quando chegar no passo de agendamento
+  useEffect(() => {
+    if (step === 'schedule' && selectedService && selectedProfessional && selectedDate) {
+      fetchAvailableSlots(selectedDate);
+    }
+  }, [step, selectedService, selectedProfessional, selectedDate]);
 
   const fetchSalonData = async () => {
     try {
@@ -123,16 +248,35 @@ export default function SalaoPublico() {
   const handleProfessionalSelect = (professional: Professional) => {
     setSelectedProfessional(professional);
     setStep('schedule');
+    // Buscar horários disponíveis automaticamente para a data selecionada
+    setTimeout(() => {
+      if (selectedDate) {
+        fetchAvailableSlots(selectedDate);
+      }
+    }, 100);
   };
 
   const handleDateSelect = async (date: string) => {
-    setSelectedDate(date);
-    await fetchAvailableSlots(date);
+    // Garantir que a data está no formato correto
+    const formattedDate = date.split('T')[0]; // Remove qualquer parte de tempo
+    
+    // Debug log
+    console.log('handleDateSelect debug:', {
+      originalDate: date,
+      formattedDate: formattedDate,
+      selectedDate: selectedDate,
+      currentTime: new Date().toLocaleString('pt-BR')
+    });
+    
+    setSelectedDate(formattedDate);
+    await fetchAvailableSlots(formattedDate);
   };
 
   const fetchAvailableSlots = async (date: string) => {
     if (!selectedService || !selectedProfessional) return;
 
+    setLoadingSlots(true);
+    
     try {
       // Buscar agendamentos existentes para o dia
       const { data: appointments, error } = await supabase
@@ -145,10 +289,58 @@ export default function SalaoPublico() {
 
       if (error) throw error;
 
-      // Gerar slots disponíveis (assumindo horário de funcionamento 8h-18h)
+      // Buscar horários bloqueados do funcionário para este dia
+      let blockedSlots: any[] = [];
+      try {
+        const { data: blockedData, error: blockedError } = await supabase
+          .from('blocked_slots')
+          .select('hora_inicio, hora_fim')
+          .eq('funcionario_id', selectedProfessional.id)
+          .eq('data', date);
+
+        if (!blockedError && blockedData) {
+          blockedSlots = blockedData;
+        }
+      } catch (error) {
+        // Tabela pode não existir, continuar sem horários bloqueados
+        console.log('Tabela de horários bloqueados não encontrada, continuando...');
+      }
+
+      // Buscar horário de funcionamento do salão
+      let workingHours: any = null;
+      try {
+        const { data: whData, error: workingError } = await supabase
+          .from('saloes')
+          .select('working_hours')
+          .eq('id', salaoId)
+          .single();
+
+        if (!workingError && whData) {
+          workingHours = whData;
+        }
+      } catch (error) {
+        // Campo pode não existir, continuar com horário padrão
+        console.log('Horários de funcionamento não configurados, usando padrão...');
+      }
+
+      // Determinar horário de funcionamento (padrão 8h-18h se não configurado)
+      let startHour = 8;
+      let endHour = 18;
+      
+      if (workingHours?.working_hours) {
+        const wh = workingHours.working_hours;
+        const today = new Date(date).getDay();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const dayKey = dayNames[today];
+        
+        if (wh[dayKey] && wh[dayKey].active) {
+          startHour = parseInt(wh[dayKey].open.split(':')[0]);
+          endHour = parseInt(wh[dayKey].close.split(':')[0]);
+        }
+      }
+
+      // Gerar slots disponíveis
       const slots: TimeSlot[] = [];
-      const startHour = 8;
-      const endHour = 18;
       const serviceDuration = selectedService.duracao_minutos;
 
       for (let hour = startHour; hour < endHour; hour++) {
@@ -156,16 +348,31 @@ export default function SalaoPublico() {
           const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
           const slotDateTime = new Date(`${date}T${timeString}:00`);
           
-          // Verificar se o slot está disponível
-          const isAvailable = !appointments?.some(apt => {
+          // Verificar se o slot está disponível (não conflita com agendamentos)
+          const isAvailableByAppointments = !appointments?.some(apt => {
             const aptTime = new Date(apt.data_hora);
-            const aptEndTime = new Date(aptTime.getTime() + (apt.servico?.duracao_minutos || 60) * 60000);
+            const aptServiceDuration = (apt.servico as any)?.duracao_minutos || 60;
+            const aptEndTime = new Date(aptTime.getTime() + aptServiceDuration * 60000);
             const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
             
             return (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
                    (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
                    (slotDateTime <= aptTime && slotEndTime >= aptEndTime);
           });
+
+          // Verificar se o slot não está bloqueado pelo funcionário
+          const isAvailableByBlockedSlots = !blockedSlots?.some(blocked => {
+            const blockedStart = new Date(`${date}T${blocked.hora_inicio}`);
+            const blockedEnd = new Date(`${date}T${blocked.hora_fim}`);
+            const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
+            
+            return (slotDateTime >= blockedStart && slotDateTime < blockedEnd) ||
+                   (slotEndTime > blockedStart && slotEndTime <= blockedEnd) ||
+                   (slotDateTime <= blockedStart && slotEndTime >= blockedEnd);
+          });
+
+          // Slot está disponível se não conflita com agendamentos E não está bloqueado
+          const isAvailable = isAvailableByAppointments && isAvailableByBlockedSlots;
 
           slots.push({
             time: timeString,
@@ -175,9 +382,24 @@ export default function SalaoPublico() {
       }
 
       setAvailableSlots(slots);
+      
+      // Debug logs
+      console.log('Horários carregados:', {
+        date,
+        professional: selectedProfessional.nome,
+        service: selectedService.nome,
+        totalSlots: slots.length,
+        availableSlots: slots.filter(s => s.available).length,
+        workingHours: { startHour, endHour },
+        appointments: appointments?.length || 0,
+        blockedSlots: blockedSlots.length
+      });
     } catch (error) {
       console.error('Erro ao buscar horários disponíveis:', error);
       toast.error('Erro ao buscar horários disponíveis');
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -200,7 +422,7 @@ export default function SalaoPublico() {
     try {
       const dataHora = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
       
-      const success = await createAppointmentRequest({
+      const result = await createAppointmentRequest({
         salao_id: salaoId!,
         servico_id: selectedService.id,
         funcionario_id: selectedProfessional.id,
@@ -211,8 +433,16 @@ export default function SalaoPublico() {
         observacoes: formData.observacoes || undefined
       });
 
-      if (success) {
+      console.log('Resultado createAppointmentRequest:', result);
+      if (result && (result as any).request) {
         setStep('success');
+        
+        // Se uma conta foi criada, mostrar modal de login
+        if ((result as any).senhaTemporaria && formData.cliente_email) {
+          setSenhaTemporaria((result as any).senhaTemporaria);
+          setClienteEmail(formData.cliente_email);
+          setShowLoginModal(true);
+        }
       } else {
         toast.error('Erro ao enviar solicitação');
       }
@@ -238,25 +468,57 @@ export default function SalaoPublico() {
       {/* Header do Salão */}
       <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{salon.nome}</h1>
-              <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{salon.nome}</h1>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Phone className="h-4 w-4" />
-                  <span>{salon.telefone}</span>
+                  <span className="text-sm sm:text-base">{salon.telefone}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
-                  <span>{salon.endereco}</span>
+                  <span className="text-sm sm:text-base">{salon.endereco}</span>
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <Badge variant="outline" className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400">
+            <div className="flex flex-col items-start sm:items-end gap-2">
+              <Badge variant="outline" className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400 self-start sm:self-end">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Online
               </Badge>
+              {clienteLogado ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 self-start sm:self-end">
+                    <User className="h-3 w-3 mr-1" />
+                    {clienteLogado.nome}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClienteLogout}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-start sm:self-end"
+                  >
+                    <LogOut className="h-3 w-3 mr-1" />
+                    Sair
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+                  <div className="text-xs text-muted-foreground self-start sm:self-end">
+                    Já tem login?
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowLoginModal(true)}
+                    className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-xs px-3 py-1 self-start sm:self-end"
+                  >
+                    <LogIn className="h-3 w-3" />
+                    Entrar
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -269,6 +531,7 @@ export default function SalaoPublico() {
             {['services', 'professional', 'schedule', 'form'].map((stepName, index) => (
               <div key={stepName} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step === 'success' ? 'bg-green-500 text-white' : // Todos verdes na tela de sucesso
                   step === stepName ? 'bg-primary text-primary-foreground' : 
                   ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
                 }`}>
@@ -276,6 +539,7 @@ export default function SalaoPublico() {
                 </div>
                 {index < 3 && (
                   <div className={`w-16 h-0.5 ${
+                    step === 'success' ? 'bg-green-500' : // Todas as linhas verdes na tela de sucesso
                     ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500' : 'bg-muted'
                   }`} />
                 )}
@@ -414,18 +678,44 @@ export default function SalaoPublico() {
               <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Calendar className="h-5 w-5 text-primary" />
+                    <CalendarIcon className="h-5 w-5 text-primary" />
                     Escolha a Data
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => handleDateSelect(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full"
-                  />
+                  <div className="space-y-3">
+                    {/* Campo de data formatada (visual) */}
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        value={formatDate(selectedDate)}
+                        readOnly
+                        className="w-full pr-10 cursor-pointer bg-muted/50"
+                        onClick={() => {
+                          const dateInput = document.getElementById('date-input') as HTMLInputElement;
+                          if (dateInput) dateInput.showPicker();
+                        }}
+                        placeholder="Selecione uma data"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <CalendarIcon className="h-4 w-4 text-primary" />
+                      </div>
+                    </div>
+                    
+                    {/* Campo de data nativo (funcional) */}
+                    <Input
+                      id="date-input"
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => handleDateSelect(e.target.value)}
+                      min={getTodayDate()}
+                      className="sr-only"
+                    />
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Clique no campo para abrir o calendário e escolher uma data
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -437,21 +727,63 @@ export default function SalaoPublico() {
                       <Clock className="h-5 w-5 text-primary" />
                       Horários Disponíveis
                     </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Horários livres para {formatDate(selectedDate)}
+                    </p>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto modal-scrollbar">
-                      {availableSlots.map((slot) => (
-                        <Button
-                          key={slot.time}
-                          variant={slot.available ? "outline" : "secondary"}
-                          disabled={!slot.available}
-                          onClick={() => slot.available && handleTimeSelect(slot.time)}
+                    {loadingSlots ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                        <p className="text-muted-foreground">Carregando horários disponíveis...</p>
+                      </div>
+                    ) : availableSlots.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum horário disponível</h3>
+                        <p className="text-muted-foreground text-sm mb-4">
+                          Não há horários disponíveis para esta data. 
+                          Tente selecionar outra data ou entre em contato com o salão.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setStep('professional')}
                           className="text-sm"
                         >
-                          {slot.time}
+                          Escolher Outro Profissional
                         </Button>
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4 text-sm text-muted-foreground">
+                          {availableSlots.filter(slot => slot.available).length} de {availableSlots.length} horários disponíveis
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto modal-scrollbar">
+                          {availableSlots.map((slot) => (
+                            <Button
+                              key={slot.time}
+                              variant={slot.available ? "outline" : "secondary"}
+                              disabled={!slot.available}
+                              onClick={() => slot.available && handleTimeSelect(slot.time)}
+                              className={`text-sm ${
+                                slot.available 
+                                  ? 'hover:bg-primary hover:text-primary-foreground border-primary' 
+                                  : 'cursor-not-allowed opacity-50'
+                              }`}
+                              title={slot.available ? `Agendar para ${slot.time}` : 'Horário indisponível'}
+                            >
+                              {slot.time}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="mt-3 text-xs text-muted-foreground">
+                          <span className="inline-block w-3 h-3 bg-primary border border-primary rounded mr-1"></span>
+                          Disponível
+                          <span className="inline-block w-3 h-3 bg-muted border border-border rounded ml-3 mr-1"></span>
+                          Indisponível
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -468,13 +800,37 @@ export default function SalaoPublico() {
               </Button>
               <h2 className="text-2xl font-bold text-foreground">Seus Dados</h2>
               <p className="text-muted-foreground">
-                {selectedProfessional.nome} • {selectedService.nome} • {selectedDate} às {selectedTime}
+                {selectedProfessional.nome} • {selectedService.nome} • {formatDate(selectedDate)} às {selectedTime}
               </p>
             </div>
 
             <Card className="max-w-2xl mx-auto border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Informações para o Agendamento</CardTitle>
+                <CardTitle className="text-foreground flex items-center justify-between">
+                  <span>Informações para o Agendamento</span>
+                  {clienteLogado && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full text-sm">
+                        <CheckCircle className="h-4 w-4" />
+                        Cliente Logado
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClienteLogout}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4 mr-1" />
+                        Sair
+                      </Button>
+                    </div>
+                  )}
+                </CardTitle>
+                {clienteLogado && (
+                  <p className="text-sm text-muted-foreground">
+                    Olá, <strong>{clienteLogado.nome}</strong>! Seus dados foram preenchidos automaticamente.
+                  </p>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -484,7 +840,14 @@ export default function SalaoPublico() {
                     value={formData.cliente_nome}
                     onChange={(e) => setFormData(prev => ({ ...prev, cliente_nome: e.target.value }))}
                     placeholder="Seu nome completo"
+                    disabled={clienteLogado !== null}
+                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
                   />
+                  {clienteLogado && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Dados preenchidos automaticamente do seu perfil
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -494,18 +857,31 @@ export default function SalaoPublico() {
                     value={formData.cliente_telefone}
                     onChange={(e) => setFormData(prev => ({ ...prev, cliente_telefone: e.target.value }))}
                     placeholder="(11) 99999-9999"
+                    disabled={clienteLogado !== null}
+                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
                   />
+                  {clienteLogado && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Dados preenchidos automaticamente do seu perfil
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <Label htmlFor="cliente_email">E-mail</Label>
                   <Input
                     id="cliente_email"
-                    type="email"
                     value={formData.cliente_email}
                     onChange={(e) => setFormData(prev => ({ ...prev, cliente_email: e.target.value }))}
                     placeholder="seu@email.com"
+                    disabled={clienteLogado !== null}
+                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
                   />
+                  {clienteLogado && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Dados preenchidos automaticamente do seu perfil
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -542,24 +918,80 @@ export default function SalaoPublico() {
               Sua solicitação de agendamento foi enviada com sucesso. 
               O salão entrará em contato para confirmar o horário.
             </p>
-            <Button onClick={() => {
-              setStep('services');
-              setSelectedService(null);
-              setSelectedProfessional(null);
-              setSelectedDate('');
-              setSelectedTime('');
-              setFormData({
-                cliente_nome: '',
-                cliente_telefone: '',
-                cliente_email: '',
-                observacoes: ''
-              });
-            }}>
-              Fazer Novo Agendamento
-            </Button>
+            
+            {/* Explicação sobre acompanhamento */}
+            <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 mb-6">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <LogIn className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      Quer acompanhar seu agendamento?
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Você pode fazer login para ver o status da sua solicitação, 
+                      receber notificações e gerenciar seus agendamentos futuros.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Botões centralizados */}
+            <div className="flex flex-col items-center gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => setShowLoginModal(true)}
+                className="flex items-center gap-2 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+              >
+                <LogIn className="h-4 w-4" />
+                Acompanhar Agendamentos
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setStep('services');
+                  setSelectedService(null);
+                  setSelectedProfessional(null);
+                  setSelectedDate(getTodayDate());
+                  setSelectedTime('');
+                  setFormData({
+                    cliente_nome: '',
+                    cliente_telefone: '',
+                    cliente_email: '',
+                    observacoes: ''
+                  });
+                }}
+                className="w-full sm:w-auto border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background transition-all duration-300"
+              >
+                Fazer Novo Agendamento
+              </Button>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Modal de Login */}
+      <ClienteLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => {
+          // Buscar dados do cliente logado do localStorage
+          const storedCliente = localStorage.getItem('cliente_auth');
+          if (storedCliente) {
+            const clienteData = JSON.parse(storedCliente);
+            if (clienteData.salao_id === salaoId) {
+              // Redirecionar diretamente para o dashboard de agendamentos
+              navigate(`/cliente/${salaoId}/agendamentos`);
+            }
+          }
+        }}
+        salaoId={salaoId!}
+        clienteEmail={clienteEmail}
+        senhaTemporaria={senhaTemporaria}
+      />
     </div>
   );
 }

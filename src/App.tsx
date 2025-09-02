@@ -16,6 +16,8 @@ import SolicitacoesAgendamento from "./pages/admin/SolicitacoesAgendamento";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import SalaoPublico from "./pages/SalaoPublico";
+import { ClienteAgendamentos } from "./pages/ClienteAgendamentos";
+import ClienteLogin from "./pages/ClienteLogin";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import GestaoSaloes from "./pages/superadmin/GestaoSaloes";
 import GestaoUsuarios from "./pages/superadmin/GestaoUsuarios";
@@ -24,6 +26,7 @@ import SuperAdminRelatorios from "./pages/superadmin/Relatorios";
 import SuperAdminConfiguracoes from "./pages/superadmin/Configuracoes";
 import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { ClienteAuthProvider } from "./hooks/useClienteAuth";
 import ProfissionalDashboard from "./pages/profissional/ProfissionalDashboard";
 import ProfissionalAgenda from "./pages/profissional/Agenda";
 import ProfissionalClientes from "./pages/profissional/Clientes";
@@ -32,9 +35,6 @@ import ProfissionalProdutos from "./pages/profissional/Produtos";
 import ProfissionalRelatorios from "./pages/profissional/Relatorios";
 import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
 import Perfil from "./pages/Perfil";
-import Agendar from "./pages/Agendar";
-import AgendamentoConfirmado from "./pages/AgendamentoConfirmado";
-import AdminLayout from "@/components/layout/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -164,38 +164,52 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/profissional/agenda" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalAgenda />
         </ProtectedRoute>
       } />
       <Route path="/profissional/clientes" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalClientes />
         </ProtectedRoute>
       } />
       <Route path="/profissional/servicos" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalServicos />
         </ProtectedRoute>
       } />
       <Route path="/profissional/produtos" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalProdutos />
         </ProtectedRoute>
       } />
       <Route path="/profissional/relatorios" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalRelatorios />
         </ProtectedRoute>
       } />
       <Route path="/profissional/configuracoes" element={
-        <ProtectedRoute allowedRoles={['profissional']}>
+        <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalConfiguracoes />
         </ProtectedRoute>
       } />
       
       {/* Public Routes - Autoatendimento */}
-      <Route path="/salao/:salaoId" element={<SalaoPublico />} />
+      <Route path="/salao/:salaoId" element={
+        <ClienteAuthProvider>
+          <SalaoPublico />
+        </ClienteAuthProvider>
+      } />
+      <Route path="/cliente/:salaoId/login" element={
+        <ClienteAuthProvider>
+          <ClienteLogin />
+        </ClienteAuthProvider>
+      } />
+      <Route path="/cliente/:salaoId/agendamentos" element={
+        <ClienteAuthProvider>
+          <ClienteAgendamentos />
+        </ClienteAuthProvider>
+      } />
       
       {/* 404 Route */}
       <Route path="*" element={<NotFound />} />

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useClientes } from './useClientes';
 
 export interface AppointmentRequest {
   id: string;
@@ -43,9 +44,17 @@ export interface CreateAppointmentRequestData {
   observacoes?: string;
 }
 
+// Resultado esperado pelo front: request + senha temporária opcional
+export interface CreateAppointmentRequestResult {
+  request: AppointmentRequest;
+  senhaTemporaria?: string;
+}
+
 export const useAppointmentRequests = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { checkClienteExists, createCliente } = useClientes();
 
+  // Buscar solicitações de agendamento
   const fetchAppointmentRequests = async (salaoId: string): Promise<AppointmentRequest[]> => {
     try {
       setIsLoading(true);
@@ -56,7 +65,7 @@ export const useAppointmentRequests = () => {
           *,
           servico:services(nome, duracao_minutos, preco),
           funcionario:employees(nome),
-          aprovado_por_user:users!aprovado_por(nome)
+          aprovado_por_user:users(nome)
         `)
         .eq('salao_id', salaoId)
         .order('criado_em', { ascending: false });
@@ -65,17 +74,34 @@ export const useAppointmentRequests = () => {
       return data || [];
     } catch (error) {
       console.error('Erro ao buscar solicitações:', error);
-      return [];
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createAppointmentRequest = async (data: CreateAppointmentRequestData): Promise<AppointmentRequest | null> => {
+  // Criar nova solicitação de agendamento
+  const createAppointmentRequest = async (data: CreateAppointmentRequestData): Promise<CreateAppointmentRequestResult> => {
     try {
       setIsLoading(true);
       
-      const { data: result, error } = await supabase
+      // Verificar se o cliente já existe
+      const clienteExists = await checkClienteExists(data.salao_id, data.cliente_email || '');
+      
+      let temporaryPassword: string | undefined;
+      if (!clienteExists && data.cliente_email) {
+        // Criar cliente se não existir com senha temporária e defaults seguros
+        temporaryPassword = Math.floor(100000 + Math.random() * 900000).toString();
+        await createCliente({
+          salao_id: data.salao_id,
+          nome: data.cliente_nome,
+          email: data.cliente_email,
+          telefone: data.cliente_telefone || 'Não informado',
+          senha_hash: temporaryPassword
+        });
+      }
+
+      const { data: request, error } = await supabase
         .from('appointment_requests')
         .insert([data])
         .select(`
@@ -85,17 +111,24 @@ export const useAppointmentRequests = () => {
         `)
         .single();
 
-      if (error) throw error;
-      return result;
+      if (error) {
+        console.error('Erro ao criar solicitação:', error);
+        throw error;
+      }
+
+      return temporaryPassword
+        ? { request, senhaTemporaria: temporaryPassword }
+        : { request };
     } catch (error) {
       console.error('Erro ao criar solicitação:', error);
-      return null;
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const approveAppointmentRequest = async (requestId: string, userId: string): Promise<boolean> => {
+  // Aprovar solicitação de agendamento
+  const approveAppointmentRequest = async (requestId: string, aprovadoPor: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
@@ -113,11 +146,13 @@ export const useAppointmentRequests = () => {
         .from('appointments')
         .insert([{
           salao_id: request.salao_id,
-          servico_id: request.servico_id,
+          cliente_id: null, // Será preenchido depois se necessário
           funcionario_id: request.funcionario_id,
+          servico_id: request.servico_id,
           data_hora: request.data_hora,
           status: 'confirmado',
           observacoes: request.observacoes,
+          // Campos diretos do cliente
           cliente_nome: request.cliente_nome,
           cliente_telefone: request.cliente_telefone,
           cliente_email: request.cliente_email
@@ -127,18 +162,19 @@ export const useAppointmentRequests = () => {
 
       if (appointmentError) throw appointmentError;
 
-      // Atualizar solicitação como aprovada
+      // Atualizar solicitação como aprovada e vincular ao agendamento criado
       const { error: updateError } = await supabase
         .from('appointment_requests')
         .update({
           status: 'aprovado',
-          aprovado_por: userId,
+          aprovado_por: aprovadoPor,
           aprovado_em: new Date().toISOString(),
-          appointment_id: appointment.id
+          appointment_id: appointment.id // Vincular o agendamento criado
         })
         .eq('id', requestId);
 
       if (updateError) throw updateError;
+
       return true;
     } catch (error) {
       console.error('Erro ao aprovar solicitação:', error);
@@ -148,7 +184,8 @@ export const useAppointmentRequests = () => {
     }
   };
 
-  const rejectAppointmentRequest = async (requestId: string, userId: string, motivo: string): Promise<boolean> => {
+  // Rejeitar solicitação de agendamento
+  const rejectAppointmentRequest = async (requestId: string, motivoRejeicao: string, rejeitadoPor: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
@@ -156,9 +193,9 @@ export const useAppointmentRequests = () => {
         .from('appointment_requests')
         .update({
           status: 'rejeitado',
-          aprovado_por: userId,
-          aprovado_em: new Date().toISOString(),
-          motivo_rejeicao: motivo
+          motivo_rejeicao: motivoRejeicao,
+          aprovado_por: rejeitadoPor,
+          aprovado_em: new Date().toISOString()
         })
         .eq('id', requestId);
 
@@ -172,6 +209,7 @@ export const useAppointmentRequests = () => {
     }
   };
 
+  // Deletar solicitação de agendamento
   const deleteAppointmentRequest = async (requestId: string): Promise<boolean> => {
     try {
       setIsLoading(true);
