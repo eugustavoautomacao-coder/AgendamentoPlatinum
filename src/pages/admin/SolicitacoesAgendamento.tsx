@@ -31,6 +31,17 @@ export default function SolicitacoesAgendamento() {
   const [searchTerm, setSearchTerm] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Calcular contadores para cada status
+  const getStatusCounts = () => {
+    const counts = {
+      all: requests.length,
+      pendente: requests.filter(r => r.status === 'pendente').length,
+      aprovado: requests.filter(r => r.status === 'aprovado').length,
+      rejeitado: requests.filter(r => r.status === 'rejeitado').length
+    };
+    return counts;
+  };
+
   useEffect(() => {
     if (user?.user_metadata?.salao_id) {
       loadRequests();
@@ -106,39 +117,96 @@ export default function SolicitacoesAgendamento() {
   };
 
   const handleApprove = async (requestId: string) => {
-    if (!user?.id) return;
+    // Validações completas
+    if (!requestId || requestId.trim() === '') {
+      toast.error('ID da solicitação inválido');
+      return;
+    }
     
-    const success = await approveAppointmentRequest(requestId, user.id);
-    if (success) {
-      toast.success('Solicitação aprovada com sucesso!');
-      loadRequests();
-    } else {
-      toast.error('Erro ao aprovar solicitação');
+    if (!user?.id || user.id.trim() === '') {
+      toast.error('ID do usuário inválido');
+      return;
+    }
+    
+    try {
+      const success = await approveAppointmentRequest(requestId, user.id);
+      if (success) {
+        toast.success('Solicitação aprovada com sucesso!');
+        loadRequests();
+      } else {
+        toast.error('Erro ao aprovar solicitação');
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao aprovar:', error);
+      toast.error(`Erro ao aprovar solicitação: ${error}`);
     }
   };
 
   const handleReject = async () => {
-    if (!selectedRequest || !user?.id) return;
+    // Validações completas
+    if (!selectedRequest) {
+      toast.error('Nenhuma solicitação selecionada');
+      return;
+    }
     
-    const success = await rejectAppointmentRequest(selectedRequest.id, user.id, rejectReason);
-    if (success) {
-      toast.success('Solicitação rejeitada');
-      setRejectDialogOpen(false);
-      setRejectReason('');
-      setSelectedRequest(null);
-      loadRequests();
-    } else {
-      toast.error('Erro ao rejeitar solicitação');
+    if (!selectedRequest.id || selectedRequest.id.trim() === '') {
+      toast.error('ID da solicitação inválido');
+      return;
+    }
+    
+    if (!user?.id || user.id.trim() === '') {
+      toast.error('ID do usuário inválido');
+      return;
+    }
+    
+    // Validação do motivo da rejeição
+    if (!rejectReason || rejectReason.trim() === '') {
+      toast.error('Por favor, informe o motivo da rejeição');
+      return;
+    }
+    
+    // Log para debug
+    console.log('Debug - Rejeitando solicitação:', {
+      requestId: selectedRequest.id,
+      motivo: rejectReason,
+      userId: user.id
+    });
+    
+    try {
+      const success = await rejectAppointmentRequest(selectedRequest.id, rejectReason, user.id);
+      if (success) {
+        toast.success('Solicitação rejeitada');
+        setRejectDialogOpen(false);
+        setRejectReason('');
+        setSelectedRequest(null);
+        loadRequests();
+      } else {
+        toast.error('Erro ao rejeitar solicitação');
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao rejeitar:', error);
+      toast.error(`Erro ao rejeitar solicitação: ${error}`);
     }
   };
 
   const handleDelete = async (requestId: string) => {
-    const success = await deleteAppointmentRequest(requestId);
-    if (success) {
-      toast.success('Solicitação removida');
-      loadRequests();
-    } else {
-      toast.error('Erro ao remover solicitação');
+    // Validações completas
+    if (!requestId || requestId.trim() === '') {
+      toast.error('ID da solicitação inválido');
+      return;
+    }
+    
+    try {
+      const success = await deleteAppointmentRequest(requestId);
+      if (success) {
+        toast.success('Solicitação removida');
+        loadRequests();
+      } else {
+        toast.error('Erro ao remover solicitação');
+      }
+    } catch (error) {
+      console.error('Erro detalhado ao deletar:', error);
+      toast.error(`Erro ao remover solicitação: ${error}`);
     }
   };
 
@@ -250,18 +318,24 @@ export default function SolicitacoesAgendamento() {
               
               {/* Filtros de Status */}
               <div className="flex gap-2 flex-wrap">
-                {(['all', 'pendente', 'aprovado', 'rejeitado'] as const).map((filterType) => (
-                  <Button
-                    key={filterType}
-                    variant={filter === filterType ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilter(filterType)}
-                    className="flex items-center gap-2"
-                  >
-                    <Filter className="h-3 w-3" />
-                    {filterType === 'all' ? 'Todas' : filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-                  </Button>
-                ))}
+                {(['all', 'pendente', 'aprovado', 'rejeitado'] as const).map((filterType) => {
+                  const counts = getStatusCounts();
+                  const count = counts[filterType];
+                  const label = filterType === 'all' ? 'Todas' : filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                  
+                  return (
+                    <Button
+                      key={filterType}
+                      variant={filter === filterType ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilter(filterType)}
+                      className="flex items-center gap-2"
+                    >
+                      <Filter className="h-3 w-3" />
+                      {label} ({count})
+                    </Button>
+                  );
+                })}
               </div>
             </div>
             
@@ -395,9 +469,14 @@ export default function SolicitacoesAgendamento() {
                             </Button>
                             
                             <AlertDialog open={rejectDialogOpen && selectedRequest?.id === request.id} onOpenChange={(open) => {
-                              setRejectDialogOpen(open);
-                              if (open) setSelectedRequest(request);
-                              if (!open) setSelectedRequest(null);
+                              if (open) {
+                                setSelectedRequest(request);
+                                setRejectDialogOpen(true);
+                              } else {
+                                setRejectDialogOpen(false);
+                                setSelectedRequest(null);
+                                setRejectReason(''); // Limpar motivo ao fechar
+                              }
                             }}>
                               <AlertDialogTrigger asChild>
                                 <Button size="sm" variant="destructive" className="shadow-sm">

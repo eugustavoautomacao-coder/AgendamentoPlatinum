@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar as CalendarIcon, Clock, User, Phone, Mail, MapPin, Star, CheckCircle, Search, LogIn, LogOut } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Phone, Mail, MapPin, Star, CheckCircle, Search, LogIn, LogOut, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { ClienteLoginModal } from '@/components/ClienteLoginModal';
 
@@ -482,7 +482,7 @@ export default function SalaoPublico() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-start sm:items-end gap-2">
+            <div className="flex flex-col items-start sm:items-end gap-3">
               <Badge variant="outline" className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400 self-start sm:self-end">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Online
@@ -505,16 +505,17 @@ export default function SalaoPublico() {
                 </div>
               ) : (
                 <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                  <div className="text-xs text-muted-foreground self-start sm:self-end">
+                  <div className="text-xs text-muted-foreground self-start sm:self-end flex items-center gap-1.5">
+                    <HelpCircle className="h-3 w-3" />
                     Já tem login?
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowLoginModal(true)}
-                    className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-xs px-3 py-1 self-start sm:self-end"
+                    className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 self-start sm:self-end"
                   >
-                    <LogIn className="h-3 w-3" />
+                    <LogIn className="h-4 w-4" />
                     Entrar
                   </Button>
                 </div>
@@ -810,10 +811,6 @@ export default function SalaoPublico() {
                   <span>Informações para o Agendamento</span>
                   {clienteLogado && (
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full text-sm">
-                        <CheckCircle className="h-4 w-4" />
-                        Cliente Logado
-                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -924,15 +921,24 @@ export default function SalaoPublico() {
               <CardContent className="p-6">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <LogIn className="h-5 w-5 text-primary" />
+                    {clienteLogado ? (
+                      <User className="h-5 w-5 text-primary" />
+                    ) : (
+                      <LogIn className="h-5 w-5 text-primary" />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Quer acompanhar seu agendamento?
+                      {clienteLogado 
+                        ? 'Quer ver seus agendamentos?'
+                        : 'Quer acompanhar seu agendamento?'
+                      }
                     </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                      Você pode fazer login para ver o status da sua solicitação, 
-                      receber notificações e gerenciar seus agendamentos futuros.
+                      {clienteLogado 
+                        ? 'Você pode acessar seu dashboard para ver o status da sua solicitação, receber notificações e gerenciar seus agendamentos futuros.'
+                        : 'Você pode fazer login para ver o status da sua solicitação, receber notificações e gerenciar seus agendamentos futuros.'
+                      }
                     </p>
                   </div>
                 </div>
@@ -943,11 +949,28 @@ export default function SalaoPublico() {
             <div className="flex flex-col items-center gap-3">
               <Button 
                 variant="outline"
-                onClick={() => setShowLoginModal(true)}
+                onClick={() => {
+                  // Se o usuário já estiver logado, ir direto para o dashboard
+                  if (clienteLogado) {
+                    navigate(`/cliente/${salaoId}/agendamentos`);
+                  } else {
+                    // Se não estiver logado, abrir modal de login
+                    setShowLoginModal(true);
+                  }
+                }}
                 className="flex items-center gap-2 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
               >
-                <LogIn className="h-4 w-4" />
-                Acompanhar Agendamentos
+                {clienteLogado ? (
+                  <>
+                    <User className="h-4 w-4" />
+                    Ver Meus Agendamentos
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    Acompanhar Agendamentos
+                  </>
+                )}
               </Button>
               <Button 
                 variant="outline"

@@ -19,7 +19,6 @@ import {
   Mail, 
   MessageSquare, 
   LogOut,
-  ArrowLeft,
   RefreshCw,
   Plus
 } from 'lucide-react';
@@ -162,15 +161,9 @@ export const ClienteAgendamentos: React.FC = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/salao/${salaoId}`)}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Button>
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Meus Agendamentos</h1>
                 <p className="text-muted-foreground">Olá, {cliente.nome}</p>
@@ -269,8 +262,17 @@ export const ClienteAgendamentos: React.FC = () => {
           </Card>
         </div>
 
-        {/* Botão Nova Solicitação */}
-        <div className="flex justify-end mb-6">
+        {/* Botões de Ação */}
+        <div className="flex justify-between items-center mb-6">
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/cliente/${salaoId}/historico`)}
+            className="flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+          >
+            <Calendar className="h-4 w-4" />
+            Histórico de Agendamentos
+          </Button>
+          
           <Button
             onClick={() => navigate(`/salao/${salaoId}`)}
             className="flex items-center gap-2 bg-primary hover:bg-primary/90"

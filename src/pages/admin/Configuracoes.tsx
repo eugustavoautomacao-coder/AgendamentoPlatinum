@@ -387,10 +387,10 @@ const Configuracoes = () => {
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
-                    Confirmação de Agendamentos
+                    Confirmação da Solicitação
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Enviar confirmação automática por e-mail
+                    Enviar confirmação automática por e-mail quando cliente cria solicitação
                   </p>
                 </div>
                 <Switch defaultChecked />

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { EmailNotificationManager } from "@/components/EmailNotificationManager";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -15,8 +16,11 @@ import Produtos from "./pages/admin/Produtos";
 import SolicitacoesAgendamento from "./pages/admin/SolicitacoesAgendamento";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
+import { ConfiguracoesEmail } from "./pages/admin/ConfiguracoesEmail";
 import SalaoPublico from "./pages/SalaoPublico";
 import { ClienteAgendamentos } from "./pages/ClienteAgendamentos";
+import { ClienteHistorico } from "./pages/ClienteHistorico";
+import { TesteEmail } from "./pages/TesteEmail";
 import ClienteLogin from "./pages/ClienteLogin";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import GestaoSaloes from "./pages/superadmin/GestaoSaloes";
@@ -34,6 +38,7 @@ import ProfissionalServicos from "./pages/profissional/Servicos";
 import ProfissionalProdutos from "./pages/profissional/Produtos";
 import ProfissionalRelatorios from "./pages/profissional/Relatorios";
 import ProfissionalConfiguracoes from "./pages/profissional/Configuracoes";
+import ProfissionalSolicitacoes from "./pages/profissional/SolicitacoesAgendamento";
 import Perfil from "./pages/Perfil";
 
 const queryClient = new QueryClient();
@@ -156,6 +161,11 @@ function AppRoutes() {
           <Configuracoes />
         </ProtectedRoute>
       } />
+      <Route path="/admin/configuracoes-email" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <ConfiguracoesEmail />
+        </ProtectedRoute>
+      } />
       
       {/* Profissional Routes */}
       <Route path="/profissional" element={
@@ -166,6 +176,11 @@ function AppRoutes() {
       <Route path="/profissional/agenda" element={
         <ProtectedRoute allowedRoles={['funcionario']}>
           <ProfissionalAgenda />
+        </ProtectedRoute>
+      } />
+      <Route path="/profissional/solicitacoes" element={
+        <ProtectedRoute allowedRoles={['funcionario']}>
+          <ProfissionalSolicitacoes />
         </ProtectedRoute>
       } />
       <Route path="/profissional/clientes" element={
@@ -210,6 +225,14 @@ function AppRoutes() {
           <ClienteAgendamentos />
         </ClienteAuthProvider>
       } />
+              <Route path="/cliente/:salaoId/historico" element={
+          <ClienteAuthProvider>
+            <ClienteHistorico />
+          </ClienteAuthProvider>
+        } />
+        
+        {/* Rota de teste de email */}
+        <Route path="/teste-email" element={<TesteEmail />} />
       
       {/* 404 Route */}
       <Route path="*" element={<NotFound />} />
@@ -225,6 +248,11 @@ function App() {
           <TooltipProvider>
             <BrowserRouter>
               <AppRoutes />
+              <EmailNotificationManager 
+                enabled={true}
+                intervalMinutes={30}
+                reminderHours={[24, 2]}
+              />
               <Toaster />
               <Sonner />
             </BrowserRouter>

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { EmailService } from '@/services/emailService';
+import { AgendamentoEmailData } from '@/settings/email.config';
 
 export interface ClienteAgendamento {
   id: string;
@@ -34,6 +36,7 @@ export const useClienteAgendamentos = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const emailService = new EmailService();
 
   // Buscar agendamentos do cliente
   const loadAgendamentos = useCallback(async (clienteEmail: string, salaoId: string) => {
@@ -154,6 +157,29 @@ export const useClienteAgendamentos = () => {
 
       // Atualizar lista local
       updateAgendamentoStatus(agendamentoId, 'cancelado');
+
+      // Enviar email de cancelamento
+      try {
+        const agendamento = agendamentos.find(ag => ag.id === agendamentoId);
+        if (agendamento) {
+          const emailData: AgendamentoEmailData = {
+            cliente_nome: agendamento.cliente_nome,
+            cliente_email: agendamento.cliente_email,
+            servico_nome: agendamento.servico?.nome || 'Serviço',
+            funcionario_nome: agendamento.funcionario?.nome || 'Profissional',
+            data_hora: agendamento.data_hora,
+            preco: agendamento.servico?.preco || 0,
+            duracao_minutos: agendamento.servico?.duracao_minutos || 60,
+            observacoes: agendamento.observacoes
+          };
+          
+          await emailService.enviarCancelamentoAgendamento(emailData);
+          console.log('✅ Email de cancelamento enviado com sucesso');
+        }
+      } catch (emailError) {
+        console.error('❌ Erro ao enviar email de cancelamento:', emailError);
+        // Não falhar a operação principal por erro de email
+      }
 
       toast.success('Agendamento cancelado com sucesso!');
       return true;

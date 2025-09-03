@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,7 @@ import { useSalonInfo } from "@/hooks/useSalonInfo";
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/profissional", exact: true },
   { title: "Agenda", icon: Calendar, href: "/profissional/agenda" },
+  { title: "Solicitações", icon: MessageSquare, href: "/profissional/solicitacoes" },
   { title: "Clientes", icon: Users, href: "/profissional/clientes" },
   { title: "Serviços", icon: Scissors, href: "/profissional/servicos" },
   { title: "Produtos", icon: Package, href: "/profissional/produtos" },

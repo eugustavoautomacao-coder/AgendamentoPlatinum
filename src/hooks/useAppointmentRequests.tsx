@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useClientes } from './useClientes';
+import { EmailService } from '@/services/emailService';
+import { AgendamentoEmailData } from '@/settings/email.config';
 
 export interface AppointmentRequest {
   id: string;
@@ -53,6 +55,7 @@ export interface CreateAppointmentRequestResult {
 export const useAppointmentRequests = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { checkClienteExists, createCliente } = useClientes();
+  const emailService = new EmailService();
 
   // Buscar solicitações de agendamento
   const fetchAppointmentRequests = async (salaoId: string): Promise<AppointmentRequest[]> => {
@@ -116,6 +119,28 @@ export const useAppointmentRequests = () => {
         throw error;
       }
 
+      // Enviar email de confirmação da solicitação para o cliente (se tiver email)
+      if (data.cliente_email) {
+        try {
+          const emailData: AgendamentoEmailData = {
+            cliente_nome: data.cliente_nome,
+            cliente_email: data.cliente_email,
+            servico_nome: request.servico?.nome || 'Serviço',
+            funcionario_nome: request.funcionario?.nome || 'Profissional',
+            data_hora: data.data_hora,
+            preco: request.servico?.preco || 0,
+            duracao_minutos: request.servico?.duracao_minutos || 60,
+            observacoes: data.observacoes
+          };
+          
+          await emailService.enviarConfirmacaoAgendamento(emailData);
+          console.log('✅ Email de confirmação da solicitação enviado com sucesso');
+        } catch (emailError) {
+          console.error('❌ Erro ao enviar email de confirmação da solicitação:', emailError);
+          // Não falhar a operação principal por erro de email
+        }
+      }
+
       return temporaryPassword
         ? { request, senhaTemporaria: temporaryPassword }
         : { request };
@@ -131,6 +156,14 @@ export const useAppointmentRequests = () => {
   const approveAppointmentRequest = async (requestId: string, aprovadoPor: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      
+      // Validações de entrada
+      if (!requestId || requestId.trim() === '') {
+        throw new Error('ID da solicitação é obrigatório');
+      }
+      if (!aprovadoPor || aprovadoPor.trim() === '') {
+        throw new Error('ID do usuário que aprovou é obrigatório');
+      }
       
       // Buscar dados da solicitação
       const { data: request, error: fetchError } = await supabase
@@ -175,6 +208,26 @@ export const useAppointmentRequests = () => {
 
       if (updateError) throw updateError;
 
+      // Enviar email de confirmação para o cliente
+      try {
+        const emailData: AgendamentoEmailData = {
+          cliente_nome: request.cliente_nome,
+          cliente_email: request.cliente_email || '',
+          servico_nome: request.servico?.nome || 'Serviço',
+          funcionario_nome: request.funcionario?.nome || 'Profissional',
+          data_hora: request.data_hora,
+          preco: request.servico?.preco || 0,
+          duracao_minutos: request.servico?.duracao_minutos || 60,
+          observacoes: request.observacoes
+        };
+        
+        await emailService.enviarAprovacaoAgendamento(emailData);
+        console.log('✅ Email de aprovação enviado com sucesso');
+      } catch (emailError) {
+        console.error('❌ Erro ao enviar email de aprovação:', emailError);
+        // Não falhar a operação principal por erro de email
+      }
+
       return true;
     } catch (error) {
       console.error('Erro ao aprovar solicitação:', error);
@@ -189,6 +242,17 @@ export const useAppointmentRequests = () => {
     try {
       setIsLoading(true);
       
+      // Validações de entrada
+      if (!requestId || requestId.trim() === '') {
+        throw new Error('ID da solicitação é obrigatório');
+      }
+      if (!motivoRejeicao || motivoRejeicao.trim() === '') {
+        throw new Error('Motivo da rejeição é obrigatório');
+      }
+      if (!rejeitadoPor || rejeitadoPor.trim() === '') {
+        throw new Error('ID do usuário que rejeitou é obrigatório');
+      }
+      
       const { error } = await supabase
         .from('appointment_requests')
         .update({
@@ -200,6 +264,41 @@ export const useAppointmentRequests = () => {
         .eq('id', requestId);
 
       if (error) throw error;
+
+      // Enviar email de rejeição para o cliente
+      try {
+        // Buscar dados completos da solicitação para o email
+        const { data: requestData } = await supabase
+          .from('appointment_requests')
+          .select(`
+            *,
+            servico:services(nome, duracao_minutos, preco),
+            funcionario:employees(nome)
+          `)
+          .eq('id', requestId)
+          .single();
+
+        if (requestData) {
+          const emailData: AgendamentoEmailData = {
+            cliente_nome: requestData.cliente_nome,
+            cliente_email: requestData.cliente_email || '',
+            servico_nome: requestData.servico?.nome || 'Serviço',
+            funcionario_nome: requestData.funcionario?.nome || 'Profissional',
+            data_hora: requestData.data_hora,
+            preco: requestData.servico?.preco || 0,
+            duracao_minutos: requestData.servico?.duracao_minutos || 60,
+            observacoes: requestData.observacoes,
+            motivo_rejeicao: motivoRejeicao
+          };
+          
+          await emailService.enviarRejeicaoAgendamento(emailData);
+          console.log('✅ Email de rejeição enviado com sucesso');
+        }
+      } catch (emailError) {
+        console.error('❌ Erro ao enviar email de rejeição:', emailError);
+        // Não falhar a operação principal por erro de email
+      }
+
       return true;
     } catch (error) {
       console.error('Erro ao rejeitar solicitação:', error);
