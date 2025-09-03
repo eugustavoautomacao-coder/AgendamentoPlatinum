@@ -237,12 +237,16 @@ export default function SolicitacoesAgendamento() {
   return (
     <ProfissionalLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Solicitações de Agendamento</h1>
-            <p className="text-muted-foreground">
-              Gerencie as solicitações de agendamento dos seus clientes
-            </p>
+          <div className="flex items-center gap-3">
+            <MessageSquare className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Solicitações de Agendamento</h1>
+              <p className="text-muted-foreground">
+                Gerencie as solicitações de agendamento dos seus clientes
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button

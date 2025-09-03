@@ -17,6 +17,8 @@ import SolicitacoesAgendamento from "./pages/admin/SolicitacoesAgendamento";
 import Relatorios from "./pages/admin/Relatorios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import { ConfiguracoesEmail } from "./pages/admin/ConfiguracoesEmail";
+import Comissoes from "./pages/admin/Comissoes";
+import ComissoesMensais from "./pages/admin/ComissoesMensais";
 import SalaoPublico from "./pages/SalaoPublico";
 import { ClienteAgendamentos } from "./pages/ClienteAgendamentos";
 import { ClienteHistorico } from "./pages/ClienteHistorico";
@@ -149,6 +151,16 @@ function AppRoutes() {
       <Route path="/admin/solicitacoes-agendamento" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <SolicitacoesAgendamento />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/comissoes" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Comissoes />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/comissoes-mensais" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <ComissoesMensais />
         </ProtectedRoute>
       } />
       <Route path="/admin/relatorios" element={

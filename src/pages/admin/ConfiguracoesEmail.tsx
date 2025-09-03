@@ -104,14 +104,17 @@ export const ConfiguracoesEmail: React.FC = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="container mx-auto max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
-            <Mail className="h-8 w-8 text-primary" />
-            Configurações de Email
-          </h1>
-          <p className="text-muted-foreground">
-            Configure o sistema de notificações por email e lembretes automáticos.
-          </p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Settings className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Configurações de Email</h1>
+              <p className="text-muted-foreground">
+                Configure as notificações por email do sistema
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Status do Sistema */}

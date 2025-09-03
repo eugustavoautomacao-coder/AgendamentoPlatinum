@@ -12,6 +12,9 @@ export interface Service {
   preco: number;
   categoria?: string;
   observacao?: string;
+  taxa_custo_tipo?: 'fixo' | 'percentual';
+  taxa_custo_valor?: number;
+  ativo?: boolean;
   criado_em: string;
 }
 

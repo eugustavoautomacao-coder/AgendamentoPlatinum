@@ -14,11 +14,13 @@ export interface Appointment {
   status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido';
   motivo_cancelamento?: string;
   data_conclusao?: string;
-  criado_em: string;
+  criado_em?: string;
   observacoes?: string;
-  // Joined data
+  // Dados diretos do cliente (para agendamentos de solicitações)
   cliente_nome?: string;
   cliente_telefone?: string;
+  cliente_email?: string;
+  // Joined data (busca dinâmica)
   funcionario_nome?: string;
   servico_nome?: string;
   servico_duracao?: number;
@@ -84,9 +86,30 @@ export function useAppointments() {
   // Mutation para criar agendamento
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: any) => {
+      // Validar campos obrigatórios
+      if (!appointmentData.salao_id) {
+        throw new Error('salao_id é obrigatório');
+      }
+      if (!appointmentData.funcionario_id) {
+        throw new Error('funcionario_id é obrigatório');
+      }
+      if (!appointmentData.servico_id) {
+        throw new Error('servico_id é obrigatório');
+      }
+      if (!appointmentData.data_hora) {
+        throw new Error('data_hora é obrigatório');
+      }
+      
+      // Garantir que o status seja definido
+      const dataToInsert = {
+        ...appointmentData,
+        status: appointmentData.status || 'confirmado', // Status padrão se não for fornecido
+        criado_em: new Date().toISOString()
+      };
+
       const { data, error } = await supabase
         .from('appointments')
-        .insert([appointmentData])
+        .insert([dataToInsert])
         .select()
         .single();
 

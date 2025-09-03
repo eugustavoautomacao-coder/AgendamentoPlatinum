@@ -18,13 +18,16 @@ const Servicos = () => {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [editService, setEditService] = useState(null);
-  const [form, setForm] = useState({ 
-    nome: '', 
-    duracao_minutos: 60, 
-    preco: 0, 
-    categoria: '', 
+  const [form, setForm] = useState({
+    nome: '',
+    duracao_minutos: 60,
+    preco: 0,
+    categoria: '',
     descricao: '',
-    observacao: ''
+    observacao: '',
+    taxa_custo_tipo: 'fixo' as 'fixo' | 'percentual',
+    taxa_custo_valor: 0,
+    ativo: true
   });
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,17 +63,20 @@ const Servicos = () => {
 
   const handleOpenNew = () => {
     setEditService(null);
-    setForm({ 
-      nome: '', 
-      duracao_minutos: 60, 
-      preco: 0, 
-      categoria: '', 
+    setForm({
+      nome: '',
+      duracao_minutos: 60,
+      preco: 0,
+      categoria: '',
       descricao: '',
-      observacao: ''
+      observacao: '',
+      taxa_custo_tipo: 'fixo',
+      taxa_custo_valor: 0,
+      ativo: true
     });
     setOpen(true);
   };
-  
+
   const handleOpenEdit = (service) => {
     setEditService(service);
     setForm({
@@ -79,11 +85,14 @@ const Servicos = () => {
       preco: service.preco,
       categoria: service.categoria || '',
       descricao: service.descricao || '',
-      observacao: service.observacao || ''
+      observacao: service.observacao || '',
+      taxa_custo_tipo: service.taxa_custo_tipo || 'fixo',
+      taxa_custo_valor: service.taxa_custo_valor || 0,
+      ativo: service.ativo !== undefined ? service.ativo : true
     });
     setOpen(true);
   };
-  
+
   const handleSave = async () => {
     setSaving(true);
     if (editService) {
@@ -95,7 +104,7 @@ const Servicos = () => {
     setOpen(false);
     refetch();
   };
-  
+
   const handleDelete = async (service) => {
     await deleteService(service.id);
     refetch();
@@ -103,7 +112,7 @@ const Servicos = () => {
 
   const handleAddDefaultServices = async () => {
     if (!profile?.salao_id) return;
-    
+
     setAddingDefaultServices(true);
     try {
       await addDefaultServicesToExistingSalon(profile.salao_id);
@@ -125,14 +134,19 @@ const Servicos = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Lista de Serviços</h1>
-            <p className="text-muted-foreground">Todos os serviços disponíveis no salão</p>
+          <div className="flex items-center gap-3">
+            <Scissors className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Lista de Serviços</h1>
+              <p className="text-muted-foreground">
+                Gerencie os serviços oferecidos pelo salão
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             {services.length === 0 && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleAddDefaultServices}
                 disabled={addingDefaultServices}
               >
@@ -199,6 +213,52 @@ const Servicos = () => {
                         placeholder="50.00"
                       />
                     </div>
+                  </div>
+
+                  {/* Campos de Comissionamento */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Tipo de Taxa de Custo</label>
+                      <Select
+                        value={form.taxa_custo_tipo}
+                        onValueChange={(value) => setForm({ ...form, taxa_custo_tipo: value as 'fixo' | 'percentual' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixo">Valor Fixo (R$)</SelectItem>
+                          <SelectItem value="percentual">Porcentagem (%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">
+                        {form.taxa_custo_tipo === 'percentual' ? 'Taxa de Custo (%)' : 'Taxa de Custo (R$)'}
+                      </label>
+                      <Input
+                        type="number"
+                        step={form.taxa_custo_tipo === 'percentual' ? '0.01' : '0.01'}
+                        min={0}
+                        max={form.taxa_custo_tipo === 'percentual' ? '100' : undefined}
+                        value={form.taxa_custo_valor}
+                        onChange={(e) => setForm({ ...form, taxa_custo_valor: parseFloat(e.target.value) || 0 })}
+                        placeholder={form.taxa_custo_tipo === 'percentual' ? '15.00' : '5.00'}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="ativo"
+                      checked={form.ativo}
+                      onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="ativo" className="text-sm font-medium">
+                      Serviço ativo para agendamentos
+                    </label>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Categoria (Opcional)</label>
@@ -275,8 +335,8 @@ const Servicos = () => {
 
             {/* Botão Limpar Filtros */}
             {hasActiveFilters && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={clearFilters}
                 className="w-full sm:w-auto"
               >
@@ -293,7 +353,7 @@ const Servicos = () => {
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Search className="h-3 w-3" />
                   Busca: "{searchTerm}"
-                  <button 
+                  <button
                     onClick={() => setSearchTerm('')}
                     className="ml-1 hover:text-destructive"
                   >
@@ -305,7 +365,7 @@ const Servicos = () => {
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Filter className="h-3 w-3" />
                   Categoria: {selectedCategory}
-                  <button 
+                  <button
                     onClick={() => setSelectedCategory('all')}
                     className="ml-1 hover:text-destructive"
                   >
@@ -353,7 +413,7 @@ const Servicos = () => {
                         <div className="h-5 bg-muted rounded w-48"></div>
                         <div className="h-5 bg-muted rounded w-20"></div>
                       </div>
-                      
+
                       <div className="flex items-center gap-6 mb-2">
                         <div className="h-4 bg-muted rounded w-16"></div>
                         <div className="h-4 bg-muted rounded w-24"></div>
@@ -380,8 +440,8 @@ const Servicos = () => {
                       <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p className="text-lg font-medium">Nenhum serviço encontrado</p>
                       <p className="text-sm">Tente ajustar os filtros ou termos de busca</p>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={clearFilters}
                         className="mt-4"
                       >
@@ -393,8 +453,8 @@ const Servicos = () => {
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p className="text-lg font-medium">Nenhum serviço cadastrado</p>
                       <p className="text-sm">Comece criando seu primeiro serviço ou adicione os serviços padrão</p>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleAddDefaultServices}
                         disabled={addingDefaultServices}
                         className="mt-4"
@@ -427,7 +487,7 @@ const Servicos = () => {
                         </h3>
                         {service.categoria && <Badge variant="secondary">{service.categoria}</Badge>}
                       </div>
-                      
+
                       <div className="flex items-center gap-6 text-sm text-muted-foreground mb-2">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />

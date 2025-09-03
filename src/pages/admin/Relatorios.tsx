@@ -355,12 +355,16 @@ const Relatorios = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-            <p className="text-muted-foreground">
-              Análise financeira e operacional do salão - {format(new Date(), 'MMMM yyyy', { locale: ptBR })}
-            </p>
+          <div className="flex items-center gap-3">
+            <BarChart3 className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+              <p className="text-muted-foreground">
+                Análises e estatísticas do seu salão
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Dialog open={showFilters} onOpenChange={setShowFilters}>

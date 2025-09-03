@@ -164,12 +164,16 @@ const Configuracoes = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
-            <p className="text-muted-foreground">
-              Gerencie as configurações do seu salão
-            </p>
+          <div className="flex items-center gap-3">
+            <Settings className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+              <p className="text-muted-foreground">
+                Configure as preferências do seu salão
+              </p>
+            </div>
           </div>
           <Button onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />

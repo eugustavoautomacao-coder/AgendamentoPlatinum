@@ -10,6 +10,8 @@ export interface Professional {
   telefone?: string;
   email?: string;
   cargo?: string;
+  percentual_comissao?: number;
+  ativo?: boolean;
   avatar_url?: string;
   criado_em: string;
 }
@@ -27,6 +29,7 @@ export function useProfessionals() {
     
     try {
       setLoading(true);
+      
       const { data, error } = await supabase
         .from('employees')
         .select('*')
@@ -42,6 +45,8 @@ export function useProfessionals() {
         telefone: prof.telefone,
         email: prof.email,
         cargo: prof.cargo,
+        percentual_comissao: prof.percentual_comissao,
+        ativo: prof.ativo,
         avatar_url: prof.avatar_url,
         criado_em: prof.criado_em
       })) || [];
@@ -64,6 +69,7 @@ export function useProfessionals() {
     email: string;
     telefone?: string;
     cargo?: string;
+    percentual_comissao?: number;
   }) => {
     if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
@@ -98,15 +104,20 @@ export function useProfessionals() {
 
   const updateProfessional = async (id: string, data: Partial<Professional>) => {
     try {
+      // Criar objeto de atualização apenas com campos fornecidos
+      const updateData: any = {};
+      
+      if (data.nome !== undefined) updateData.nome = data.nome;
+      if (data.telefone !== undefined) updateData.telefone = data.telefone;
+      if (data.email !== undefined) updateData.email = data.email;
+      if (data.cargo !== undefined) updateData.cargo = data.cargo;
+      if (data.percentual_comissao !== undefined) updateData.percentual_comissao = data.percentual_comissao;
+      if (data.ativo !== undefined) updateData.ativo = data.ativo;
+      if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
+
       const { error } = await supabase
         .from('employees')
-        .update({
-          nome: data.nome,
-          telefone: data.telefone,
-          email: data.email,
-          cargo: data.cargo,
-          avatar_url: data.avatar_url
-        })
+        .update(updateData)
         .eq('id', id);
 
       if (error) throw error;

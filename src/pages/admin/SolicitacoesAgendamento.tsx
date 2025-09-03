@@ -256,13 +256,13 @@ export default function SolicitacoesAgendamento() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <MessageSquare className="h-8 w-8 text-primary" />
-              Solicitações de Agendamento
-            </h1>
-            <p className="text-muted-foreground mt-1">Gerencie as solicitações de agendamento online</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Solicitações de Agendamento</h1>
+              <p className="text-muted-foreground mt-1">Gerencie as solicitações de agendamento online</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-2">

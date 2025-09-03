@@ -10,8 +10,17 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // Recuperar estado da sidebar do localStorage
+    const savedState = localStorage.getItem('admin-sidebar-collapsed');
+    return savedState ? JSON.parse(savedState) : false;
+  });
   const [isMobile, setIsMobile] = useState(false);
+
+  // Persistir estado da sidebar no localStorage
+  useEffect(() => {
+    localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   useEffect(() => {
     const checkMobile = () => {

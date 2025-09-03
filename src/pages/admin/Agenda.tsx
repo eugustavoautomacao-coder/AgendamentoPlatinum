@@ -313,12 +313,24 @@ const Agenda = () => {
     if (!form.funcionario_id || !form.cliente_id || !form.servico_id || !form.date || !form.time) return;
     setSaving(true);
     const data_hora = new Date(`${form.date}T${form.time}:00`).toISOString();
+    
+    // Buscar informações do cliente para incluir no agendamento
+    const cliente = clients.find(c => c.id === form.cliente_id);
+    const servico = services.find(s => s.id === form.servico_id);
+    
     await createAppointment({
+      salao_id: salonInfo?.id,
       funcionario_id: form.funcionario_id,
       cliente_id: form.cliente_id,
       servico_id: form.servico_id,
-      data_hora
+      data_hora,
+      status: 'confirmado', // Status padrão para agendamentos manuais
+      // Dados diretos do cliente para compatibilidade
+      cliente_nome: cliente?.nome || '',
+      cliente_telefone: cliente?.telefone || '',
+      cliente_email: cliente?.email || ''
     } as any);
+    
     setSaving(false);
     setOpen(false);
     setForm({ funcionario_id: '', cliente_id: '', servico_id: '', date: '', time: '' });
@@ -929,9 +941,12 @@ const Agenda = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Agenda</h1>
-            <p className="text-muted-foreground">Gerencie todos os agendamentos do salão</p>
+          <div className="flex items-center gap-3">
+            <CalendarIcon className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Agenda</h1>
+              <p className="text-muted-foreground">Gerencie todos os agendamentos do salão</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setFilterModalOpen(true)}>

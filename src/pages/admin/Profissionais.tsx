@@ -1,4 +1,4 @@
-import { User, Plus, Clock, Star, Camera, Users, UserPlus, Edit, Trash2, Save, X, Phone, Mail, Briefcase } from "lucide-react";
+import { User, Plus, Clock, Star, Camera, Users, UserPlus, Edit, Trash2, Save, X, Phone, Mail, Briefcase, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,8 @@ const Profissionais = () => {
     nome: "",
     email: "",
     telefone: "",
-    cargo: ""
+    cargo: "",
+    percentual_comissao: 0
   });
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -31,7 +32,8 @@ const Profissionais = () => {
   const [editForm, setEditForm] = useState({
     nome: "",
     telefone: "",
-    cargo: ""
+    cargo: "",
+    percentual_comissao: 0
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
@@ -47,10 +49,12 @@ const Profissionais = () => {
 
   const handleEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setEditImagePreview(e.target?.result as string);
+        const result = e.target?.result as string;
+        setEditImagePreview(result);
       };
       reader.readAsDataURL(file);
     }
@@ -66,12 +70,14 @@ const Profissionais = () => {
         .from('avatars')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
-
+      
       return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -87,13 +93,14 @@ const Profissionais = () => {
       nome: form.nome,
       email: form.email,
       telefone: form.telefone,
-      cargo: form.cargo
+      cargo: form.cargo,
+      percentual_comissao: form.percentual_comissao
     });
     
     setSubmitting(false);
     if (!result.error) {
       setOpen(false);
-      setForm({ nome: "", email: "", telefone: "", cargo: "" });
+      setForm({ nome: "", email: "", telefone: "", cargo: "", percentual_comissao: 0 });
     }
   };
 
@@ -104,23 +111,31 @@ const Profissionais = () => {
     setEditLoading(true);
     
     // Handle image upload if there's a new image
-    let avatarUrl = null;
+    let avatarUrl = undefined;
     const fileInput = document.getElementById('edit-avatar-input') as HTMLInputElement;
     if (fileInput?.files?.[0]) {
       avatarUrl = await uploadImage(fileInput.files[0], editId);
     }
     
-    const result = await updateProfessional(editId, {
+    // Criar objeto de atualização apenas com campos fornecidos
+    const updateData: any = {
       nome: editForm.nome,
       telefone: editForm.telefone,
       cargo: editForm.cargo,
-      avatar_url: avatarUrl
-    });
+      percentual_comissao: editForm.percentual_comissao
+    };
+    
+    // Só incluir avatar_url se uma nova imagem foi enviada
+    if (avatarUrl !== undefined) {
+      updateData.avatar_url = avatarUrl;
+    }
+    
+    const result = await updateProfessional(editId, updateData);
     
     setEditLoading(false);
     if (!result.error) {
       setEditId(null);
-      setEditForm({ nome: "", telefone: "", cargo: "" });
+      setEditForm({ nome: "", telefone: "", cargo: "", percentual_comissao: 0 });
       setEditImagePreview(null);
     }
   };
@@ -141,15 +156,36 @@ const Profissionais = () => {
     setEditForm({
       nome: professional.nome || "",
       telefone: professional.telefone || "",
-      cargo: professional.cargo || ""
+      cargo: professional.cargo || "",
+      percentual_comissao: professional.percentual_comissao || 0
     });
     setEditImagePreview(null);
   };
 
   const handleQuickAvatarChange = async (professional: any, file: File) => {
-    const avatarUrl = await uploadImage(file, professional.id);
-    if (avatarUrl) {
-      await updateProfessional(professional.id, { avatar_url: avatarUrl });
+    try {
+      const avatarUrl = await uploadImage(file, professional.id);
+      
+      if (avatarUrl) {
+        await updateProfessional(professional.id, { avatar_url: avatarUrl });
+        toast({
+          title: "Sucesso",
+          description: "Foto atualizada com sucesso"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao fazer upload da imagem"
+        });
+      }
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar foto"
+      });
     }
   };
 
@@ -160,16 +196,32 @@ const Profissionais = () => {
       const filePath = urlParts.slice(-2).join('/'); // Get last two parts: folder/filename
       
       // Delete from storage
-      await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('avatars')
         .remove([filePath]);
+      
+      if (storageError) {
+        console.error('Error removing from storage:', storageError);
+      } else {
+        console.log('Arquivo removido do storage com sucesso');
+      }
       
       // Update database
       await updateProfessional(id, { avatar_url: null });
       
       setEditImagePreview(null);
+      
+      toast({
+        title: "Sucesso",
+        description: "Foto removida com sucesso"
+      });
     } catch (error) {
       console.error('Error removing avatar:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao remover foto"
+      });
     }
   };
 
@@ -206,12 +258,16 @@ const Profissionais = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Profissionais</h1>
-            <p className="text-muted-foreground">
-              Gerencie a equipe do seu salão
-            </p>
+          <div className="flex items-center gap-3">
+            <User className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Profissionais</h1>
+              <p className="text-muted-foreground">
+                Gerencie a equipe de profissionais do salão
+              </p>
+            </div>
           </div>
           <Button onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -409,6 +465,27 @@ const Profissionais = () => {
                 </Label>
                 <Input id="cargo" name="cargo" value={form.cargo} onChange={handleChange} disabled={submitting} />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="percentual_comissao" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Percentual de Comissão (%)
+                </Label>
+                <Input 
+                  id="percentual_comissao" 
+                  name="percentual_comissao" 
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={form.percentual_comissao} 
+                  onChange={handleChange} 
+                  disabled={submitting}
+                  placeholder="30.00"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Percentual de comissão sobre o valor do serviço (após dedução da taxa de custo)
+                </span>
+              </div>
               <DialogFooter>
                 <Button type="submit" disabled={submitting}>
                   <Save className="h-4 w-4 mr-2" />
@@ -530,6 +607,27 @@ const Profissionais = () => {
                   Cargo
                 </Label>
                 <Input id="edit-cargo" name="cargo" value={editForm.cargo} onChange={handleEditChange} disabled={editLoading} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-percentual_comissao" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Percentual de Comissão (%)
+                </Label>
+                <Input 
+                  id="edit-percentual_comissao" 
+                  name="percentual_comissao" 
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={editForm.percentual_comissao} 
+                  onChange={handleEditChange} 
+                  disabled={editLoading}
+                  placeholder="30.00"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Percentual de comissão sobre o valor do serviço (após dedução da taxa de custo)
+                </span>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={editLoading}>

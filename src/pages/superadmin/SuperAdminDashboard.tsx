@@ -1,4 +1,4 @@
-import { Building2, Users, CreditCard, TrendingUp, Plus, Eye } from "lucide-react";
+import { Building2, Users, CreditCard, TrendingUp, Plus, Eye, LayoutDashboard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,11 +90,14 @@ const SuperAdminDashboard = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard SuperAdmin</h1>
-            <p className="text-muted-foreground">
-              Visão geral da plataforma
-            </p>
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-pink-500" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard SuperAdmin</h1>
+              <p className="text-muted-foreground">
+                Visão geral da plataforma
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button asChild>
