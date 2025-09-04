@@ -38,12 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data: profile, error } = await supabase
         .from('users')
-        .select(`
-          *,
-          saloes (
-            nome
-          )
-        `)
+        .select('*')
         .eq('id', session.user.id)
         .single();
       
@@ -52,9 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Adicionar nome do salão ao perfil
       const profileWithSalon = {
         ...profile,
-        salao_nome: profile.saloes?.nome,
-        email: profile.email || session.user.email
-      };
+        salao_nome: (profile as any)?.salao_nome || undefined,
+        email: (profile as any)?.email || session.user.email
+      } as any;
       
       setProfile(profileWithSalon);
     } catch (error) {
@@ -75,12 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const { data: profile, error } = await supabase
                 .from('users')
-                .select(`
-                  *,
-                  saloes (
-                    nome
-                  )
-                `)
+                .select('*')
                 .eq('id', session.user.id)
                 .single();
               
@@ -89,15 +79,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Adicionar nome do salão ao perfil
               const profileWithSalon = {
                 ...profile,
-                salao_nome: profile.saloes?.nome,
-                email: profile.email || session.user.email // Prioriza o email do profile, senão pega do user
-              };
+                salao_nome: (profile as any)?.salao_nome || undefined,
+                email: (profile as any)?.email || session.user.email
+              } as any;
               
               setProfile(profileWithSalon);
             } catch (error) {
               console.error('Error fetching profile:', error);
-              // Remover toast daqui para evitar loop
-              console.error('Erro ao carregar perfil do usuário');
+              
+              // Se for erro PGRST116 (perfil não encontrado), não fazer logout
+              if (error.code === 'PGRST116') {
+                console.warn('Usuário autenticado mas sem perfil na tabela users. Aguardando criação automática...');
+                setProfile(null);
+              } else {
+                console.error('Erro ao carregar perfil do usuário:', error);
+                setProfile(null);
+              }
             }
           }, 0);
         } else {

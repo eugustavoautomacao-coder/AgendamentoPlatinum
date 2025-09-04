@@ -15,6 +15,13 @@ import Servicos from "./pages/admin/Servicos";
 import Produtos from "./pages/admin/Produtos";
 import SolicitacoesAgendamento from "./pages/admin/SolicitacoesAgendamento";
 import Relatorios from "./pages/admin/Relatorios";
+import RelatorioFaturamento from "./pages/admin/relatorios/Faturamento";
+import RelatorioComissoes from "./pages/admin/relatorios/Comissoes";
+import RelatorioClientes from "./pages/admin/relatorios/Clientes";
+import RelatorioServicos from "./pages/admin/relatorios/Servicos";
+import RelatorioAgendamentos from "./pages/admin/relatorios/Agendamentos";
+import RelatorioFuncionarios from "./pages/admin/relatorios/Funcionarios";
+import RelatorioHorarios from "./pages/admin/relatorios/Horarios";
 import Configuracoes from "./pages/admin/Configuracoes";
 import { ConfiguracoesEmail } from "./pages/admin/ConfiguracoesEmail";
 import Comissoes from "./pages/admin/Comissoes";
@@ -166,6 +173,42 @@ function AppRoutes() {
       <Route path="/admin/relatorios" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <Relatorios />
+        </ProtectedRoute>
+      } />
+      {/* Rotas de Relatórios */}
+      <Route path="/admin/relatorios/faturamento" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioFaturamento />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/comissoes" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioComissoes />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/clientes" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioClientes />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/servicos" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioServicos />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/agendamentos" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioAgendamentos />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/funcionarios" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioFuncionarios />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/relatorios/horarios" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <RelatorioHorarios />
         </ProtectedRoute>
       } />
       <Route path="/admin/configuracoes" element={

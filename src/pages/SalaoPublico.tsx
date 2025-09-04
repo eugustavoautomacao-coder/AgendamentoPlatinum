@@ -276,7 +276,7 @@ export default function SalaoPublico() {
     if (!selectedService || !selectedProfessional) return;
 
     setLoadingSlots(true);
-    
+
     try {
       // Buscar agendamentos existentes para o dia
       const { data: appointments, error } = await supabase
@@ -704,14 +704,14 @@ export default function SalaoPublico() {
                     </div>
                     
                     {/* Campo de data nativo (funcional) */}
-                    <Input
+                  <Input
                       id="date-input"
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => handleDateSelect(e.target.value)}
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => handleDateSelect(e.target.value)}
                       min={getTodayDate()}
                       className="sr-only"
-                    />
+                  />
                     
                     <p className="text-xs text-muted-foreground">
                       Clique no campo para abrir o calendário e escolher uma data
@@ -759,24 +759,24 @@ export default function SalaoPublico() {
                         <div className="mb-4 text-sm text-muted-foreground">
                           {availableSlots.filter(slot => slot.available).length} de {availableSlots.length} horários disponíveis
                         </div>
-                        <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto modal-scrollbar">
-                          {availableSlots.map((slot) => (
-                            <Button
-                              key={slot.time}
-                              variant={slot.available ? "outline" : "secondary"}
-                              disabled={!slot.available}
-                              onClick={() => slot.available && handleTimeSelect(slot.time)}
+                    <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto modal-scrollbar">
+                      {availableSlots.map((slot) => (
+                        <Button
+                          key={slot.time}
+                          variant={slot.available ? "outline" : "secondary"}
+                          disabled={!slot.available}
+                          onClick={() => slot.available && handleTimeSelect(slot.time)}
                               className={`text-sm ${
                                 slot.available 
                                   ? 'hover:bg-primary hover:text-primary-foreground border-primary' 
                                   : 'cursor-not-allowed opacity-50'
                               }`}
                               title={slot.available ? `Agendar para ${slot.time}` : 'Horário indisponível'}
-                            >
-                              {slot.time}
-                            </Button>
-                          ))}
-                        </div>
+                        >
+                          {slot.time}
+                        </Button>
+                      ))}
+                    </div>
                         <div className="mt-3 text-xs text-muted-foreground">
                           <span className="inline-block w-3 h-3 bg-primary border border-primary rounded mr-1"></span>
                           Disponível
@@ -924,7 +924,7 @@ export default function SalaoPublico() {
                     {clienteLogado ? (
                       <User className="h-5 w-5 text-primary" />
                     ) : (
-                      <LogIn className="h-5 w-5 text-primary" />
+                    <LogIn className="h-5 w-5 text-primary" />
                     )}
                   </div>
                   <div>
@@ -967,8 +967,8 @@ export default function SalaoPublico() {
                   </>
                 ) : (
                   <>
-                    <LogIn className="h-4 w-4" />
-                    Acompanhar Agendamentos
+                <LogIn className="h-4 w-4" />
+                Acompanhar Agendamentos
                   </>
                 )}
               </Button>
@@ -1007,7 +1007,7 @@ export default function SalaoPublico() {
             const clienteData = JSON.parse(storedCliente);
             if (clienteData.salao_id === salaoId) {
               // Redirecionar diretamente para o dashboard de agendamentos
-              navigate(`/cliente/${salaoId}/agendamentos`);
+          navigate(`/cliente/${salaoId}/agendamentos`);
             }
           }
         }}

@@ -266,11 +266,22 @@ const GestaoUsuarios = () => {
     if (!deleteUser) return;
     setDeleteLoading(true);
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', deleteUser.id);
-      if (error) throw error;
+      // Chama a Edge Function para excluir de ambas as tabelas
+      const response = await fetch('https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/delete-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({ userId: deleteUser.id })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao excluir usuário');
+      }
+
       toast({ title: 'Usuário excluído com sucesso!' });
       setDeleteUser(null);
       await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });

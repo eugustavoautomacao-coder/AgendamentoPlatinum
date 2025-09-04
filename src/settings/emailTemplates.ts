@@ -411,6 +411,158 @@ export const emailTemplates = {
     <p style="color: #666; font-size: 14px;">
       <strong>Precisa cancelar?</strong> Entre em contato o quanto antes para reagendar.
     </p>
+  `,
+
+  // Template de reset de senha usando variáveis do Supabase
+  resetPassword: (data: { email: string; resetUrl: string }) => `
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="font-size: 48px;">🔐</div>
+    </div>
+    <div class="title">Redefinir Senha</div>
+    
+    <p>Olá <strong>${data.email}</strong>,</p>
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema AlveX.</p>
+    
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Email</div>
+        <div class="info-value">${data.email}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Data da Solicitação</div>
+        <div class="info-value">${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+    </div>
+    
+    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0 0 20px 0; color: #d63384; font-weight: 600; text-align: center;">📋 Como redefinir sua senha:</p>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+        <div style="color: #333; font-size: 14px;">Clique no botão "Redefinir Senha" abaixo</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+        <div style="color: #333; font-size: 14px;">Você será redirecionado para uma página segura</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+        <div style="color: #333; font-size: 14px;">Digite sua nova senha e confirme</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">4</div>
+        <div style="color: #333; font-size: 14px;">Faça login com sua nova senha</div>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${data.resetUrl}" class="button">
+        🔑 Redefinir Senha
+      </a>
+    </div>
+    
+    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0; color: #856404; font-weight: 600;">🛡️ Informações de Segurança:</p>
+      <ul style="margin: 10px 0 0 0; color: #856404; padding-left: 20px;">
+        <li>Este link é válido por <strong>24 horas</strong></li>
+        <li>Use apenas em dispositivos confiáveis</li>
+        <li>Não compartilhe este link com ninguém</li>
+        <li>Se não solicitou esta redefinição, ignore este email</li>
+      </ul>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p style="color: #666; font-size: 14px; text-align: center;">
+      <strong>Problemas com o link?</strong><br>
+      Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+      <span style="color: #d63384; word-break: break-all; font-size: 12px;">
+        ${data.resetUrl}
+      </span>
+    </p>
+    
+    <p style="color: #666; font-size: 14px; margin-top: 20px;">
+      <strong>Dúvidas?</strong> Entre em contato com o suporte do sistema ou com o estabelecimento.
+    </p>
+  `,
+
+  // Template para uso direto no Supabase (com variáveis do Supabase)
+  resetPasswordSupabase: () => `
+    <div style="text-align: center; margin-bottom: 20px;">
+      <div style="font-size: 48px;">🔐</div>
+    </div>
+    <div class="title">Redefinir Senha</div>
+    
+    <p>Olá <strong>{{.Email}}</strong>,</p>
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema AlveX.</p>
+    
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Email</div>
+        <div class="info-value">{{.Email}}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Site</div>
+        <div class="info-value">{{.SiteURL}}</div>
+      </div>
+    </div>
+    
+    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0 0 20px 0; color: #d63384; font-weight: 600; text-align: center;">📋 Como redefinir sua senha:</p>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">1</div>
+        <div style="color: #333; font-size: 14px;">Clique no botão "Redefinir Senha" abaixo</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">2</div>
+        <div style="color: #333; font-size: 14px;">Você será redirecionado para uma página segura</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">3</div>
+        <div style="color: #333; font-size: 14px;">Digite sua nova senha e confirme</div>
+      </div>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 6px; border-left: 4px solid #d63384;">
+        <div style="background: linear-gradient(135deg, #d63384 0%, #e91e63 100%); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; flex-shrink: 0;">4</div>
+        <div style="color: #333; font-size: 14px;">Faça login com sua nova senha</div>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="{{.ConfirmationURL}}" class="button">
+        🔑 Redefinir Senha
+      </a>
+    </div>
+    
+    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0; color: #856404; font-weight: 600;">🛡️ Informações de Segurança:</p>
+      <ul style="margin: 10px 0 0 0; color: #856404; padding-left: 20px;">
+        <li>Este link é válido por <strong>24 horas</strong></li>
+        <li>Use apenas em dispositivos confiáveis</li>
+        <li>Não compartilhe este link com ninguém</li>
+        <li>Se não solicitou esta redefinição, ignore este email</li>
+      </ul>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <p style="color: #666; font-size: 14px; text-align: center;">
+      <strong>Problemas com o link?</strong><br>
+      Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+      <span style="color: #d63384; word-break: break-all; font-size: 12px;">
+        {{.ConfirmationURL}}
+      </span>
+    </p>
+    
+    <p style="color: #666; font-size: 14px; margin-top: 20px;">
+      <strong>Dúvidas?</strong> Entre em contato com o suporte do sistema ou com o estabelecimento.
+    </p>
   `
 };
 
@@ -424,4 +576,9 @@ export interface EmailTemplateData {
   duracao_minutos: number;
   observacoes?: string;
   motivo_rejeicao?: string;
+}
+
+export interface ResetPasswordTemplateData {
+  email: string;
+  resetUrl: string;
 }
