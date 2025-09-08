@@ -71,6 +71,18 @@ export class EmailService {
       html
     });
   }
+
+  // Template: Confirmação da Solicitação de Agendamento com Credenciais
+  async enviarConfirmacaoAgendamentoComCredenciais(data: AgendamentoEmailData, senhaTemporaria: string): Promise<boolean> {
+    const content = emailTemplates.confirmacaoAgendamentoComCredenciais(data, senhaTemporaria);
+    const html = emailTemplates.baseTemplate(content, 'Solicitação de Agendamento Enviada - Suas Credenciais');
+
+    return await this.enviarEmail({
+      to: data.cliente_email,
+      subject: `📋 Solicitação de Agendamento Enviada - Suas Credenciais de Acesso`,
+      html
+    });
+  }
   
   // Template: Aprovação de Agendamento
   async enviarAprovacaoAgendamento(data: AgendamentoEmailData): Promise<boolean> {

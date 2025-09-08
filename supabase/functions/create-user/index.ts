@@ -50,10 +50,17 @@ serve(async (req) => {
 
     // Obter dados do request
     const requestBody = await req.json()
-    const { nome, email, password, tipo, salao_id } = requestBody
-    if (!nome || !email || !password || !tipo || (tipo !== 'cliente' && !salao_id)) {
+    const { nome, email, password, tipo, salao_id, telefone } = requestBody
+    if (!nome || !email || !password || !tipo || !telefone) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    // Para clientes, salao_id é obrigatório
+    if (tipo === 'cliente' && !salao_id) {
+      return new Response(
+        JSON.stringify({ error: 'Salão é obrigatório para clientes' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -88,7 +95,8 @@ serve(async (req) => {
       user_metadata: { 
         nome,
         tipo,
-        salao_id: tipo === 'cliente' ? null : salao_id
+        salao_id,
+        telefone
       },
       email_confirm: true
     })
@@ -113,8 +121,9 @@ serve(async (req) => {
         id: authData.user.id,
         nome,
         tipo,
-        salao_id: tipo === 'cliente' ? null : salao_id,
-        email
+        salao_id,
+        email,
+        telefone
       })
 
     console.log('User insert result:', { error: userError });
@@ -159,7 +168,8 @@ serve(async (req) => {
           email: authData.user.email,
           nome,
           tipo,
-          salao_id: tipo === 'cliente' ? null : salao_id
+          salao_id,
+          telefone
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

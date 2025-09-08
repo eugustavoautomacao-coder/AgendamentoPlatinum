@@ -30,7 +30,7 @@ export const useLembretesAutomaticos = (config: LembreteConfig = {
         .select(`
           *,
           servico:services(nome, duracao_minutos, preco),
-          funcionario:employees(nome)
+          funcionario:employees!appointments_funcionario_id_fkey(nome, email, telefone)
         `)
         .eq('status', 'confirmado')
         .gte('data_hora', agora.toISOString())

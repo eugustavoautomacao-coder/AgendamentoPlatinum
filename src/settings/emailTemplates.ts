@@ -223,6 +223,106 @@ export const emailTemplates = {
     </p>
   `,
 
+  // Template de confirmação da solicitação de agendamento com credenciais (para novos clientes)
+  confirmacaoAgendamentoComCredenciais: (data: any, senhaTemporaria: string) => `
+    <div class="title">📋 Solicitação de Agendamento Enviada!</div>
+    
+    <p>Olá <strong>${data.cliente_nome}</strong>,</p>
+    <p>Sua solicitação de agendamento foi enviada com sucesso ao salão! Aqui estão os detalhes:</p>
+    
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Serviço</div>
+        <div class="info-value">${data.servico_nome}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Profissional</div>
+        <div class="info-value">${data.funcionario_nome}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Data Solicitada</div>
+        <div class="info-value">${new Date(data.data_hora).toLocaleDateString('pt-BR')}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Horário</div>
+        <div class="info-value">${new Date(data.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Preço</div>
+        <div class="info-value price-highlight">R$ ${data.preco.toFixed(2)}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Duração</div>
+        <div class="info-value">${data.duracao_minutos} min</div>
+      </div>
+    </div>
+    
+    ${data.observacoes ? `
+      <div class="divider"></div>
+      <p><strong>Observações:</strong></p>
+      <p style="background-color: #fdf2f8; padding: 15px; border-radius: 8px; border-left: 4px solid #e91e63;">
+        ${data.observacoes}
+      </p>
+    ` : ''}
+    
+    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0; color: #856404; font-weight: 600;">⏳ Status da Solicitação</p>
+      <p style="margin: 10px 0 0 0; color: #856404;">
+        Sua solicitação está sendo analisada pelo salão. Você receberá uma notificação por email assim que for aprovada ou rejeitada.
+      </p>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div style="background-color: #e8f5e8; border: 2px solid #4caf50; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+      <h3 style="color: #2e7d32; margin: 0 0 15px 0; font-size: 20px;">Sua Conta Foi Criada!</h3>
+      <p style="color: #2e7d32; margin: 0 0 20px 0; font-size: 16px;">
+        Criamos uma conta para você no sistema do salão. Use as credenciais abaixo para acessar seu dashboard:
+      </p>
+      
+      <div style="background-color: white; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #4caf50;">
+        <div style="margin-bottom: 15px;">
+          <div style="color: #2e7d32; font-weight: 600; font-size: 14px; text-transform: uppercase; margin-bottom: 5px;">Email</div>
+          <div style="color: #333; font-size: 18px; font-weight: 600; font-family: monospace;">${data.cliente_email}</div>
+        </div>
+        <div>
+          <div style="color: #2e7d32; font-weight: 600; font-size: 14px; text-transform: uppercase; margin-bottom: 5px;">Senha Temporária</div>
+          <div style="color: #333; font-size: 24px; font-weight: bold; font-family: monospace; letter-spacing: 2px;">${senhaTemporaria}</div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin: 20px 0;">
+        <a href="#" class="button" style="background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);">
+          🏠 Acessar Meu Dashboard
+        </a>
+      </div>
+    </div>
+    
+    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+      <p style="margin: 0; color: #856404; font-weight: 600;">🔐 Informações Importantes:</p>
+      <ul style="margin: 10px 0 0 0; color: #856404; padding-left: 20px;">
+        <li>Esta é uma <strong>senha temporária</strong> - recomendamos alterá-la no primeiro acesso</li>
+        <li>Guarde estas credenciais em local seguro</li>
+        <li>No dashboard você pode ver seus agendamentos e histórico</li>
+        <li>Use o mesmo email e senha para futuros agendamentos</li>
+      </ul>
+    </div>
+    
+    <p><strong>Próximos passos:</strong></p>
+    <ol style="color: #666; line-height: 1.8;">
+      <li>Aguarde a análise do salão (geralmente em até 24h)</li>
+      <li>Verifique seu email para receber a confirmação</li>
+      <li>Acesse seu dashboard com as credenciais fornecidas</li>
+      <li>Em caso de aprovação, confirme sua presença</li>
+      <li>Em caso de rejeição, entre em contato para reagendar</li>
+    </ol>
+    
+    <p style="color: #666; font-size: 14px; margin-top: 20px;">
+      <strong>Dúvidas?</strong> Entre em contato diretamente com o salão para mais informações.
+    </p>
+  `,
+
   // Template de aprovação de agendamento
   aprovacaoAgendamento: (data: any) => `
     <div class="title">🎉 Agendamento Aprovado!</div>

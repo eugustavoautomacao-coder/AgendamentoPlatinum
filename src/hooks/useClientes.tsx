@@ -95,9 +95,9 @@ export const useClientes = () => {
         .select('*')
         .eq('salao_id', salaoId)
         .eq('email', email)
-        .single();
+        .maybeSingle(); // Usar maybeSingle() em vez de single()
 
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
+      if (error) throw error;
 
       return data;
     } catch (err) {

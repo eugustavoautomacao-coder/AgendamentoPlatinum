@@ -6,21 +6,21 @@ import { AgendamentoEmailData } from '@/settings/email.config';
 
 export interface ClienteAgendamento {
   id: string;
-  salao_id: string;
-  servico_id: string;
+  cliente_id?: string;
   funcionario_id: string;
+  servico_id: string;
   data_hora: string;
-  cliente_nome: string;
-  cliente_telefone: string;
-  cliente_email: string;
+  status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido' | 'aprovado' | 'rejeitado';
+  motivo_cancelamento?: string;
+  data_conclusao?: string;
+  employee_id?: string;
+  salao_id: string;
   observacoes?: string;
-  status: 'pendente' | 'aprovado' | 'rejeitado' | 'cancelado';
-  motivo_rejeicao?: string;
-  aprovado_por?: string;
-  aprovado_em?: string;
-  appointment_id?: string;
+  cliente_nome?: string;
+  cliente_telefone?: string;
+  cliente_email?: string;
   criado_em: string;
-  atualizado_em: string;
+  tipo?: 'pendente' | 'confirmado' | 'aprovado';
   servico: {
     nome: string;
     duracao_minutos: number;
@@ -44,20 +44,94 @@ export const useClienteAgendamentos = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      console.log('🔍 Buscando agendamentos para:', { clienteEmail, salaoId });
+      
+      // Verificar se o cliente existe na tabela clientes
+      const { data: clienteData, error: clienteError } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('email', clienteEmail);
+      
+      console.log('👤 Cliente encontrado na tabela clientes:', { clienteData, clienteError });
+      
+      // Primeiro, vamos verificar se há agendamentos na tabela appointments
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('cliente_email', clienteEmail);
+      
+      console.log('📋 Agendamentos encontrados (sem joins):', { appointmentsData, appointmentsError });
+      
+      // Verificar TODAS as solicitações (não apenas pendentes)
+      const { data: allRequestsData, error: allRequestsError } = await supabase
+        .from('appointment_requests')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('cliente_email', clienteEmail);
+      
+      console.log('📋 TODAS as solicitações encontradas:', { allRequestsData, allRequestsError });
+      
+      // Verificar se há solicitações pendentes
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('appointment_requests')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('cliente_email', clienteEmail)
+        .eq('status', 'pendente');
+      
+      console.log('📋 Solicitações pendentes encontradas:', { requestsData, requestsError });
+      
+      // Se não há agendamentos nem solicitações, vamos mostrar uma mensagem
+      if ((!appointmentsData || appointmentsData.length === 0) && (!requestsData || requestsData.length === 0)) {
+        console.log('ℹ️ Nenhum agendamento encontrado para este cliente');
+      }
+      
+      // Buscar apenas agendamentos (pendentes, aprovados e rejeitados)
+      const { data: requestsWithJoins, error: requestsWithJoinsError } = await supabase
         .from('appointment_requests')
         .select(`
           *,
           servico:services(nome, duracao_minutos, preco),
-          funcionario:employees(nome)
+          funcionario:employees!appointment_requests_funcionario_id_fkey(nome, email, telefone)
         `)
         .eq('salao_id', salaoId)
         .eq('cliente_email', clienteEmail)
-        .order('criado_em', { ascending: false });
+        .in('status', ['pendente', 'aprovado', 'rejeitado'])
+        .order('data_hora', { ascending: false });
 
-      if (error) throw error;
+      console.log('📋 Agendamentos encontrados:', { requestsWithJoins, requestsWithJoinsError });
 
-      setAgendamentos(data || []);
+      if (requestsWithJoinsError) throw requestsWithJoinsError;
+
+      // Mapear agendamentos com tipo baseado no status
+      const allAgendamentos = (requestsWithJoins || []).map(req => ({
+        ...req,
+        tipo: req.status === 'pendente' ? 'pendente' as const : 
+              req.status === 'aprovado' ? 'aprovado' as const : 
+              req.status === 'rejeitado' ? 'rejeitado' as const : 'pendente' as const
+      }));
+
+      const sortedAgendamentos = allAgendamentos.sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime());
+
+      console.log('📊 Total de agendamentos encontrados:', sortedAgendamentos.length);
+      console.log('📋 Lista completa de agendamentos:', sortedAgendamentos);
+      
+      // Debug detalhado de cada item
+      sortedAgendamentos.forEach((item, index) => {
+        console.log(`📋 Item ${index + 1}:`, {
+          id: item.id,
+          tipo: item.tipo,
+          status: item.status,
+          data_hora: item.data_hora,
+          cliente_nome: item.cliente_nome,
+          servico_nome: item.servico?.nome,
+          funcionario_nome: item.funcionario?.nome
+        });
+      });
+
+      setAgendamentos(sortedAgendamentos);
       setLastUpdate(new Date());
     } catch (err) {
       console.error('Erro ao carregar agendamentos:', err);
@@ -201,10 +275,9 @@ export const useClienteAgendamentos = () => {
   // Contar agendamentos por status
   const getContadores = () => {
     return {
-      pendentes: agendamentos.filter(ag => ag.status === 'pendente').length,
-      aprovados: agendamentos.filter(ag => ag.status === 'aprovado').length,
-      rejeitados: agendamentos.filter(ag => ag.status === 'rejeitado').length,
-      cancelados: agendamentos.filter(ag => ag.status === 'cancelado').length,
+      pendentes: agendamentos.filter(ag => ag.status === 'pendente' || ag.tipo === 'pendente').length,
+      aprovados: agendamentos.filter(ag => ag.status === 'aprovado' || ag.tipo === 'aprovado').length,
+      rejeitados: agendamentos.filter(ag => ag.status === 'rejeitado' || ag.tipo === 'rejeitado').length,
       total: agendamentos.length
     };
   };

@@ -344,41 +344,40 @@ export default function SalaoPublico() {
       const serviceDuration = selectedService.duracao_minutos;
 
       for (let hour = startHour; hour < endHour; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          const slotDateTime = new Date(`${date}T${timeString}:00`);
+        // Gerar apenas horários cheios (sem minutos fracionados)
+        const timeString = `${hour.toString().padStart(2, '0')}:00`;
+        const slotDateTime = new Date(`${date}T${timeString}:00`);
+        
+        // Verificar se o slot está disponível (não conflita com agendamentos)
+        const isAvailableByAppointments = !appointments?.some(apt => {
+          const aptTime = new Date(apt.data_hora);
+          const aptServiceDuration = (apt.servico as any)?.duracao_minutos || 60;
+          const aptEndTime = new Date(aptTime.getTime() + aptServiceDuration * 60000);
+          const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
           
-          // Verificar se o slot está disponível (não conflita com agendamentos)
-          const isAvailableByAppointments = !appointments?.some(apt => {
-            const aptTime = new Date(apt.data_hora);
-            const aptServiceDuration = (apt.servico as any)?.duracao_minutos || 60;
-            const aptEndTime = new Date(aptTime.getTime() + aptServiceDuration * 60000);
-            const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
-            
-            return (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
-                   (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
-                   (slotDateTime <= aptTime && slotEndTime >= aptEndTime);
-          });
+          return (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
+                 (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
+                 (slotDateTime <= aptTime && slotEndTime >= aptEndTime);
+        });
 
-          // Verificar se o slot não está bloqueado pelo funcionário
-          const isAvailableByBlockedSlots = !blockedSlots?.some(blocked => {
-            const blockedStart = new Date(`${date}T${blocked.hora_inicio}`);
-            const blockedEnd = new Date(`${date}T${blocked.hora_fim}`);
-            const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
-            
-            return (slotDateTime >= blockedStart && slotDateTime < blockedEnd) ||
-                   (slotEndTime > blockedStart && slotEndTime <= blockedEnd) ||
-                   (slotDateTime <= blockedStart && slotEndTime >= blockedEnd);
-          });
+        // Verificar se o slot não está bloqueado pelo funcionário
+        const isAvailableByBlockedSlots = !blockedSlots?.some(blocked => {
+          const blockedStart = new Date(`${date}T${blocked.hora_inicio}`);
+          const blockedEnd = new Date(`${date}T${blocked.hora_fim}`);
+          const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
+          
+          return (slotDateTime >= blockedStart && slotDateTime < blockedEnd) ||
+                 (slotEndTime > blockedStart && slotEndTime <= blockedEnd) ||
+                 (slotDateTime <= blockedStart && slotEndTime >= blockedEnd);
+        });
 
-          // Slot está disponível se não conflita com agendamentos E não está bloqueado
-          const isAvailable = isAvailableByAppointments && isAvailableByBlockedSlots;
+        // Slot está disponível se não conflita com agendamentos E não está bloqueado
+        const isAvailable = isAvailableByAppointments && isAvailableByBlockedSlots;
 
-          slots.push({
-            time: timeString,
-            available: isAvailable
-          });
-        }
+        slots.push({
+          time: timeString,
+          available: isAvailable
+        });
       }
 
       setAvailableSlots(slots);
@@ -437,11 +436,11 @@ export default function SalaoPublico() {
       if (result && (result as any).request) {
         setStep('success');
         
-        // Se uma conta foi criada, mostrar modal de login
+        // Se uma conta foi criada, salvar as credenciais para uso posterior
         if ((result as any).senhaTemporaria && formData.cliente_email) {
           setSenhaTemporaria((result as any).senhaTemporaria);
           setClienteEmail(formData.cliente_email);
-          setShowLoginModal(true);
+          // NÃO abrir o modal automaticamente
         }
       } else {
         toast.error('Erro ao enviar solicitação');
@@ -915,6 +914,23 @@ export default function SalaoPublico() {
               Sua solicitação de agendamento foi enviada com sucesso. 
               O salão entrará em contato para confirmar o horário.
             </p>
+
+            {/* Mensagem sobre credenciais enviadas por email */}
+            {!clienteLogado && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-green-800">
+                      Suas credenciais foram enviadas por email!
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Verifique sua caixa de entrada e spam. Use o email e senha temporária para fazer login e acompanhar seus agendamentos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Explicação sobre acompanhamento */}
             <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 mb-6">

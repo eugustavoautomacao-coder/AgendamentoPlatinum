@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useClienteAuth } from '@/hooks/useClienteAuth';
 import { useClienteAgendamentos } from '@/hooks/useClienteAgendamentos';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,9 +24,9 @@ import {
 } from 'lucide-react';
 
 export const ClienteAgendamentos: React.FC = () => {
-  const { salaoId } = useParams<{ salaoId: string }>();
   const navigate = useNavigate();
-  const { cliente, logout, isAuthenticated } = useClienteAuth();
+  const { salaoId } = useParams<{ salaoId: string }>();
+  const { cliente, isAuthenticated, logout } = useClienteAuth();
   const { 
     agendamentos, 
     loading, 
@@ -44,6 +44,7 @@ export const ClienteAgendamentos: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && cliente && salaoId) {
+      console.log('🔄 Carregando agendamentos para cliente:', cliente.email, 'salao:', salaoId);
       loadAgendamentos(cliente.email, salaoId);
     }
   }, [isAuthenticated, cliente, salaoId, loadAgendamentos]);
@@ -57,7 +58,7 @@ export const ClienteAgendamentos: React.FC = () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isAuthenticated, cliente, salaoId, setupRealtimeSync]);
+  }, [isAuthenticated, cliente, setupRealtimeSync]);
 
   // Atualização automática a cada 30 segundos (fallback)
   useEffect(() => {
@@ -70,9 +71,9 @@ export const ClienteAgendamentos: React.FC = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated, cliente, salaoId, refreshData]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout();
-    navigate(`/salao/${salaoId}`);
+    navigate('/login');
   };
 
   const handleCancelarAgendamento = async (agendamentoId: string) => {
@@ -212,7 +213,7 @@ export const ClienteAgendamentos: React.FC = () => {
                   <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pendentes</p>
+                  <p className="text-sm text-muted-foreground">Pendente</p>
                   <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{contadores.pendentes}</p>
                 </div>
               </div>
@@ -274,7 +275,7 @@ export const ClienteAgendamentos: React.FC = () => {
           </Button>
           
           <Button
-            onClick={() => navigate(`/salao/${salaoId}`)}
+            onClick={() => navigate(`/salao/${cliente?.salao_id}`)}
             className="flex items-center gap-2 bg-primary hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
@@ -291,7 +292,7 @@ export const ClienteAgendamentos: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="pendente" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Pendentes ({contadores.pendentes})
+              Pendente ({contadores.pendentes})
             </TabsTrigger>
             <TabsTrigger value="aprovado" className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
@@ -307,15 +308,7 @@ export const ClienteAgendamentos: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Loading State */}
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Carregando agendamentos...</p>
-              </div>
-            </div>
-          )}
+          {/* Loading State - Removido para não empurrar os cards */}
 
           {/* Tab Todos */}
           <TabsContent value="todos" className="space-y-4">
@@ -326,7 +319,7 @@ export const ClienteAgendamentos: React.FC = () => {
                   <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum agendamento encontrado</h3>
                   <p className="text-muted-foreground mb-6">Você ainda não possui agendamentos.</p>
                   <Button
-                    onClick={() => navigate(`/salao/${salaoId}`)}
+                    onClick={() => navigate(`/salao/${cliente?.salao_id}`)}
                     className="flex items-center gap-2 mx-auto"
                   >
                     <Plus className="h-4 w-4" />
@@ -433,9 +426,9 @@ export const ClienteAgendamentos: React.FC = () => {
             // Mapear status para mensagens de estado vazio
             const getEmptyMessage = (status: string) => {
               const messages = {
-                'pendente': 'Você não possui solicitações pendentes de aprovação.',
+                'pendente': 'Você não possui agendamentos pendentes de aprovação.',
                 'aprovado': 'Você não possui agendamentos aprovados.',
-                'rejeitado': 'Você não possui solicitações rejeitadas.',
+                'rejeitado': 'Você não possui agendamentos rejeitados.',
                 'cancelado': 'Você não possui agendamentos cancelados.'
               };
               return messages[status as keyof typeof messages] || 'Nenhum agendamento encontrado.';
@@ -460,7 +453,7 @@ export const ClienteAgendamentos: React.FC = () => {
                             {getEmptyMessage(status)}
                           </p>
                           <Button
-                            onClick={() => navigate(`/salao/${salaoId}`)}
+                            onClick={() => navigate(`/salao/${cliente?.salao_id}`)}
                             variant="outline"
                             className="flex items-center gap-2 mx-auto"
                           >

@@ -37,7 +37,8 @@ const GestaoUsuarios = () => {
     email: '',
     password: '',
     tipo: 'admin',
-    salao_id: ''
+    salao_id: '',
+    telefone: ''
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -65,6 +66,7 @@ const GestaoUsuarios = () => {
     newUser.email.trim() &&
     newUser.password.trim() &&
     newUser.tipo &&
+    newUser.telefone.trim() &&
     (!isSalonRequired || newUser.salao_id);
 
   // Ajustar validação do formulário de edição
@@ -188,7 +190,8 @@ const GestaoUsuarios = () => {
         email: newUser.email.trim(),
         password: newUser.password,
         tipo: newUser.tipo.trim().toLowerCase(),
-        salao_id: newUser.tipo === 'cliente' ? null : (newUser.salao_id || null)
+        salao_id: newUser.salao_id || null,
+        telefone: newUser.telefone.trim()
       };
       console.log("Payload enviado:", payload);
       // Chamada para Edge Function
@@ -213,7 +216,7 @@ const GestaoUsuarios = () => {
         description: `O usuário ${newUser.nome} foi criado.`
       });
       setIsCreateOpen(false);
-      setNewUser({ nome: '', email: '', password: '', tipo: 'admin', salao_id: '' });
+      setNewUser({ nome: '', email: '', password: '', tipo: 'admin', salao_id: '', telefone: '' });
       // Atualizar listagem
       await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
     } catch (error: any) {
@@ -392,8 +395,18 @@ const GestaoUsuarios = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="user-phone">Telefone</Label>
+                  <Input
+                    id="user-phone"
+                    value={newUser.telefone}
+                    onChange={e => setNewUser(u => ({ ...u, telefone: e.target.value }))}
+                    placeholder="Telefone"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="user-role">Tipo</Label>
-                  <Select value={newUser.tipo} onValueChange={value => setNewUser(u => ({ ...u, tipo: value }))}>
+                  <Select value={newUser.tipo} onValueChange={value => setNewUser(u => ({ ...u, tipo: value, salao_id: '' }))}>
                     <SelectTrigger id="user-role" className="w-full">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>

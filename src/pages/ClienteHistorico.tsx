@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useClienteAuth } from '@/hooks/useClienteAuth';
-import { useClienteAgendamentos } from '@/hooks/useClienteAgendamentos';
+import { useClienteAgendamentos, ClienteAgendamento } from '@/hooks/useClienteAgendamentos';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,28 +28,6 @@ import {
   Timer
 } from 'lucide-react';
 
-interface ClienteAgendamento {
-  id: string;
-  servico: {
-    nome: string;
-    preco: number;
-    duracao_minutos: number;
-    descricao?: string;
-  };
-  funcionario: {
-    nome: string;
-    avatar_url?: string;
-  };
-  data_hora: string;
-  status: string;
-  observacoes?: string;
-  motivo_rejeicao?: string;
-  cliente_telefone: string;
-  cliente_email?: string;
-  criado_em: string;
-  atualizado_em: string;
-  fotos?: string[];
-}
 
 export const ClienteHistorico: React.FC = () => {
   const { salaoId } = useParams<{ salaoId: string }>();

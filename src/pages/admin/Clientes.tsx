@@ -139,7 +139,7 @@ const Clientes = () => {
         .select(`
           *,
           servico:servico_id(nome, preco),
-          funcionario:funcionario_id(nome)
+          funcionario:employees!appointments_funcionario_id_fkey(nome)
         `)
         .eq('cliente_id', clientId)
         .order('data_hora', { ascending: false });

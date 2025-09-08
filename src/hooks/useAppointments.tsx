@@ -47,7 +47,7 @@ export function useAppointments() {
         .from('appointments')
         .select(`
           *,
-          servico:servico_id(nome, duracao_minutos, preco)
+          servico:services!servico_id(nome, duracao_minutos, preco)
         `)
         .eq('salao_id', profile.salao_id)
         .order('data_hora', { ascending: true });

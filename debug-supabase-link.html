@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Supabase Link</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Supabase Link</h1>
+        
+        <div class="log" id="urlInfo">
+            <strong>Informações da URL atual:</strong>
+        </div>
+        
+        <div class="log" id="paramsInfo">
+            <strong>Parâmetros encontrados:</strong>
+        </div>
+        
+        <div class="log" id="testResults">
+            <strong>Resultados dos testes:</strong>
+        </div>
+        
+        <h3>🧪 Testes</h3>
+        
+        <div>
+            <label>Link do Supabase para testar:</label>
+            <input type="text" id="supabaseLink" placeholder="Cole o link do email aqui" value="https://lbpqmdcmoybuuthzezmj.supabase.co/auth/v1/verify?token=ba79be9910d08e5f28b160194cd7b68b87d842726c26d7c18a0aba6f&type=recovery&redirect_to=http://localhost:8080/redefinir-senha">
+        </div>
+        
+        <button onclick="analyzeCurrentURL()">Analisar URL Atual</button>
+        <button onclick="testSupabaseLink()">Testar Link do Supabase</button>
+        <button onclick="simulateRedirect()">Simular Redirecionamento</button>
+        <button onclick="clearLogs()">Limpar Logs</button>
+        
+        <h3>📋 Instruções</h3>
+        <ol>
+            <li>Cole o link do email no campo acima</li>
+            <li>Clique em "Testar Link do Supabase"</li>
+            <li>Verifique os resultados nos logs</li>
+            <li>Use "Simular Redirecionamento" para testar o que deveria acontecer</li>
+        </ol>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            
+            logElement.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function analyzeCurrentURL() {
+            const urlInfo = document.getElementById('urlInfo');
+            const paramsInfo = document.getElementById('paramsInfo');
+            
+            const url = new URL(window.location.href);
+            
+            urlInfo.innerHTML = `
+<strong>Informações da URL atual:</strong>
+- URL completa: ${window.location.href}
+- Hostname: ${window.location.hostname}
+- Port: ${window.location.port}
+- Pathname: ${window.location.pathname}
+- Search: ${window.location.search}
+- Hash: ${window.location.hash}
+- Origin: ${window.location.origin}
+            `;
+            
+            const searchParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            
+            paramsInfo.innerHTML = `
+<strong>Parâmetros encontrados:</strong>
+Query String:
+${Array.from(searchParams.entries()).map(([key, value]) => `- ${key}: ${value}`).join('\n') || '- Nenhum parâmetro encontrado'}
+
+Hash:
+${Array.from(hashParams.entries()).map(([key, value]) => `- ${key}: ${value}`).join('\n') || '- Nenhum parâmetro encontrado'}
+            `;
+        }
+        
+        function testSupabaseLink() {
+            const link = document.getElementById('supabaseLink').value;
+            if (!link) {
+                log('❌ Por favor, cole o link do Supabase primeiro', 'error');
+                return;
+            }
+            
+            log('🔗 Testando link do Supabase...', 'info');
+            log(`Link: ${link}`, 'info');
+            
+            try {
+                const url = new URL(link);
+                const token = url.searchParams.get('token');
+                const type = url.searchParams.get('type');
+                const redirectTo = url.searchParams.get('redirect_to');
+                
+                log(`✅ Token encontrado: ${token ? 'Sim' : 'Não'}`, token ? 'success' : 'error');
+                log(`✅ Type: ${type}`, type === 'recovery' ? 'success' : 'warning');
+                log(`✅ Redirect To: ${redirectTo}`, 'info');
+                
+                if (token && type === 'recovery' && redirectTo) {
+                    log('✅ Link do Supabase parece válido!', 'success');
+                    log('💡 O Supabase deveria redirecionar para:', 'info');
+                    log(`${redirectTo}#access_token=...&refresh_token=...&type=recovery`, 'info');
+                } else {
+                    log('❌ Link do Supabase parece inválido', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao analisar link: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulateRedirect() {
+            const link = document.getElementById('supabaseLink').value;
+            if (!link) {
+                log('❌ Por favor, cole o link do Supabase primeiro', 'error');
+                return;
+            }
+            
+            log('🎭 Simulando redirecionamento...', 'info');
+            
+            try {
+                const url = new URL(link);
+                const redirectTo = url.searchParams.get('redirect_to');
+                
+                if (redirectTo) {
+                    // Simular o que o Supabase deveria fazer
+                    const simulatedURL = `${redirectTo}#access_token=simulated_token&refresh_token=simulated_refresh&type=recovery`;
+                    
+                    log('✅ URL de redirecionamento simulada:', 'success');
+                    log(simulatedURL, 'info');
+                    
+                    log('💡 Esta é a URL que o Supabase deveria gerar', 'info');
+                    log('💡 Com os tokens reais de autenticação', 'info');
+                    
+                    // Perguntar se quer navegar para a URL simulada
+                    if (confirm('Deseja navegar para a URL simulada para testar?')) {
+                        window.location.href = simulatedURL;
+                    }
+                } else {
+                    log('❌ Não foi possível encontrar redirect_to no link', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao simular redirecionamento: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('testResults').innerHTML = '<strong>Resultados dos testes:</strong>';
+        }
+        
+        // Analisar URL atual ao carregar a página
+        window.onload = function() {
+            analyzeCurrentURL();
+            log('🚀 Página de debug carregada', 'success');
+            log('💡 Cole o link do email e clique em "Testar Link do Supabase"', 'info');
+        };
+    </script>
+</body>
+</html>
+
+

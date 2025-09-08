@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useClientes } from './useClientes';
 import { EmailService } from '@/services/emailService';
@@ -54,6 +55,7 @@ export interface CreateAppointmentRequestResult {
 
 export const useAppointmentRequests = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const { checkClienteExists, createCliente } = useClientes();
   const emailService = new EmailService();
 
@@ -67,7 +69,7 @@ export const useAppointmentRequests = () => {
         .select(`
           *,
           servico:services(nome, duracao_minutos, preco),
-          funcionario:employees(nome),
+          funcionario:employees!appointment_requests_funcionario_id_fkey(nome, email, telefone),
           aprovado_por_user:users(nome)
         `)
         .eq('salao_id', salaoId)
@@ -89,35 +91,66 @@ export const useAppointmentRequests = () => {
       setIsLoading(true);
       
       // Verificar se o cliente já existe
+      console.log('🔍 Verificando se cliente existe:', data.cliente_email);
       const clienteExists = await checkClienteExists(data.salao_id, data.cliente_email || '');
+      console.log('🔍 Cliente existe?', clienteExists);
       
       let temporaryPassword: string | undefined;
       if (!clienteExists && data.cliente_email) {
-        // Criar cliente se não existir com senha temporária e defaults seguros
-        temporaryPassword = Math.floor(100000 + Math.random() * 900000).toString();
-        await createCliente({
-          salao_id: data.salao_id,
-          nome: data.cliente_nome,
-          email: data.cliente_email,
-          telefone: data.cliente_telefone || 'Não informado',
-          senha_hash: temporaryPassword
-        });
+        console.log('🚀 Criando novo cliente via Edge Function...');
+        const functionsUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-client';
+        console.log('🔗 URL da Edge Function:', functionsUrl);
+        // Criar cliente usando a Edge Function create-client
+        try {
+          const response = await fetch(functionsUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              name: data.cliente_nome,
+              email: data.cliente_email,
+              phone: data.cliente_telefone || 'Não informado',
+              salon_id: data.salao_id,
+              observacoes: data.observacoes || ''
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erro ao criar cliente');
+          }
+
+          const result = await response.json();
+          temporaryPassword = result.password;
+          
+          console.log('✅ Cliente criado com sucesso via Edge Function');
+          console.log('🔑 Senha temporária recebida:', temporaryPassword);
+        } catch (clientError) {
+          console.error('❌ Erro ao criar cliente via Edge Function:', clientError);
+          // Continuar sem criar o cliente se houver erro
+        }
       }
 
+      console.log('📝 Criando solicitação de agendamento com dados:', data);
+      
       const { data: request, error } = await supabase
         .from('appointment_requests')
         .insert([data])
         .select(`
           *,
           servico:services(nome, duracao_minutos, preco),
-          funcionario:employees(nome)
+          funcionario:employees!inner(nome, email, telefone)
         `)
         .single();
 
       if (error) {
-        console.error('Erro ao criar solicitação:', error);
+        console.error('❌ Erro ao criar solicitação:', error);
         throw error;
       }
+      
+      console.log('✅ Solicitação criada com sucesso:', request);
 
       // Enviar email de confirmação da solicitação para o cliente (se tiver email)
       if (data.cliente_email) {
@@ -133,8 +166,17 @@ export const useAppointmentRequests = () => {
             observacoes: data.observacoes
           };
           
-          await emailService.enviarConfirmacaoAgendamento(emailData);
-          console.log('✅ Email de confirmação da solicitação enviado com sucesso');
+          // Se um novo cliente foi criado, enviar email com credenciais
+          console.log('📧 Enviando email... Senha temporária disponível?', !!temporaryPassword);
+          if (temporaryPassword) {
+            console.log('📧 Enviando email COM credenciais...');
+            await emailService.enviarConfirmacaoAgendamentoComCredenciais(emailData, temporaryPassword);
+            console.log('✅ Email de confirmação com credenciais enviado com sucesso');
+          } else {
+            console.log('📧 Enviando email SEM credenciais...');
+            await emailService.enviarConfirmacaoAgendamento(emailData);
+            console.log('✅ Email de confirmação da solicitação enviado com sucesso');
+          }
         } catch (emailError) {
           console.error('❌ Erro ao enviar email de confirmação da solicitação:', emailError);
           // Não falhar a operação principal por erro de email
@@ -174,39 +216,51 @@ export const useAppointmentRequests = () => {
 
       if (fetchError) throw fetchError;
 
+      // Normalizar horário para horário cheio (remover minutos fracionados)
+      const normalizeTimeToFullHour = (dateTimeString: string): string => {
+        const date = new Date(dateTimeString);
+        // Arredondar para a hora cheia mais próxima
+        const normalizedDate = new Date(date);
+        normalizedDate.setMinutes(0, 0, 0); // Zerar minutos, segundos e milissegundos
+        return normalizedDate.toISOString();
+      };
+
       // Criar agendamento
-      const { data: appointment, error: appointmentError } = await supabase
-        .from('appointments')
-        .insert([{
-          salao_id: request.salao_id,
-          cliente_id: null, // Será preenchido depois se necessário
-          funcionario_id: request.funcionario_id,
-          servico_id: request.servico_id,
-          data_hora: request.data_hora,
-          status: 'confirmado',
-          observacoes: request.observacoes,
-          // Campos diretos do cliente
-          cliente_nome: request.cliente_nome,
-          cliente_telefone: request.cliente_telefone,
-          cliente_email: request.cliente_email
-        }])
-        .select()
-        .single();
+      const appointmentData = {
+        salao_id: request.salao_id,
+        cliente_id: null, // Será preenchido depois se necessário
+        funcionario_id: request.funcionario_id,
+        employee_id: request.funcionario_id, // Campo duplicado para compatibilidade
+        servico_id: request.servico_id,
+        data_hora: normalizeTimeToFullHour(request.data_hora), // Normalizar para horário cheio
+        status: 'confirmado',
+        observacoes: request.observacoes,
+        // Campos diretos do cliente
+        cliente_nome: request.cliente_nome,
+        cliente_telefone: request.cliente_telefone,
+        cliente_email: request.cliente_email
+      };
 
-      if (appointmentError) throw appointmentError;
-
-      // Atualizar solicitação como aprovada e vincular ao agendamento criado
+      // Apenas atualizar o status do agendamento original para 'aprovado'
+      console.log('✅ Atualizando status do agendamento para aprovado...');
       const { error: updateError } = await supabase
         .from('appointment_requests')
         .update({
           status: 'aprovado',
           aprovado_por: aprovadoPor,
-          aprovado_em: new Date().toISOString(),
-          appointment_id: appointment.id // Vincular o agendamento criado
+          aprovado_em: new Date().toISOString()
         })
         .eq('id', requestId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('❌ Erro ao atualizar status do agendamento:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Status do agendamento atualizado para aprovado');
+
+      // Invalidar cache dos agendamentos para atualizar a interface
+      queryClient.invalidateQueries({ queryKey: ['appointment-requests'] });
 
       // Enviar email de confirmação para o cliente
       try {
@@ -273,7 +327,7 @@ export const useAppointmentRequests = () => {
           .select(`
             *,
             servico:services(nome, duracao_minutos, preco),
-            funcionario:employees(nome)
+            funcionario:employees!inner(nome, email, telefone)
           `)
           .eq('id', requestId)
           .single();

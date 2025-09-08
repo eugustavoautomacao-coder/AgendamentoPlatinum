@@ -22,6 +22,7 @@ import { format, addDays, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AgendaSkeleton } from '@/components/AgendaSkeleton';
+import { NoProfessionalsMessage } from '@/components/NoProfessionalsMessage';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -928,6 +929,15 @@ const Agenda = () => {
   return (
       <AdminLayout>
         <AgendaSkeleton />
+      </AdminLayout>
+    );
+  }
+
+  // Verificar se não há profissionais cadastrados
+  if (professionals.length === 0) {
+    return (
+      <AdminLayout>
+        <NoProfessionalsMessage />
       </AdminLayout>
     );
   }
