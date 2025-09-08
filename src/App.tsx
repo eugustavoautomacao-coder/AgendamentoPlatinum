@@ -31,6 +31,7 @@ import { ClienteAgendamentos } from "./pages/ClienteAgendamentos";
 import { ClienteHistorico } from "./pages/ClienteHistorico";
 import { TesteEmail } from "./pages/TesteEmail";
 import ClienteLogin from "./pages/ClienteLogin";
+import ResetPassword from "./pages/ResetPassword";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import GestaoSaloes from "./pages/superadmin/GestaoSaloes";
 import GestaoUsuarios from "./pages/superadmin/GestaoUsuarios";
@@ -90,6 +91,7 @@ function AppRoutes() {
         : profile?.tipo === 'admin' ? '/admin'
         : profile?.tipo === 'funcionario' ? '/profissional'
         : '/'} replace />} />
+      <Route path="/redefinir-senha" element={<ResetPassword />} />
       <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
       
       {/* SuperAdmin Routes */}

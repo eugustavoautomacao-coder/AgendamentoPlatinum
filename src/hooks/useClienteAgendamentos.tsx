@@ -12,6 +12,7 @@ export interface ClienteAgendamento {
   data_hora: string;
   status: 'pendente' | 'confirmado' | 'cancelado' | 'concluido' | 'aprovado' | 'rejeitado';
   motivo_cancelamento?: string;
+  motivo_rejeicao?: string;
   data_conclusao?: string;
   employee_id?: string;
   salao_id: string;
@@ -20,7 +21,7 @@ export interface ClienteAgendamento {
   cliente_telefone?: string;
   cliente_email?: string;
   criado_em: string;
-  tipo?: 'pendente' | 'confirmado' | 'aprovado';
+  tipo?: 'pendente' | 'confirmado' | 'aprovado' | 'rejeitado' | 'cancelado';
   servico: {
     nome: string;
     duracao_minutos: number;
@@ -44,7 +45,6 @@ export const useClienteAgendamentos = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Buscando agendamentos para:', { clienteEmail, salaoId });
       
       // Verificar se o cliente existe na tabela clientes
       const { data: clienteData, error: clienteError } = await supabase
@@ -53,7 +53,6 @@ export const useClienteAgendamentos = () => {
         .eq('salao_id', salaoId)
         .eq('email', clienteEmail);
       
-      console.log('👤 Cliente encontrado na tabela clientes:', { clienteData, clienteError });
       
       // Primeiro, vamos verificar se há agendamentos na tabela appointments
       const { data: appointmentsData, error: appointmentsError } = await supabase
@@ -62,7 +61,6 @@ export const useClienteAgendamentos = () => {
         .eq('salao_id', salaoId)
         .eq('cliente_email', clienteEmail);
       
-      console.log('📋 Agendamentos encontrados (sem joins):', { appointmentsData, appointmentsError });
       
       // Verificar TODAS as solicitações (não apenas pendentes)
       const { data: allRequestsData, error: allRequestsError } = await supabase
@@ -71,7 +69,6 @@ export const useClienteAgendamentos = () => {
         .eq('salao_id', salaoId)
         .eq('cliente_email', clienteEmail);
       
-      console.log('📋 TODAS as solicitações encontradas:', { allRequestsData, allRequestsError });
       
       // Verificar se há solicitações pendentes
       const { data: requestsData, error: requestsError } = await supabase
@@ -81,12 +78,7 @@ export const useClienteAgendamentos = () => {
         .eq('cliente_email', clienteEmail)
         .eq('status', 'pendente');
       
-      console.log('📋 Solicitações pendentes encontradas:', { requestsData, requestsError });
       
-      // Se não há agendamentos nem solicitações, vamos mostrar uma mensagem
-      if ((!appointmentsData || appointmentsData.length === 0) && (!requestsData || requestsData.length === 0)) {
-        console.log('ℹ️ Nenhum agendamento encontrado para este cliente');
-      }
       
       // Buscar apenas agendamentos (pendentes, aprovados e rejeitados)
       const { data: requestsWithJoins, error: requestsWithJoinsError } = await supabase
@@ -98,10 +90,9 @@ export const useClienteAgendamentos = () => {
         `)
         .eq('salao_id', salaoId)
         .eq('cliente_email', clienteEmail)
-        .in('status', ['pendente', 'aprovado', 'rejeitado'])
+        .in('status', ['pendente', 'aprovado', 'rejeitado', 'cancelado'])
         .order('data_hora', { ascending: false });
 
-      console.log('📋 Agendamentos encontrados:', { requestsWithJoins, requestsWithJoinsError });
 
       if (requestsWithJoinsError) throw requestsWithJoinsError;
 
@@ -110,26 +101,12 @@ export const useClienteAgendamentos = () => {
         ...req,
         tipo: req.status === 'pendente' ? 'pendente' as const : 
               req.status === 'aprovado' ? 'aprovado' as const : 
-              req.status === 'rejeitado' ? 'rejeitado' as const : 'pendente' as const
+              req.status === 'rejeitado' ? 'rejeitado' as const :
+              req.status === 'cancelado' ? 'cancelado' as const : 'pendente' as const
       }));
 
       const sortedAgendamentos = allAgendamentos.sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime());
 
-      console.log('📊 Total de agendamentos encontrados:', sortedAgendamentos.length);
-      console.log('📋 Lista completa de agendamentos:', sortedAgendamentos);
-      
-      // Debug detalhado de cada item
-      sortedAgendamentos.forEach((item, index) => {
-        console.log(`📋 Item ${index + 1}:`, {
-          id: item.id,
-          tipo: item.tipo,
-          status: item.status,
-          data_hora: item.data_hora,
-          cliente_nome: item.cliente_nome,
-          servico_nome: item.servico?.nome,
-          funcionario_nome: item.funcionario?.nome
-        });
-      });
 
       setAgendamentos(sortedAgendamentos);
       setLastUpdate(new Date());
@@ -156,7 +133,6 @@ export const useClienteAgendamentos = () => {
           filter: `salao_id=eq.${salaoId} AND cliente_email=eq.${clienteEmail}`
         },
         (payload) => {
-          console.log('Mudança detectada em tempo real:', payload);
           
           if (payload.eventType === 'INSERT') {
             // Nova solicitação criada
@@ -248,7 +224,6 @@ export const useClienteAgendamentos = () => {
           };
           
           await emailService.enviarCancelamentoAgendamento(emailData);
-          console.log('✅ Email de cancelamento enviado com sucesso');
         }
       } catch (emailError) {
         console.error('❌ Erro ao enviar email de cancelamento:', emailError);
@@ -278,6 +253,7 @@ export const useClienteAgendamentos = () => {
       pendentes: agendamentos.filter(ag => ag.status === 'pendente' || ag.tipo === 'pendente').length,
       aprovados: agendamentos.filter(ag => ag.status === 'aprovado' || ag.tipo === 'aprovado').length,
       rejeitados: agendamentos.filter(ag => ag.status === 'rejeitado' || ag.tipo === 'rejeitado').length,
+      cancelados: agendamentos.filter(ag => ag.status === 'cancelado' || ag.tipo === 'cancelado').length,
       total: agendamentos.length
     };
   };

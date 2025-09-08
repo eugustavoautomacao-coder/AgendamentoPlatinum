@@ -132,6 +132,40 @@ export class EmailService {
     });
   }
   
+  // Template: Reset de Senha
+  async sendPasswordResetEmail(data: { to: string; nome: string; resetLink: string }): Promise<boolean> {
+    const content = `
+      <div style="text-align: center; padding: 20px;">
+        <h2 style="color: #333; margin-bottom: 20px;">🔐 Redefinir Senha</h2>
+        <p style="color: #666; font-size: 16px; margin-bottom: 20px;">
+          Olá <strong>${data.nome}</strong>,
+        </p>
+        <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+          Você solicitou a redefinição de sua senha. Clique no botão abaixo para criar uma nova senha:
+        </p>
+        <a href="${data.resetLink}" 
+           style="background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          Redefinir Senha
+        </a>
+        <p style="color: #999; font-size: 14px; margin-top: 30px;">
+          Este link expira em 24 horas. Se você não solicitou esta redefinição, ignore este email.
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 20px;">
+          Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+          <span style="word-break: break-all;">${data.resetLink}</span>
+        </p>
+      </div>
+    `;
+    
+    const html = emailTemplates.baseTemplate(content, 'Redefinir Senha');
+
+    return await this.enviarEmail({
+      to: data.to,
+      subject: '🔐 Redefinir sua senha',
+      html
+    });
+  }
+  
   // Utilitários
   private formatarDataHora(dataHora: string): string {
     const data = new Date(dataHora);

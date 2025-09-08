@@ -91,15 +91,11 @@ export const useAppointmentRequests = () => {
       setIsLoading(true);
       
       // Verificar se o cliente já existe
-      console.log('🔍 Verificando se cliente existe:', data.cliente_email);
       const clienteExists = await checkClienteExists(data.salao_id, data.cliente_email || '');
-      console.log('🔍 Cliente existe?', clienteExists);
       
       let temporaryPassword: string | undefined;
       if (!clienteExists && data.cliente_email) {
-        console.log('🚀 Criando novo cliente via Edge Function...');
         const functionsUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-client';
-        console.log('🔗 URL da Edge Function:', functionsUrl);
         // Criar cliente usando a Edge Function create-client
         try {
           const response = await fetch(functionsUrl, {
@@ -125,15 +121,12 @@ export const useAppointmentRequests = () => {
           const result = await response.json();
           temporaryPassword = result.password;
           
-          console.log('✅ Cliente criado com sucesso via Edge Function');
-          console.log('🔑 Senha temporária recebida:', temporaryPassword);
         } catch (clientError) {
           console.error('❌ Erro ao criar cliente via Edge Function:', clientError);
           // Continuar sem criar o cliente se houver erro
         }
       }
 
-      console.log('📝 Criando solicitação de agendamento com dados:', data);
       
       const { data: request, error } = await supabase
         .from('appointment_requests')
@@ -150,7 +143,6 @@ export const useAppointmentRequests = () => {
         throw error;
       }
       
-      console.log('✅ Solicitação criada com sucesso:', request);
 
       // Enviar email de confirmação da solicitação para o cliente (se tiver email)
       if (data.cliente_email) {
@@ -167,15 +159,10 @@ export const useAppointmentRequests = () => {
           };
           
           // Se um novo cliente foi criado, enviar email com credenciais
-          console.log('📧 Enviando email... Senha temporária disponível?', !!temporaryPassword);
           if (temporaryPassword) {
-            console.log('📧 Enviando email COM credenciais...');
             await emailService.enviarConfirmacaoAgendamentoComCredenciais(emailData, temporaryPassword);
-            console.log('✅ Email de confirmação com credenciais enviado com sucesso');
           } else {
-            console.log('📧 Enviando email SEM credenciais...');
             await emailService.enviarConfirmacaoAgendamento(emailData);
-            console.log('✅ Email de confirmação da solicitação enviado com sucesso');
           }
         } catch (emailError) {
           console.error('❌ Erro ao enviar email de confirmação da solicitação:', emailError);
@@ -242,7 +229,6 @@ export const useAppointmentRequests = () => {
       };
 
       // Apenas atualizar o status do agendamento original para 'aprovado'
-      console.log('✅ Atualizando status do agendamento para aprovado...');
       const { error: updateError } = await supabase
         .from('appointment_requests')
         .update({
@@ -257,7 +243,6 @@ export const useAppointmentRequests = () => {
         throw updateError;
       }
 
-      console.log('✅ Status do agendamento atualizado para aprovado');
 
       // Invalidar cache dos agendamentos para atualizar a interface
       queryClient.invalidateQueries({ queryKey: ['appointment-requests'] });
@@ -276,7 +261,6 @@ export const useAppointmentRequests = () => {
         };
         
         await emailService.enviarAprovacaoAgendamento(emailData);
-        console.log('✅ Email de aprovação enviado com sucesso');
       } catch (emailError) {
         console.error('❌ Erro ao enviar email de aprovação:', emailError);
         // Não falhar a operação principal por erro de email
@@ -346,7 +330,6 @@ export const useAppointmentRequests = () => {
           };
           
           await emailService.enviarRejeicaoAgendamento(emailData);
-          console.log('✅ Email de rejeição enviado com sucesso');
         }
       } catch (emailError) {
         console.error('❌ Erro ao enviar email de rejeição:', emailError);

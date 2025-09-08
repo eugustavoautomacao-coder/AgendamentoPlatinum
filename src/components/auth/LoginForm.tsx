@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ForgotPasswordModal } from "./ForgotPasswordModal";
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;
@@ -16,6 +17,7 @@ const LoginForm = ({ onSubmit, isLoading = false }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -127,12 +129,6 @@ const LoginForm = ({ onSubmit, isLoading = false }: LoginFormProps) => {
             )}
           </div>
 
-          {/* Forgot Password Link */}
-          <div className="text-right">
-            <Button variant="link" size="sm" className="p-0 h-auto">
-              Esqueci minha senha
-            </Button>
-          </div>
         </CardContent>
 
         <CardFooter className="flex flex-col space-y-4">
@@ -144,6 +140,22 @@ const LoginForm = ({ onSubmit, isLoading = false }: LoginFormProps) => {
           >
             {isLoading ? "Entrando..." : "Entrar"}
           </Button>
+          
+          {/* Forgot Password Link */}
+          <div className="text-center">
+            <Button 
+              type="button"
+              variant="link" 
+              size="sm" 
+              className="p-0 h-auto"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowForgotPasswordModal(true);
+              }}
+            >
+              Esqueci minha senha
+            </Button>
+          </div>
           
           <div className="text-center text-sm text-muted-foreground">
             <p>Não tem acesso?</p>
@@ -158,6 +170,12 @@ const LoginForm = ({ onSubmit, isLoading = false }: LoginFormProps) => {
           </div>
         </CardFooter>
       </form>
+      
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </Card>
   );
 };

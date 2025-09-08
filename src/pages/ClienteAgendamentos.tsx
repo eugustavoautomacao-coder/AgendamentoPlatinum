@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ClienteDashboardSkeleton } from '@/components/ClienteDashboardSkeleton';
 import { 
   Clock, 
   CheckCircle, 
@@ -44,7 +45,6 @@ export const ClienteAgendamentos: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && cliente && salaoId) {
-      console.log('🔄 Carregando agendamentos para cliente:', cliente.email, 'salao:', salaoId);
       loadAgendamentos(cliente.email, salaoId);
     }
   }, [isAuthenticated, cliente, salaoId, loadAgendamentos]);
@@ -145,14 +145,12 @@ export const ClienteAgendamentos: React.FC = () => {
   };
 
   if (!isAuthenticated || !cliente) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando...</p>
-        </div>
-      </div>
-    );
+    return <ClienteDashboardSkeleton />;
+  }
+
+  // Mostrar skeleton durante o carregamento inicial
+  if (loading && agendamentos.length === 0) {
+    return <ClienteDashboardSkeleton />;
   }
 
   return (
@@ -167,7 +165,7 @@ export const ClienteAgendamentos: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Meus Agendamentos</h1>
-                <p className="text-muted-foreground">Olá, {cliente.nome}</p>
+                <p className="text-muted-foreground">Olá, {cliente.nome.split(' ')[0]}</p>
               </div>
             </div>
             

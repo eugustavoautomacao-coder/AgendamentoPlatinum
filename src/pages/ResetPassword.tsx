@@ -7,9 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Lock, AlertCircle, CheckCircle } from 'lucide-react';
-import { extractAuthParams, hasValidAuthParams, logAuthDebug, cleanAuthParams } from '@/utils/supabaseRedirectHandler';
-import SupabaseLinkDebugger from '@/components/debug/SupabaseLinkDebugger';
-import ManualLinkProcessor from '@/components/debug/ManualLinkProcessor';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -21,34 +18,52 @@ export default function ResetPassword() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [errors, setErrors] = useState<{password?: string; confirmPassword?: string}>({});
-  const [showDebugger, setShowDebugger] = useState(false);
-  const [showManualProcessor, setShowManualProcessor] = useState(false);
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
-    // LOG 1: Confirma que o componente montou e o listener será configurado.
-    console.log("Página Redefinir-Senha montada. Configurando listener...");
+    // Verificar se é um reset de cliente via token
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const type = urlParams.get('type');
+    
+    if (token && type === 'cliente') {
+      
+      // Verificar se o token existe e é válido
+      const resetData = localStorage.getItem(`reset_token_${token}`);
+      if (resetData) {
+        const data = JSON.parse(resetData);
+        const now = new Date();
+        const expires = new Date(data.expires);
+        
+        if (now < expires) {
+          setIsAuthorized(true);
+          setMessage('');
+          // Armazenar dados do reset para uso posterior
+          localStorage.setItem('current_reset_data', JSON.stringify(data));
+        } else {
+          setMessage('Link de recuperação expirado. Solicite um novo link.');
+          setIsAuthorized(false);
+        }
+      } else {
+        setMessage('Link de recuperação inválido. Solicite um novo link.');
+        setIsAuthorized(false);
+      }
+    } else {
+      // Comportamento normal para admin/profissional
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // LOG 2: Mostra CADA evento que o Supabase captura. É o log mais importante.
-      console.log("onAuthStateChange disparado!", { event, session });
 
       if (event === 'PASSWORD_RECOVERY') {
-        // LOG 3: Confirma que o evento específico que queremos foi detectado.
-        console.log("EVENTO DE PASSWORD_RECOVERY DETECTADO! Sessão temporária ativa.");
         setIsAuthorized(true);
         setMessage('');
       } else if (event === 'SIGNED_OUT') {
-        console.log("Usuário deslogado");
         setIsAuthorized(false);
         setMessage('Sessão expirada. Solicite um novo link de recuperação.');
       } else if (event === 'TOKEN_REFRESHED') {
-        console.log("Token renovado");
       } else if (event === 'INITIAL_SESSION') {
-        console.log("Sessão inicial detectada");
         if (session) {
           setIsAuthorized(true);
           setMessage('');
@@ -57,10 +72,9 @@ export default function ResetPassword() {
     });
 
     return () => {
-      // LOG 4: Confirma que o componente está sendo desmontado (útil para debug).
-      console.log("Página Redefinir-Senha desmontada. Removendo listener.");
       subscription.unsubscribe();
     };
+    }
   }, []);
 
   const validateForm = () => {
@@ -87,9 +101,10 @@ export default function ResetPassword() {
     
     if (!validateForm()) {
       toast({
-        title: 'Erro na validação',
-        description: 'Por favor, corrija os campos destacados',
+        title: '⚠️ Erro na validação',
+        description: 'Por favor, corrija os campos destacados antes de continuar',
         variant: 'destructive',
+        className: 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20',
       });
       return;
     }
@@ -103,6 +118,113 @@ export default function ResetPassword() {
     setMessage('');
 
     try {
+      // Verificar se é um reset de cliente via token
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const type = urlParams.get('type');
+      
+      if (token && type === 'cliente') {
+        // Reset de cliente via token
+        const resetData = localStorage.getItem('current_reset_data');
+        
+        if (!resetData) {
+          setMessage('Dados de reset não encontrados. Solicite um novo link.');
+          setIsSuccess(false);
+          return;
+        }
+        
+        const data = JSON.parse(resetData);
+        
+        // Atualizar senha na tabela clientes
+        const { error } = await supabase
+          .from('clientes')
+          .update({ 
+            senha_hash: password,
+            senha_temporaria: false
+          })
+          .eq('email', data.email)
+          .eq('salao_id', data.salaoId);
+        
+        if (error) {
+          setMessage(`Erro: ${error.message}`);
+          setIsSuccess(false);
+          toast({
+            variant: 'destructive',
+            title: '❌ Erro ao alterar senha',
+            description: error.message,
+            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
+          });
+        } else {
+          // Limpar tokens de reset
+          localStorage.removeItem(`reset_token_${token}`);
+          localStorage.removeItem('current_reset_data');
+          
+          setMessage('Senha alterada com sucesso! Redirecionando para o login...');
+          setIsSuccess(true);
+          toast({
+            title: '🔐 Senha alterada com sucesso!',
+            description: 'Sua senha foi atualizada com segurança. Redirecionando para o login...',
+            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+          });
+          
+          // Redirecionar para login principal (detecta automaticamente se é cliente)
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        }
+      } else {
+        // Comportamento normal - verificar se é cliente logado ou admin/profissional
+        const clienteAuth = localStorage.getItem('cliente_auth');
+        
+        if (clienteAuth) {
+          // É um cliente, atualizar senha na tabela clientes
+          const clienteData = JSON.parse(clienteAuth);
+          
+          const { error } = await supabase
+            .from('clientes')
+            .update({ 
+              senha_hash: password,
+              senha_temporaria: false // Marcar que não é mais senha temporária
+            })
+            .eq('id', clienteData.id);
+          
+          if (error) {
+            setMessage(`Erro: ${error.message}`);
+            setIsSuccess(false);
+            toast({
+              variant: 'destructive',
+              title: 'Erro ao alterar senha',
+              description: error.message,
+            });
+          } else {
+            // Atualizar dados no localStorage
+            const clienteAtualizado = { ...clienteData, senha_hash: password, senha_temporaria: false };
+            localStorage.setItem('cliente_auth', JSON.stringify(clienteAtualizado));
+            
+            setMessage('Senha alterada com sucesso! Redirecionando para o login...');
+            setIsSuccess(true);
+            toast({
+              title: 'Senha alterada!',
+              description: 'Sua senha foi alterada com sucesso.',
+            });
+            
+            // Fazer logout do cliente e redirecionar
+            localStorage.removeItem('cliente_auth');
+            
+            // Mostrar mensagem de sucesso
+            toast({
+              title: '🔐 Senha alterada com sucesso!',
+              description: 'Faça login com sua nova senha. Redirecionando automaticamente...',
+              className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+            });
+            
+            // Redirecionar para login principal (detecta automaticamente se é cliente)
+            setTimeout(() => {
+              navigate('/login');
+            }, 2000);
+          }
+        } else {
+          // É um admin/profissional, usar Supabase Auth
       const { error } = await supabase.auth.updateUser({
         password: password,
       });
@@ -112,15 +234,17 @@ export default function ResetPassword() {
         setIsSuccess(false);
         toast({
           variant: 'destructive',
-          title: 'Erro ao alterar senha',
+            title: '❌ Erro ao alterar senha',
           description: error.message,
+            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
         });
       } else {
         setMessage('Senha alterada com sucesso! Redirecionando para o login...');
         setIsSuccess(true);
         toast({
-          title: 'Senha alterada!',
-          description: 'Sua senha foi alterada com sucesso.',
+            title: '🔐 Senha alterada com sucesso!',
+            description: 'Sua senha foi atualizada com segurança. Redirecionando para o login...',
+            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
         });
         
         // Fazer logout e redirecionar para login
@@ -128,21 +252,53 @@ export default function ResetPassword() {
         
         // Mostrar mensagem de sucesso
         toast({
-          title: 'Senha alterada com sucesso!',
-          description: 'Faça login com sua nova senha.',
-        });
-        
-        setTimeout(() => {
+            title: '🔐 Senha alterada com sucesso!',
+            description: 'Faça login com sua nova senha. Redirecionando automaticamente...',
+            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+          });
+          
+          // Detectar se é cliente ou admin e redirecionar para o login correto
+          setTimeout(async () => {
+            try {
+              // Obter a sessão atual para pegar o email do usuário
+              const { data: { session: currentSession } } = await supabase.auth.getSession();
+              
+              if (currentSession?.user?.email) {
+                // Verificar se o usuário é um cliente
+                const { data: clienteData } = await supabase
+                  .from('clientes')
+                  .select('salao_id')
+                  .eq('email', currentSession.user.email)
+                  .single();
+                
+                if (clienteData) {
+                  // É um cliente, redirecionar para login principal (detecta automaticamente)
+                  navigate('/login');
+                } else {
+                  // É um admin/funcionario, redirecionar para login de admin
+                  navigate('/login');
+                }
+              } else {
+                // Se não conseguir obter o email, redirecionar para login de admin por padrão
+                navigate('/login');
+              }
+            } catch (error) {
+              console.error('Erro ao detectar tipo de usuário:', error);
+              // Em caso de erro, redirecionar para login de admin por padrão
           navigate('/login');
+            }
         }, 2000);
+        }
+        }
       }
     } catch (error: any) {
       setMessage(`Erro inesperado: ${error.message}`);
       setIsSuccess(false);
       toast({
         variant: 'destructive',
-        title: 'Erro inesperado',
-        description: 'Tente novamente em alguns instantes.',
+        title: '❌ Erro inesperado',
+        description: 'Ocorreu um erro inesperado. Tente novamente em alguns instantes.',
+        className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
       });
     } finally {
       setLoading(false);
@@ -151,13 +307,13 @@ export default function ResetPassword() {
 
   if (!isAuthorized && !message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
-        <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d]">
+        <Card className="w-full max-w-md mx-auto shadow-elegant border-2 border-[#d63384]/20 dark:border-[#d63384]/30 bg-gradient-to-br from-white to-[#fdf2f8] dark:from-[#2d1b2d] dark:to-[#1a0b1a]">
           <CardContent className="p-6">
             <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#d63384] dark:border-[#e91e63]"></div>
             </div>
-            <p className="text-center text-muted-foreground mt-4">
+            <p className="text-center text-gray-600 dark:text-gray-300 mt-4">
               Verificando link de recuperação...
             </p>
           </CardContent>
@@ -169,88 +325,83 @@ export default function ResetPassword() {
   // Se não está autorizado e há mensagem, mostrar página de instruções
   if (!isAuthorized && message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-        <Card className="w-full max-w-lg mx-auto shadow-elegant border-border">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d] p-4">
+        <Card className="w-full max-w-lg mx-auto shadow-elegant border-2 border-[#d63384]/20 dark:border-[#d63384]/30 bg-gradient-to-br from-white to-[#fdf2f8] dark:from-[#2d1b2d] dark:to-[#1a0b1a]">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-              Link de Recuperação Inválido
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d63384] to-[#e91e63] bg-clip-text text-transparent flex items-center justify-center gap-2">
+              ❌ Link de Recuperação Inválido
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600 dark:text-gray-300">
               Você precisa acessar esta página através do link enviado por email
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-red-700">
+            <div className="bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg p-4 dark:from-red-900/20 dark:to-red-800/20 dark:border-red-400/20">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">Acesso Negado</span>
               </div>
-              <p className="text-red-600 mt-2 text-sm">
+              <p className="text-red-600 dark:text-red-300 mt-2 text-sm">
                 {message}
               </p>
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-yellow-800 text-xs">
-                  <strong>Possível causa:</strong> O link do email pode ter expirado ou as configurações do Supabase precisam ser ajustadas.
-                </p>
-              </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900">Como recuperar sua senha:</h3>
+              <h3 className="font-semibold text-[#d63384] dark:text-[#e91e63]">Como recuperar sua senha:</h3>
               
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-[#d63384] to-[#e91e63] text-white rounded-full flex items-center justify-center text-sm font-medium">
                     1
                   </div>
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       <strong>Vá para a página de login</strong>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Acesse a tela de login do sistema
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-[#d63384] to-[#e91e63] text-white rounded-full flex items-center justify-center text-sm font-medium">
                     2
                   </div>
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       <strong>Clique em "Esqueci minha senha"</strong>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Abaixo do campo de senha
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-[#d63384] to-[#e91e63] text-white rounded-full flex items-center justify-center text-sm font-medium">
                     3
                   </div>
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       <strong>Digite seu email e clique "Enviar Link"</strong>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Você receberá um email com o link correto
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-sm font-medium">
+                  <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-[#d63384] to-[#e91e63] text-white rounded-full flex items-center justify-center text-sm font-medium">
                     4
                   </div>
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       <strong>Clique no link do email</strong>
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Isso te levará para esta página com os parâmetros corretos
                     </p>
                   </div>
@@ -258,12 +409,12 @@ export default function ResetPassword() {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-[#fdf2f8] to-blue-50 border-2 border-[#d63384]/20 rounded-lg p-4 dark:from-[#1a0b1a] dark:to-blue-900/20 dark:border-[#d63384]/30">
               <div className="flex items-start gap-2">
-                <div className="text-blue-600 mt-0.5">💡</div>
+                <div className="text-[#d63384] dark:text-[#e91e63] mt-0.5">💡</div>
                 <div>
-                  <p className="text-blue-800 font-medium text-sm">Dica Importante</p>
-                  <p className="text-blue-700 text-xs mt-1">
+                  <p className="text-[#d63384] dark:text-[#e91e63] font-medium text-sm">Dica Importante</p>
+                  <p className="text-gray-600 dark:text-gray-300 text-xs mt-1">
                     O link de recuperação contém informações de segurança que expiram em 24 horas. 
                     Não compartilhe este link com ninguém.
                   </p>
@@ -275,55 +426,12 @@ export default function ResetPassword() {
           <CardContent className="pt-0 space-y-3">
             <Button
               onClick={() => navigate('/login')}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-[#d63384] to-[#e91e63] hover:from-[#e91e63] hover:to-[#d63384] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 dark:from-[#e91e63] dark:to-[#d63384] dark:hover:from-[#d63384] dark:hover:to-[#e91e63]"
               size="lg"
             >
-              Ir para Login
+              🔐 Ir para Login
             </Button>
             
-            <div className="space-y-3">
-              <Button
-                onClick={async () => {
-                  console.log('🧹 Limpando cache e sessão...');
-                  await supabase.auth.signOut();
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  console.log('✅ Cache limpo com sucesso');
-                  toast({
-                    title: 'Cache limpo',
-                    description: 'Sessão e cache foram limpos. Redirecionando...',
-                  });
-                  setTimeout(() => {
-                    window.location.href = '/login';
-                  }, 1000);
-                }}
-                variant="outline"
-                className="w-full"
-                size="lg"
-              >
-                Limpar Cache e Ir para Login
-              </Button>
-              
-              <div className="grid grid-cols-1 gap-3">
-                <Button
-                  onClick={() => setShowDebugger(true)}
-                  variant="secondary"
-                  className="w-full"
-                  size="lg"
-                >
-                  🔍 Debug Link do Supabase
-                </Button>
-                
-                <Button
-                  onClick={() => setShowManualProcessor(true)}
-                  variant="default"
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  size="lg"
-                >
-                  🔗 Processar Link Manualmente
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -333,31 +441,31 @@ export default function ResetPassword() {
   // Se não está autorizado e tem mensagem, mostrar página de erro com instruções
   if (!isAuthorized && message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-        <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d] p-4">
+        <Card className="w-full max-w-md mx-auto shadow-elegant border-2 border-[#d63384]/20 dark:border-[#d63384]/30 bg-gradient-to-br from-white to-[#fdf2f8] dark:from-[#2d1b2d] dark:to-[#1a0b1a]">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-              Link Inválido
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d63384] to-[#e91e63] bg-clip-text text-transparent flex items-center justify-center gap-2">
+              ❌ Link Inválido
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600 dark:text-gray-300">
               Este link de recuperação não é válido
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <div className="flex items-center gap-2 text-red-700">
+            <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg dark:from-red-900/20 dark:to-red-800/20 dark:border-red-400/20">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">Acesso Negado</span>
               </div>
-              <p className="text-red-600 mt-2 text-sm">
+              <p className="text-red-600 dark:text-red-300 mt-2 text-sm">
                 {message}
               </p>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <h3 className="font-medium text-blue-900 mb-2">Como acessar:</h3>
-              <ol className="text-sm text-blue-700 space-y-1">
+            <div className="p-4 bg-gradient-to-r from-[#fdf2f8] to-blue-50 border-2 border-[#d63384]/20 rounded-lg dark:from-[#1a0b1a] dark:to-blue-900/20 dark:border-[#d63384]/30">
+              <h3 className="font-medium text-[#d63384] dark:text-[#e91e63] mb-2">Como acessar:</h3>
+              <ol className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                 <li>1. Vá para a página de login</li>
                 <li>2. Clique em "Esqueci minha senha"</li>
                 <li>3. Digite seu email</li>
@@ -365,19 +473,19 @@ export default function ResetPassword() {
               </ol>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => navigate('/login')}
-                className="flex-1"
+                className="flex-1 border-2 border-[#d63384]/30 text-[#d63384] hover:bg-[#d63384]/10 hover:border-[#d63384] dark:border-[#e91e63]/40 dark:text-[#e91e63] dark:hover:bg-[#e91e63]/10 dark:hover:border-[#e91e63]"
               >
-                Voltar ao Login
+                🔐 Voltar ao Login
               </Button>
               <Button
                 onClick={() => navigate('/')}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+                className="flex-1 bg-gradient-to-r from-[#d63384] to-[#e91e63] hover:from-[#e91e63] hover:to-[#d63384] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 dark:from-[#e91e63] dark:to-[#d63384] dark:hover:from-[#d63384] dark:hover:to-[#e91e63]"
               >
-                Página Inicial
+                🏠 Página Inicial
               </Button>
             </div>
           </CardContent>
@@ -387,14 +495,14 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d] p-4">
+      <Card className="w-full max-w-md mx-auto shadow-elegant border-2 border-[#d63384]/20 dark:border-[#d63384]/30 bg-gradient-to-br from-white to-[#fdf2f8] dark:from-[#2d1b2d] dark:to-[#1a0b1a]">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-            Nova Senha
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d63384] to-[#e91e63] bg-clip-text text-transparent flex items-center justify-center gap-2">
+            🔐 Nova Senha
           </CardTitle>
-          <CardDescription>
-            Crie uma nova senha para sua conta
+          <CardDescription className="text-gray-600 dark:text-gray-300">
+            Crie uma nova senha segura para sua conta
           </CardDescription>
         </CardHeader>
         
@@ -402,18 +510,18 @@ export default function ResetPassword() {
           <CardContent className="space-y-4">
             {/* Nova Senha */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
+              <Label htmlFor="password" className="text-sm font-medium text-[#d63384] dark:text-[#e91e63]">
                 Nova Senha
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#d63384] dark:text-[#e91e63]" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Digite sua nova senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`pl-10 pr-10 border-2 border-[#d63384]/20 focus:border-[#d63384] focus:ring-[#d63384]/20 dark:border-[#e91e63]/30 dark:focus:border-[#e91e63] dark:focus:ring-[#e91e63]/20 ${errors.password ? 'border-red-500 dark:border-red-400' : ''}`}
                   disabled={loading || !isAuthorized}
                 />
                 <Button
@@ -441,18 +549,18 @@ export default function ResetPassword() {
 
             {/* Confirmar Senha */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-sm font-medium">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-[#d63384] dark:text-[#e91e63]">
                 Confirmar Nova Senha
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#d63384] dark:text-[#e91e63]" />
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirme sua nova senha"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-10 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  className={`pl-10 pr-10 border-2 border-[#d63384]/20 focus:border-[#d63384] focus:ring-[#d63384]/20 dark:border-[#e91e63]/30 dark:focus:border-[#e91e63] dark:focus:ring-[#e91e63]/20 ${errors.confirmPassword ? 'border-red-500 dark:border-red-400' : ''}`}
                   disabled={loading || !isAuthorized}
                 />
                 <Button
@@ -480,17 +588,13 @@ export default function ResetPassword() {
 
             {/* Mensagem */}
             {message && (
-              <div className={`p-3 rounded-md text-sm flex items-center gap-2 ${
+              <div className={`p-4 rounded-lg text-sm border-l-4 flex items-center gap-2 ${
                 isSuccess 
-                  ? 'bg-green-50 text-green-700 border border-green-200' 
-                  : 'bg-red-50 text-red-700 border border-red-200'
+                  ? 'bg-gradient-to-r from-[#fdf2f8] to-green-50 text-[#d63384] border-l-[#d63384] border border-[#d63384]/20 dark:from-[#1a0b1a] dark:to-green-900/20 dark:text-[#e91e63] dark:border-l-[#e91e63] dark:border-[#e91e63]/20' 
+                  : 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-l-red-500 border border-red-200 dark:from-red-900/20 dark:to-red-800/20 dark:text-red-300 dark:border-l-red-400 dark:border-red-400/20'
               }`}>
-                {isSuccess ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <AlertCircle className="h-4 w-4" />
-                )}
-                {message}
+                {!isSuccess && <AlertCircle className="h-4 w-4" />}
+                <span className="font-medium">{message}</span>
               </div>
             )}
           </CardContent>
@@ -498,33 +602,16 @@ export default function ResetPassword() {
           <CardContent className="pt-0">
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-gradient-to-r from-[#d63384] to-[#e91e63] hover:from-[#e91e63] hover:to-[#d63384] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 dark:from-[#e91e63] dark:to-[#d63384] dark:hover:from-[#d63384] dark:hover:to-[#e91e63]"
               disabled={loading || !isAuthorized}
               size="lg"
             >
-              {loading ? 'Salvando...' : 'Salvar Nova Senha'}
+              {loading ? '🔐 Salvando...' : '🔐 Salvar Nova Senha'}
             </Button>
           </CardContent>
         </form>
       </Card>
       
-      {/* Modal do Debugger */}
-      {showDebugger && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <SupabaseLinkDebugger onClose={() => setShowDebugger(false)} />
-          </div>
-        </div>
-      )}
-      
-      {/* Modal do Processador Manual */}
-      {showManualProcessor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <ManualLinkProcessor onClose={() => setShowManualProcessor(false)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
