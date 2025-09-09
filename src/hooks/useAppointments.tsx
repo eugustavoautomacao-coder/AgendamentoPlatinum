@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { recalcularComissoesMensais } from '@/utils/commissionUtils';
 
 export interface Appointment {
   id: string;
@@ -116,8 +117,17 @@ export function useAppointments() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      
+      // Recalcular comissões se o agendamento for concluído
+      if (data.funcionario_id && data.status === 'concluido') {
+        const appointmentDate = new Date(data.data_hora);
+        const mes = appointmentDate.getMonth() + 1;
+        const ano = appointmentDate.getFullYear();
+        await recalcularComissoesMensais(data.funcionario_id, mes, ano);
+      }
+      
       toast({
         title: "Sucesso",
         description: "Agendamento criado com sucesso!",
@@ -146,8 +156,17 @@ export function useAppointments() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      
+      // Recalcular comissões se o agendamento for concluído
+      if (data.funcionario_id && data.status === 'concluido') {
+        const appointmentDate = new Date(data.data_hora);
+        const mes = appointmentDate.getMonth() + 1;
+        const ano = appointmentDate.getFullYear();
+        await recalcularComissoesMensais(data.funcionario_id, mes, ano);
+      }
+      
       toast({
         title: "Sucesso",
         description: "Agendamento atualizado com sucesso!",

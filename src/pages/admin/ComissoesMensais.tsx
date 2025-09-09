@@ -28,10 +28,12 @@ import {
   Plus,
   CreditCard,
   Wallet,
-  Receipt
+  Receipt,
+  Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { recalcularComissoesMensais } from '@/utils/commissionUtils';
 
 interface ComissaoMensal {
   id: string;
@@ -77,6 +79,16 @@ interface DetalheAgendamento {
   base_calculo: number;
   valor_comissao: number;
   criado_em: string;
+  appointments: {
+    id: string;
+    data_hora: string;
+    cliente_nome: string;
+    status: string;
+    services: {
+      nome: string;
+      preco: number;
+    };
+  };
 }
 
 export default function ComissoesMensais() {
@@ -107,6 +119,7 @@ export default function ComissoesMensais() {
     }
   }, [profile?.salao_id, filter, selectedPeriod]);
 
+
   const fetchComissoesMensais = async () => {
     if (!profile?.salao_id) return;
     
@@ -114,9 +127,16 @@ export default function ComissoesMensais() {
       setLoading(true);
       
       let query = supabase
-        .from('vw_comissoes_mensais_resumo')
-        .select('*')
-        .eq('salao_id', profile.salao_id);
+        .from('comissoes_mensais')
+        .select(`
+          *,
+          employees!inner(
+            nome,
+            avatar_url,
+            salao_id
+          )
+        `)
+        .eq('employees.salao_id', profile.salao_id);
       
       // Filtrar por período
       if (selectedPeriod === 'current') {
@@ -132,11 +152,19 @@ export default function ComissoesMensais() {
           .eq('ano', previousDate.getFullYear());
       }
       
-      const { data, error } = await query.order('funcionario_nome');
+      const { data, error } = await query.order('employees(nome)');
       
       if (error) throw error;
       
-      setComissoesMensais(data || []);
+      // Transformar os dados para o formato esperado
+      const transformedData = data?.map(item => ({
+        ...item,
+        funcionario_nome: item.employees.nome,
+        funcionario_avatar: item.employees.avatar_url,
+        salao_id: item.employees.salao_id
+      })) || [];
+      
+      setComissoesMensais(transformedData);
     } catch (error) {
       console.error('Erro ao buscar comissões mensais:', error);
       toast.error('Erro ao carregar comissões mensais');
@@ -150,9 +178,21 @@ export default function ComissoesMensais() {
     
     try {
       const { data, error } = await supabase
-        .from('vw_pagamentos_comissoes_detalhado')
-        .select('*')
-        .eq('salao_id', profile.salao_id)
+        .from('pagamentos_comissoes')
+        .select(`
+          *,
+          comissoes_mensais!inner(
+            id,
+            funcionario_id,
+            mes,
+            ano,
+            employees!inner(
+              nome,
+              salao_id
+            )
+          )
+        `)
+        .eq('comissoes_mensais.employees.salao_id', profile.salao_id)
         .order('data_pagamento', { ascending: false });
       
       if (error) throw error;
@@ -165,9 +205,22 @@ export default function ComissoesMensais() {
 
   const fetchDetalhesAgendamentos = async (comissaoMensalId: string) => {
     try {
+      // Buscar detalhes com informações dos agendamentos
       const { data, error } = await supabase
         .from('comissoes_agendamentos_detalhes')
-        .select('*')
+        .select(`
+          *,
+          appointments!inner(
+            id,
+            data_hora,
+            cliente_nome,
+            status,
+            services!inner(
+              nome,
+              preco
+            )
+          )
+        `)
         .eq('comissao_mensal_id', comissaoMensalId)
         .order('criado_em', { ascending: false });
       
@@ -195,15 +248,35 @@ export default function ComissoesMensais() {
         return;
       }
       
-      const { error } = await supabase.rpc('registrar_pagamento_comissao', {
-        p_comissao_mensal_id: selectedComissao.id,
-        p_valor_pago: valor,
-        p_forma_pagamento: formaPagamento,
-        p_observacoes: observacoesPagamento || null,
-        p_usuario_id: profile?.id || null
-      });
+      // Inserir o pagamento na tabela pagamentos_comissoes
+      const { error: pagamentoError } = await supabase
+        .from('pagamentos_comissoes')
+        .insert({
+          comissao_mensal_id: selectedComissao.id,
+          valor_pago: valor,
+          forma_pagamento: formaPagamento,
+          observacoes: observacoesPagamento || null,
+          usuario_id: profile?.id || null
+        });
 
-      if (error) throw error;
+      if (pagamentoError) throw pagamentoError;
+
+      // Atualizar a comissão mensal
+      const novoValorPago = selectedComissao.valor_pago + valor;
+      const novoSaldoPendente = selectedComissao.saldo_pendente - valor;
+      const novoStatus = novoSaldoPendente <= 0 ? 'pago' : 'aberto';
+
+      const { error: comissaoError } = await supabase
+        .from('comissoes_mensais')
+        .update({
+          valor_pago: novoValorPago,
+          saldo_pendente: novoSaldoPendente,
+          status: novoStatus,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', selectedComissao.id);
+
+      if (comissaoError) throw comissaoError;
       
       toast.success('Pagamento registrado com sucesso!');
       setPagamentoOpen(false);
@@ -345,6 +418,45 @@ export default function ComissoesMensais() {
             <Button onClick={fetchComissoesMensais} disabled={loading} className="flex items-center gap-2">
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Atualizar
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!profile?.salao_id) return;
+                try {
+                  setLoading(true);
+                  // Buscar todos os funcionários do salão
+                  const { data: funcionarios } = await supabase
+                    .from('employees')
+                    .select('id')
+                    .eq('salao_id', profile.salao_id)
+                    .eq('ativo', true);
+                  
+                  if (funcionarios) {
+                    const now = new Date();
+                    const mes = now.getMonth() + 1;
+                    const ano = now.getFullYear();
+                    
+                    // Recalcular comissões para todos os funcionários do mês atual
+                    for (const funcionario of funcionarios) {
+                      await recalcularComissoesMensais(funcionario.id, mes, ano);
+                    }
+                    
+                    toast.success('Comissões recalculadas com sucesso!');
+                    fetchComissoesMensais();
+                  }
+                } catch (error) {
+                  console.error('Erro ao recalcular comissões:', error);
+                  toast.error('Erro ao recalcular comissões');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading} 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <Calculator className="h-4 w-4" />
+              Recalcular
             </Button>
             <Button variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
@@ -516,7 +628,7 @@ export default function ComissoesMensais() {
                         </div>
                         <div className="flex items-center gap-2">
                           {getStatusBadge(comissao.status)}
-                          {comissao.saldo_pendente > 0 && comissao.status === 'aberto' && (
+                          {comissao.saldo_pendente > 0 && (
                             <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
                               <Clock className="h-3 w-3 mr-1" />
                               Saldo Pendente
@@ -575,7 +687,7 @@ export default function ComissoesMensais() {
 
                     {/* Ações */}
                     <div className="flex flex-col gap-2 ml-4">
-                      {comissao.status === 'aberto' && comissao.saldo_pendente > 0 && (
+                      {comissao.saldo_pendente > 0 && (
                         <Button
                           size="sm"
                           onClick={() => {

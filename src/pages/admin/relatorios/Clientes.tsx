@@ -157,11 +157,15 @@ const RelatorioClientes = () => {
       return acc;
     }, {} as Record<string, number>);
 
+    // Calcular taxa de retenção
+    const retentionRate = totalClients > 0 ? (returningClients.size / totalClients) * 100 : 0;
+
     return {
       totalClients,
       totalAppointments,
       newClientsCount: newClients.size,
       returningClientsCount: returningClients.size,
+      retentionRate,
       clientStats,
       highValueClients: highValueClients.length,
       mediumValueClients: mediumValueClients.length,
@@ -295,14 +299,31 @@ const RelatorioClientes = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Clientes'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       ['Total de Clientes:', (reportData.totalClients || 0).toString()],
       ['Novos Clientes:', (reportData.newClients || 0).toString()],
-      ['Clientes Recorrentes:', (reportData.recurringClients || 0).toString()]
+      ['Clientes Recorrentes:', (reportData.recurringClients || 0).toString()],
+      ['Taxa de Retenção:', formatPercentage(reportData.retentionRate || 0)],
+      [''],
+      ['DISTRIBUIÇÃO POR SEGMENTO'],
+      ['Segmento', 'Quantidade', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        (item.value || 0).toString(),
+        formatPercentage(((item.value || 0) / (reportData.totalClients || 1)) * 100)
+      ]),
+      [''],
+      ['EVOLUÇÃO MENSAL'],
+      ['Mês', 'Novos Clientes', 'Clientes Ativos'],
+      ...(chartData.monthly || []).map(item => [
+        item.month,
+        (item.newClients || 0).toString(),
+        (item.activeClients || 0).toString()
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-clientes');
+    exportToPDF(data, 'relatorio-clientes', 'Relatório de Clientes');
   };
 
   return (

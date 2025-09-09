@@ -153,9 +153,14 @@ const RelatorioFuncionarios = () => {
       .sort((a, b) => b.appointments - a.appointments)
       .slice(0, 5);
 
+    // Calcular receita total
+    const totalRevenue = Object.values(professionalStats)
+      .reduce((sum, prof) => sum + prof.totalRevenue, 0);
+
     return {
       totalProfessionals,
       totalAppointments,
+      totalRevenue,
       professionalStats,
       monthlyPerformance,
       topProfessionalsByRevenue,
@@ -298,14 +303,31 @@ const RelatorioFuncionarios = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Funcionários'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       ['Total de Profissionais:', (reportData.totalProfessionals || 0).toString()],
       ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()],
-      ['Rating Médio Geral:', (reportData.averageRating || 0).toFixed(1)]
+      ['Rating Médio Geral:', (reportData.averageRating || 0).toFixed(1)],
+      ['Receita Total:', formatCurrency(reportData.totalRevenue || 0)],
+      [''],
+      ['DISTRIBUIÇÃO POR PROFISSIONAL'],
+      ['Profissional', 'Receita', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        formatCurrency(item.value || 0),
+        formatPercentage(((item.value || 0) / (reportData.totalRevenue || 1)) * 100)
+      ]),
+      [''],
+      ['EVOLUÇÃO MENSAL'],
+      ['Mês', 'Total Agendamentos', 'Receita Total'],
+      ...(chartData.monthly || []).map(item => [
+        item.month,
+        (item.appointments || 0).toString(),
+        formatCurrency(item.revenue || 0)
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-funcionarios');
+    exportToPDF(data, 'relatorio-funcionarios', 'Relatório de Funcionários');
   };
 
   return (

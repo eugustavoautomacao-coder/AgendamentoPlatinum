@@ -182,34 +182,30 @@ const RelatorioFaturamento = () => {
       ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       [''],
       ['RESUMO'],
-      ['Receita Total:', formatCurrency(reportData.totalRevenue)],
+      ['Receita Total:', formatCurrency(reportData.totalRevenue || 0)],
               ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()],
-      ['Receita Média por Agendamento:', formatCurrency(reportData.averageRevenue)],
+      ['Receita Média por Agendamento:', formatCurrency(reportData.averageTicket || 0)],
       [''],
       ['DETALHAMENTO DIÁRIO'],
-      ['Data', 'Receita', 'Agendamentos', 'Receita Média'],
+      ['Data', 'Receita'],
       ...(chartData.daily || []).map(item => [
         item.date,
-        formatCurrency(item.revenue || 0),
-        (item.appointments || 0).toString(),
-        formatCurrency((item.revenue || 0) / (item.appointments || 1))
+        formatCurrency(item.revenue || 0)
       ]),
       [''],
       ['DISTRIBUIÇÃO POR SERVIÇO'],
-      ['Serviço', 'Receita', 'Agendamentos', 'Percentual'],
+      ['Serviço', 'Receita', 'Percentual'],
       ...(chartData.pie || []).map(item => [
         item.name,
         formatCurrency(item.value || 0),
-        (item.appointments || 0).toString(),
         formatPercentage(((item.value || 0) / (reportData.totalRevenue || 1)) * 100)
       ]),
       [''],
       ['TOP SERVIÇOS'],
-      ['Serviço', 'Receita', 'Agendamentos'],
-      ...(chartData.topServices || []).map(item => [
+      ['Serviço', 'Receita'],
+      ...(chartData.pie || []).slice(0, 5).map(item => [
         item.name,
-        formatCurrency(item.value || 0),
-        (item.appointments || 0).toString()
+        formatCurrency(item.value || 0)
       ])
     ];
 
@@ -222,13 +218,29 @@ const RelatorioFaturamento = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Faturamento'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
-      ['Receita Total:', formatCurrency(reportData.totalRevenue)],
-      ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()]
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
+      ['Receita Total:', formatCurrency(reportData.totalRevenue || 0)],
+      ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()],
+      ['Ticket Médio:', formatCurrency(reportData.averageTicket || 0)],
+      [''],
+      ['DISTRIBUIÇÃO POR SERVIÇO'],
+      ['Serviço', 'Receita', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        formatCurrency(item.value || 0),
+        formatPercentage(((item.value || 0) / (reportData.totalRevenue || 1)) * 100)
+      ]),
+      [''],
+      ['EVOLUÇÃO DIÁRIA'],
+      ['Data', 'Receita'],
+      ...(chartData.daily || []).map(item => [
+        formatDate(item.date),
+        formatCurrency(item.revenue || 0)
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-faturamento');
+    exportToPDF(data, 'relatorio-faturamento', 'Relatório de Faturamento');
   };
 
   return (

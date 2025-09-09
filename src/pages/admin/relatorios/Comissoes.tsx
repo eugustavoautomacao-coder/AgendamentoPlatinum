@@ -80,6 +80,10 @@ const RelatorioComissoes = () => {
       return sum + commission;
     }, 0);
     
+    const totalRevenue = filteredData.reduce((sum, apt) => {
+      return sum + (apt.servico_preco || 0);
+    }, 0);
+    
     const totalAppointments = filteredData.length;
     const averageCommission = totalAppointments > 0 ? totalCommissions / totalAppointments : 0;
 
@@ -114,6 +118,7 @@ const RelatorioComissoes = () => {
 
     return {
       totalCommissions,
+      totalRevenue,
       totalAppointments,
       averageCommission,
       professionalCommissions,
@@ -192,8 +197,8 @@ const RelatorioComissoes = () => {
       ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       [''],
       ['RESUMO'],
-      ['Total de Comissões:', formatCurrency(reportData.totalCommissions)],
-      ['Comissão Média:', formatCurrency(reportData.averageCommission)],
+      ['Total de Comissões:', formatCurrency(reportData.totalCommissions || 0)],
+      ['Comissão Média:', formatCurrency(reportData.averageCommission || 0)],
               ['Número de Profissionais:', (reportData.totalProfessionals || 0).toString()],
       [''],
       ['COMISSÕES POR PROFISSIONAL'],
@@ -203,7 +208,7 @@ const RelatorioComissoes = () => {
         (prof.appointments || 0).toString(),
         formatCurrency(prof.totalRevenue),
         formatCurrency(prof.totalCommission),
-        formatPercentage((prof.totalCommission / reportData.totalCommissions) * 100)
+        formatPercentage((prof.totalCommission / (reportData.totalCommissions || 1)) * 100)
       ]),
       [''],
       ['EVOLUÇÃO MENSAL'],
@@ -232,13 +237,31 @@ const RelatorioComissoes = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Comissões'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
-      ['Total de Comissões:', formatCurrency(reportData.totalCommissions)],
-      ['Comissão Média:', formatCurrency(reportData.averageCommission)]
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
+      ['Total de Comissões:', formatCurrency(reportData.totalCommissions || 0)],
+      ['Comissão Média:', formatCurrency(reportData.averageCommission || 0)],
+      ['Total de Receita:', formatCurrency(reportData.totalRevenue || 0)],
+      [''],
+      ['DISTRIBUIÇÃO POR PROFISSIONAL'],
+      ['Profissional', 'Receita', 'Comissão', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        formatCurrency(item.value || 0),
+        formatCurrency((item.value || 0) * 0.3), // Estimativa de 30% de comissão
+        '30%'
+      ]),
+      [''],
+      ['EVOLUÇÃO MENSAL'],
+      ['Mês', 'Receita', 'Comissões'],
+      ...(chartData.monthly || []).map(item => [
+        item.month,
+        formatCurrency(item.revenue || 0),
+        formatCurrency((item.revenue || 0) * 0.3)
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-comissoes');
+    exportToPDF(data, 'relatorio-comissoes', 'Relatório de Comissões');
   };
 
   return (

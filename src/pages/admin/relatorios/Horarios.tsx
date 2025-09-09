@@ -153,6 +153,11 @@ const RelatorioHorarios = () => {
       return acc;
     }, {} as Record<string, Record<string, number>>);
 
+    // Calcular taxa de ocupação média
+    const averageOccupancyRate = Object.values(weeklyOccupancy).length > 0 
+      ? Object.values(weeklyOccupancy).reduce((sum, rate) => sum + rate, 0) / Object.values(weeklyOccupancy).length
+      : 0;
+
     return {
       totalAppointments,
       weeklyDistribution,
@@ -160,6 +165,7 @@ const RelatorioHorarios = () => {
       monthlyDistribution,
       topPeakHours,
       weeklyOccupancy,
+      averageOccupancyRate,
       serviceTimePreferences
     };
   }, [filteredData, dateRange]);
@@ -320,15 +326,31 @@ const RelatorioHorarios = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Horários'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()],
       ['Dia Mais Ocupado:', reportData.busiestDay || 'N/A'],
       ['Horário de Pico:', reportData.peakHour || 'N/A'],
-      ['Taxa de Ocupação Média:', formatPercentage(reportData.averageOccupancyRate || 0)]
+      ['Taxa de Ocupação Média:', formatPercentage(reportData.averageOccupancyRate || 0)],
+      [''],
+      ['DISTRIBUIÇÃO SEMANAL'],
+      ['Dia da Semana', 'Agendamentos', 'Percentual'],
+      ...(chartData.weekly || []).map(item => [
+        item.day,
+        (item.appointments || 0).toString(),
+        formatPercentage(((item.appointments || 0) / (reportData.totalAppointments || 1)) * 100)
+      ]),
+      [''],
+      ['DISTRIBUIÇÃO HORÁRIA'],
+      ['Faixa Horária', 'Agendamentos', 'Percentual'],
+      ...(chartData.hourly || []).map(item => [
+        item.hour,
+        (item.appointments || 0).toString(),
+        formatPercentage(((item.appointments || 0) / (reportData.totalAppointments || 1)) * 100)
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-horarios');
+    exportToPDF(data, 'relatorio-horarios', 'Relatório de Horários');
   };
 
   return (

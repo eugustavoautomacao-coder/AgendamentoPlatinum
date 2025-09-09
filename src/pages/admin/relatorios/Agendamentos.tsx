@@ -125,6 +125,13 @@ const RelatorioAgendamentos = () => {
       return acc;
     }, {} as Record<string, number>);
 
+    // Calcular contadores por status
+    const confirmedCount = statusDistribution.confirmado || 0;
+    const pendingCount = statusDistribution.pendente || 0;
+    const cancelledCount = statusDistribution.cancelado || 0;
+    const completedCount = statusDistribution.concluido || 0;
+    const confirmationRate = totalAppointments > 0 ? (confirmedCount / totalAppointments) * 100 : 0;
+
     return {
       totalAppointments,
       statusDistribution,
@@ -132,7 +139,12 @@ const RelatorioAgendamentos = () => {
       weeklyDistribution,
       hourlyDistribution,
       occupancyRate,
-      professionalDistribution
+      professionalDistribution,
+      confirmedCount,
+      pendingCount,
+      cancelledCount,
+      completedCount,
+      confirmationRate
     };
   }, [filteredData, dateRange]);
 
@@ -252,7 +264,7 @@ const RelatorioAgendamentos = () => {
       ...Object.entries(reportData.statusDistribution).map(([status, count]) => [
         status.charAt(0).toUpperCase() + status.slice(1),
         (count || 0).toString(),
-        formatPercentage((count / reportData.totalAppointments) * 100)
+        formatPercentage((count / (reportData.totalAppointments || 1)) * 100)
       ]),
       [''],
       ['DISTRIBUIÇÃO SEMANAL'],
@@ -279,15 +291,33 @@ const RelatorioAgendamentos = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Agendamentos'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       ['Total de Agendamentos:', (reportData.totalAppointments || 0).toString()],
       ['Taxa de Ocupação:', formatPercentage(reportData.occupancyRate || 0)],
       ['Confirmados:', (reportData.confirmedCount || 0).toString()],
-      ['Pendentes:', (reportData.pendingCount || 0).toString()]
+      ['Pendentes:', (reportData.pendingCount || 0).toString()],
+      ['Cancelados:', (reportData.cancelledCount || 0).toString()],
+      ['Concluídos:', (reportData.completedCount || 0).toString()],
+      [''],
+      ['DISTRIBUIÇÃO POR STATUS'],
+      ['Status', 'Quantidade', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        (item.value || 0).toString(),
+        formatPercentage(((item.value || 0) / (reportData.totalAppointments || 1)) * 100)
+      ]),
+      [''],
+      ['EVOLUÇÃO MENSAL'],
+      ['Mês', 'Agendamentos', 'Confirmados'],
+      ...(chartData.monthly || []).map(item => [
+        item.month,
+        (item.appointments || 0).toString(),
+        (item.confirmed || 0).toString()
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-agendamentos');
+    exportToPDF(data, 'relatorio-agendamentos', 'Relatório de Agendamentos');
   };
 
   return (

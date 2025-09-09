@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClientes } from './useClientes';
 import { EmailService } from '@/services/emailService';
 import { AgendamentoEmailData } from '@/settings/email.config';
+import { recalcularComissoesMensais } from '@/utils/commissionUtils';
 
 export interface AppointmentRequest {
   id: string;
@@ -246,6 +247,14 @@ export const useAppointmentRequests = () => {
 
       // Invalidar cache dos agendamentos para atualizar a interface
       queryClient.invalidateQueries({ queryKey: ['appointment-requests'] });
+
+      // Recalcular comissões se o agendamento for concluído
+      if (request.funcionario_id && request.status === 'concluido') {
+        const appointmentDate = new Date(request.data_hora);
+        const mes = appointmentDate.getMonth() + 1;
+        const ano = appointmentDate.getFullYear();
+        await recalcularComissoesMensais(request.funcionario_id, mes, ano);
+      }
 
       // Enviar email de confirmação para o cliente
       try {

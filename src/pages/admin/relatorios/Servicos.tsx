@@ -269,14 +269,29 @@ const RelatorioServicos = () => {
   // Exportar para PDF
   const handleExportPDF = () => {
     const data = [
-      ['Relatório de Serviços'],
-      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd-MM-yyyy')}`],
+      ['RESUMO EXECUTIVO'],
+      ['Período:', `${format(dateRange.from || new Date(), 'dd/MM/yyyy')} a ${format(dateRange.to || new Date(), 'dd/MM/yyyy')}`],
       ['Total de Serviços:', (reportData.totalServices || 0).toString()],
       ['Receita Total:', formatCurrency(reportData.totalRevenue || 0)],
-      ['Margem de Lucro Estimada:', formatPercentage(reportData.profitMargin || 0)]
+      ['Margem de Lucro Estimada:', formatPercentage(reportData.profitMargin || 0)],
+      [''],
+      ['DISTRIBUIÇÃO POR SERVIÇO'],
+      ['Serviço', 'Receita', 'Percentual'],
+      ...(chartData.pie || []).map(item => [
+        item.name,
+        formatCurrency(item.value || 0),
+        formatPercentage(((item.value || 0) / (reportData.totalRevenue || 1)) * 100)
+      ]),
+      [''],
+      ['EVOLUÇÃO MENSAL'],
+      ['Mês', 'Receita'],
+      ...(chartData.monthly || []).map(item => [
+        item.month,
+        formatCurrency(item.revenue || 0)
+      ])
     ];
 
-    exportToPDF(data, 'relatorio-servicos');
+    exportToPDF(data, 'relatorio-servicos', 'Relatório de Serviços');
   };
 
   return (
