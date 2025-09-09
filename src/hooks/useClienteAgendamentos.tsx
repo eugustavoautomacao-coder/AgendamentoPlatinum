@@ -226,7 +226,7 @@ export const useClienteAgendamentos = () => {
           await emailService.enviarCancelamentoAgendamento(emailData);
         }
       } catch (emailError) {
-        console.error('❌ Erro ao enviar email de cancelamento:', emailError);
+        console.error('Erro ao enviar email de cancelamento:', emailError);
         // Não falhar a operação principal por erro de email
       }
 

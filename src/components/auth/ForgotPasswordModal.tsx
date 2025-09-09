@@ -73,7 +73,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         setMessage('Se o e-mail estiver correto, você receberá um link para redefinir sua senha.');
         setIsSuccess(true);
         toast({
-          title: '📧 Email de recuperação enviado!',
+          title: 'Email de recuperação enviado!',
           description: 'Verifique sua caixa de entrada e pasta de spam. O link expira em 24 horas.',
           className: 'border-l-4 border-l-[#c35d8f] bg-gradient-to-r from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d]',
         });
@@ -81,17 +81,19 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         // É um admin/profissional, usar Supabase Auth
         const redirectTo = `${window.location.origin}/redefinir-senha`;
         
-
         const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: redirectTo,
         });
 
+        if (error) {
+          console.error('Erro ao enviar email de reset:', error);
+        }
 
         // Sempre mostrar mensagem genérica por motivos de segurança
         setMessage('Se o e-mail estiver correto, você receberá um link para redefinir sua senha.');
         setIsSuccess(true);
         toast({
-          title: '📧 Email de recuperação enviado!',
+          title: 'Email de recuperação enviado!',
           description: 'Verifique sua caixa de entrada e pasta de spam. O link expira em 24 horas.',
           className: 'border-l-4 border-l-[#c35d8f] bg-gradient-to-r from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d]',
         });
@@ -123,7 +125,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
       <DialogContent className="sm:max-w-md border-2 border-[#c35d8f]/20 bg-gradient-to-br from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d] dark:border-[#c35d8f]/30">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#c35d8f] to-[#e91e63] bg-clip-text text-transparent flex items-center gap-2">
-            🔐 Recuperar Senha
+            Recuperar Senha
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-300">
             Digite seu e-mail para receber um link seguro de recuperação de senha.

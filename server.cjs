@@ -125,7 +125,10 @@ app.post('/api/email/send', async (req, res) => {
 
     // Configurar email
     const mailOptions = {
-      from: process.env.BREVO_FROM_EMAIL || '95bbc9001@smtp-brevo.com',
+      from: {
+        name: process.env.BREVO_FROM_NAME || 'AlveX Sistema',
+        address: process.env.BREVO_FROM_EMAIL || '95bbc9001@smtp-brevo.com'
+      },
       to,
       subject,
       html,

@@ -5,31 +5,27 @@ export class EmailService {
   private apiUrl: string;
   
   constructor() {
-    // URL do servidor Express
-    this.apiUrl = 'http://localhost:3001/api/email';
+    // URL da Edge Function do Supabase
+    this.apiUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/send-email';
   }
   
   // Testar conexão SMTP via API
   async testarConexao(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiUrl}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+      // Teste simples enviando um email de teste
+      const testResult = await this.enviarEmail({
+        to: 'teste@exemplo.com',
+        subject: 'Teste de Conexão',
+        html: '<p>Teste de conexão SMTP</p>'
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('✅ Conexão SMTP estabelecida com sucesso!');
+      if (testResult) {
         return true;
       } else {
-        console.error('❌ Erro na conexão SMTP:', result.error);
         return false;
       }
     } catch (error) {
-      console.error('❌ Erro ao testar conexão SMTP:', error);
+      console.error('Erro ao testar conexão SMTP:', error);
       return false;
     }
   }
@@ -37,25 +33,32 @@ export class EmailService {
   // Enviar email genérico via API
   async enviarEmail(options: EmailOptions): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiUrl}/send`, {
+      const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify(options)
       });
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erro HTTP:', response.status, errorText);
+        return false;
+      }
+      
       const result = await response.json();
       
       if (result.success) {
-        console.log('✅ Email enviado com sucesso:', result.messageId);
         return true;
       } else {
-        console.error('❌ Erro ao enviar email:', result.error);
+        console.error('Erro ao enviar email:', result.error);
         return false;
       }
     } catch (error) {
-      console.error('❌ Erro ao enviar email:', error);
+      console.error('Erro ao enviar email:', error);
       return false;
     }
   }

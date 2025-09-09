@@ -35,6 +35,11 @@ export const emailTemplates = {
           color: #ffffff; 
           margin-bottom: 10px; 
         }
+        .logo-img {
+          max-width: 120px;
+          height: auto;
+          margin-bottom: 15px;
+        }
         .subtitle { 
           color: #fce7f3; 
           font-size: 16px; 
@@ -141,6 +146,7 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
+        <img src="https://alvex-sistema.vercel.app/logo-alvex.svg" alt="AlveX Logo" class="logo-img">
           <div class="logo">AlveX</div>
           <div class="subtitle">Sistema de Agendamentos</div>
         </div>

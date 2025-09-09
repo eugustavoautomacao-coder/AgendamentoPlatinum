@@ -166,7 +166,7 @@ export const useAppointmentRequests = () => {
             await emailService.enviarConfirmacaoAgendamento(emailData);
           }
         } catch (emailError) {
-          console.error('❌ Erro ao enviar email de confirmação da solicitação:', emailError);
+          console.error('Erro ao enviar email de confirmação da solicitação:', emailError);
           // Não falhar a operação principal por erro de email
         }
       }
@@ -284,7 +284,7 @@ export const useAppointmentRequests = () => {
         
         await emailService.enviarAprovacaoAgendamento(emailData);
       } catch (emailError) {
-        console.error('❌ Erro ao enviar email de aprovação:', emailError);
+        console.error('Erro ao enviar email de aprovação:', emailError);
         // Não falhar a operação principal por erro de email
       }
 
@@ -354,7 +354,7 @@ export const useAppointmentRequests = () => {
           await emailService.enviarRejeicaoAgendamento(emailData);
         }
       } catch (emailError) {
-        console.error('❌ Erro ao enviar email de rejeição:', emailError);
+        console.error('Erro ao enviar email de rejeição:', emailError);
         // Não falhar a operação principal por erro de email
       }
 
