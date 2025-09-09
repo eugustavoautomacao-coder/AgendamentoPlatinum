@@ -229,7 +229,19 @@ export const useAppointmentRequests = () => {
         cliente_email: request.cliente_email
       };
 
-      // Apenas atualizar o status do agendamento original para 'aprovado'
+      // Criar agendamento na tabela appointments
+      const { data: newAppointment, error: createError } = await supabase
+        .from('appointments')
+        .insert(appointmentData)
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('❌ Erro ao criar agendamento:', createError);
+        throw createError;
+      }
+
+      // Atualizar o status da solicitação para 'aprovado'
       const { error: updateError } = await supabase
         .from('appointment_requests')
         .update({
@@ -247,6 +259,7 @@ export const useAppointmentRequests = () => {
 
       // Invalidar cache dos agendamentos para atualizar a interface
       queryClient.invalidateQueries({ queryKey: ['appointment-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
 
       // Recalcular comissões se o agendamento for concluído
       if (request.funcionario_id && request.status === 'concluido') {
