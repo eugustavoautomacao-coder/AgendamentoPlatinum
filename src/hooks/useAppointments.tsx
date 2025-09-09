@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { recalcularComissoesMensais } from '@/utils/commissionUtils';
+import { monitorQueryPerformance } from '@/utils/performanceMonitor';
+import { fetchCachedWithPagination, invalidatePaginationCache } from '@/utils/queryOptimization';
 
 export interface Appointment {
   id: string;
@@ -44,14 +46,15 @@ export function useAppointments() {
     queryFn: async (): Promise<Appointment[]> => {
       if (!profile?.salao_id) return [];
       
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          servico:services!servico_id(nome, duracao_minutos, preco)
-        `)
-        .eq('salao_id', profile.salao_id)
-        .order('data_hora', { ascending: true });
+      return await monitorQueryPerformance('fetchAppointments', async () => {
+        const { data, error } = await supabase
+          .from('appointments')
+          .select(`
+            *,
+            servico:services!servico_id(nome, duracao_minutos, preco)
+          `)
+          .eq('salao_id', profile.salao_id)
+          .order('data_hora', { ascending: true });
 
       if (error) {
         console.error('Erro ao buscar agendamentos:', error);
@@ -78,7 +81,8 @@ export function useAppointments() {
         })
       );
 
-      return appointmentsWithNames;
+        return appointmentsWithNames;
+      });
     },
     enabled: !!profile?.salao_id,
     staleTime: 1000 * 60 * 5, // 5 minutos

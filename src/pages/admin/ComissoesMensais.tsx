@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { recalcularComissoesMensais } from '@/utils/commissionUtils';
+import { useOptimizedCommissions } from '@/hooks/useOptimizedCommissions';
 
 interface ComissaoMensal {
   id: string;

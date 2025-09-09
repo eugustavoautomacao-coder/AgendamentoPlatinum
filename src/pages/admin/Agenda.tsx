@@ -190,7 +190,6 @@ const Agenda = () => {
   // Função para carregar horários bloqueados do banco
   const loadBlockedSlots = async (date: Date) => {
     try {
-      console.log('loadBlockedSlots chamado:', { date: format(date, 'yyyy-MM-dd'), salonInfoId: salonInfo?.id });
       
       const { data, error } = await supabase
         .from('blocked_slots')
@@ -200,15 +199,12 @@ const Agenda = () => {
 
       if (error) throw error;
 
-      console.log('Dados carregados do banco:', data);
-
       // Converter para o formato do estado local
       const blockedSet = new Set<string>();
       data?.forEach(slot => {
         blockedSet.add(`${slot.funcionario_id}-${slot.hora_inicio}`);
       });
 
-      console.log('Estado local atualizado:', Array.from(blockedSet));
       setLockedSlots(blockedSet);
     } catch (error) {
       console.error('Erro ao carregar horários bloqueados:', error);
@@ -220,7 +216,6 @@ const Agenda = () => {
   // Horário de funcionamento baseado na data selecionada
   const getScheduleForDate = (date: Date) => {
     if (!salonInfo?.working_hours) {
-      console.log('Horários de funcionamento não configurados, usando padrão');
       return { open: '08:00', close: '18:00', active: true };
     }
     
@@ -228,10 +223,7 @@ const Agenda = () => {
     const key = days[date.getDay()];
     const schedule = salonInfo.working_hours[key];
     
-    console.log(`Horário para ${key} (${format(date, 'EEEE', { locale: ptBR })}):`, schedule);
-    
     if (!schedule) {
-      console.log(`Horário não configurado para ${key}, usando padrão`);
       return { open: '08:00', close: '18:00', active: true };
     }
     
@@ -798,7 +790,6 @@ const Agenda = () => {
 
   // Carregar horários bloqueados quando mudar de data
   useEffect(() => {
-    console.log('useEffect loadBlockedSlots:', { selectedDate, salonInfoId: salonInfo?.id, salonInfo });
     if (selectedDate && salonInfo?.id) {
       loadBlockedSlots(selectedDate);
     }
