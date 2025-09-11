@@ -7,7 +7,7 @@ import {
   Settings,
   Crown
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -56,21 +56,8 @@ const menuItems = [
 
 export function SuperAdminSidebar() {
   const { state } = useSidebar();
-  const location = useLocation();
   const collapsed = state === "collapsed";
 
-  const isActive = (path: string, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
-    return location.pathname.startsWith(path);
-  };
-
-  const getNavClass = (path: string, exact = false) => {
-    return isActive(path, exact) 
-      ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-accent hover:text-accent-foreground";
-  };
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
@@ -97,15 +84,20 @@ export function SuperAdminSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={getNavClass(item.url, item.exact)}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+                  <NavLink 
+                    to={item.url} 
+                    end={item.exact}
+                    className={({ isActive }) => 
+                      `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                        isActive 
+                          ? "bg-primary text-primary-foreground font-medium" 
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`
+                    }
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {!collapsed && <span>{item.title}</span>}
+                  </NavLink>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

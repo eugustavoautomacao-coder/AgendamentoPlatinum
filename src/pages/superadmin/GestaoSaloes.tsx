@@ -407,7 +407,8 @@ const GestaoSaloes = () => {
                 </div>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 w-full">
-                <div className="space-y-3 sm:space-y-4 w-full">
+                {/* Mobile View - Cards */}
+                <div className="block md:hidden space-y-3">
                   {filteredSalons.map((salon) => (
                     <div
                       key={salon.id}
@@ -461,6 +462,61 @@ const GestaoSaloes = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Desktop View - Table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Salão</TableHead>
+                        <TableHead>E-mail</TableHead>
+                        <TableHead>CNPJ</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Criado em</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSalons.map((salon) => (
+                        <TableRow key={salon.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                                <Building2 className="h-4 w-4 text-primary-foreground" />
+                              </div>
+                              <div>
+                                <div className="font-medium">{salon.name}</div>
+                                <div className="text-sm text-muted-foreground">ID: {salon.id}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {salon.email || <span className="text-muted-foreground">-</span>}
+                          </TableCell>
+                          <TableCell>
+                            {salon.cnpj ? formatCnpj(salon.cnpj) : <span className="text-muted-foreground">-</span>}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">Ativo</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(salon.created_at).toLocaleDateString('pt-BR')}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditSalon(salon)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteSalon(salon)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>

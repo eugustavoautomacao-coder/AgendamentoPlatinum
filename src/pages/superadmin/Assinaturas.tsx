@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Plus, Crown, Check, X, TrendingUp, DollarSign, Calendar, Users } from "lucide-react";
+import { Search, Plus, Crown, Check, X, TrendingUp, DollarSign, Calendar, Users, CreditCard } from "lucide-react";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,7 +210,7 @@ const Assinaturas = () => {
                   {subscriptions.map((subscription) => (
                     <div
                       key={subscription.id}
-                      className="flex flex-col gap-3 p-3 sm:p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
+                      className="flex flex-col gap-3 p-3 sm:p-4 bg-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium text-foreground text-sm sm:text-base truncate">{subscription.salon}</div>

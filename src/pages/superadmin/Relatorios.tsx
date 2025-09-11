@@ -48,7 +48,7 @@ const Relatorios = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden min-w-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -56,8 +56,8 @@ const Relatorios = () => {
             <div className="min-w-0 flex-1">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight truncate">Relatórios</h1>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                Análises e métricas do sistema
-              </p>
+              Análises e métricas do sistema
+            </p>
             </div>
           </div>
 
@@ -134,15 +134,15 @@ const Relatorios = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="revenue" className="space-y-4 w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <Tabs defaultValue="revenue" className="space-y-4 w-full max-w-full overflow-x-hidden">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-1 h-auto min-w-0">
             <TabsTrigger value="revenue" className="text-xs sm:text-sm">Receita</TabsTrigger>
             <TabsTrigger value="salons" className="text-xs sm:text-sm">Salões</TabsTrigger>
             <TabsTrigger value="plans" className="text-xs sm:text-sm">Planos</TabsTrigger>
             <TabsTrigger value="usage" className="text-xs sm:text-sm">Uso do Sistema</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="revenue" className="space-y-4">
+          <TabsContent value="revenue" className="space-y-4 w-full max-w-full overflow-x-hidden">
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 w-full">
               <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
                 <CardHeader className="pb-3">
@@ -188,8 +188,8 @@ const Relatorios = () => {
                       <span className="truncate">Dados Detalhados</span>
                     </CardTitle>
                     <CardDescription className="text-xs sm:text-sm truncate">
-                      Breakdown da receita por período
-                    </CardDescription>
+                  Breakdown da receita por período
+                </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -223,59 +223,59 @@ const Relatorios = () => {
 
                 {/* Desktop View - Table */}
                 <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mês</TableHead>
-                        <TableHead>Receita</TableHead>
-                        <TableHead>Assinaturas</TableHead>
-                        <TableHead>Crescimento</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mês</TableHead>
+                      <TableHead>Receita</TableHead>
+                      <TableHead>Assinaturas</TableHead>
+                      <TableHead>Crescimento</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {revenueData.map((item, index) => (
+                      <TableRow key={item.month}>
+                        <TableCell>{item.month}</TableCell>
+                        <TableCell>R$ {item.revenue.toLocaleString()}</TableCell>
+                        <TableCell>{item.subscriptions}</TableCell>
+                        <TableCell>
+                          {index > 0 && (
+                            <Badge variant="outline" className="text-green-600">
+                              +{(((item.revenue - revenueData[index-1].revenue) / revenueData[index-1].revenue) * 100).toFixed(1)}%
+                            </Badge>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {revenueData.map((item, index) => (
-                        <TableRow key={item.month}>
-                          <TableCell>{item.month}</TableCell>
-                          <TableCell>R$ {item.revenue.toLocaleString()}</TableCell>
-                          <TableCell>{item.subscriptions}</TableCell>
-                          <TableCell>
-                            {index > 0 && (
-                              <Badge variant="outline" className="text-green-600">
-                                +{(((item.revenue - revenueData[index-1].revenue) / revenueData[index-1].revenue) * 100).toFixed(1)}%
-                              </Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                    ))}
+                  </TableBody>
+                </Table>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="salons" className="space-y-4">
-            <Card className="shadow-elegant w-full">
+          <TabsContent value="salons" className="space-y-4 w-full max-w-full overflow-x-hidden">
+            <Card className="shadow-elegant w-full max-w-full overflow-x-hidden">
               <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full min-w-0">
                   <div className="min-w-0 flex-1">
                     <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                       <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
                       <span className="truncate">Top Salões por Performance</span>
                     </CardTitle>
                     <CardDescription className="text-xs sm:text-sm truncate">
-                      Salões com melhor desempenho em receita e agendamentos
-                    </CardDescription>
+                  Salões com melhor desempenho em receita e agendamentos
+                </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-3 sm:p-6 w-full">
+              <CardContent className="p-3 sm:p-6 w-full max-w-full overflow-x-hidden min-w-0">
                 {/* Mobile View - Cards */}
-                <div className="block md:hidden space-y-3">
+                <div className="block lg:hidden space-y-3 w-full max-w-full overflow-x-hidden">
                   {topSalons.map((salon, index) => (
                     <div
                       key={salon.name}
-                      className="flex flex-col gap-2 p-3 sm:p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
+                      className="flex flex-col gap-2 p-3 sm:p-4 bg-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
                     >
                       <div className="flex items-center justify-between">
                         <div className="font-medium text-foreground text-sm sm:text-base truncate">{salon.name}</div>
@@ -300,41 +300,43 @@ const Relatorios = () => {
                 </div>
 
                 {/* Desktop View - Table */}
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ranking</TableHead>
-                        <TableHead>Salão</TableHead>
-                        <TableHead>Receita</TableHead>
-                        <TableHead>Agendamentos</TableHead>
-                        <TableHead>Crescimento</TableHead>
+                <div className="hidden lg:block w-full max-w-full overflow-x-hidden">
+                  <div className="overflow-x-auto w-full">
+                    <Table className="w-full min-w-[600px]">
+                  <TableHeader>
+                    <TableRow>
+                          <TableHead className="text-xs sm:text-sm w-20">Ranking</TableHead>
+                          <TableHead className="text-xs sm:text-sm w-40">Salão</TableHead>
+                          <TableHead className="text-xs sm:text-sm w-32">Receita</TableHead>
+                          <TableHead className="text-xs sm:text-sm w-32">Agendamentos</TableHead>
+                          <TableHead className="text-xs sm:text-sm w-32">Crescimento</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topSalons.map((salon, index) => (
+                      <TableRow key={salon.name}>
+                            <TableCell className="text-xs sm:text-sm">
+                              <Badge variant="outline" className="text-xs">#{index + 1}</Badge>
+                        </TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm truncate">{salon.name}</TableCell>
+                            <TableCell className="text-xs sm:text-sm">R$ {salon.revenue.toLocaleString()}</TableCell>
+                            <TableCell className="text-xs sm:text-sm">{salon.appointments}</TableCell>
+                            <TableCell className="text-xs sm:text-sm">
+                              <Badge variant="default" className="bg-green-600 text-xs">
+                            +{salon.growth}%
+                          </Badge>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {topSalons.map((salon, index) => (
-                        <TableRow key={salon.name}>
-                          <TableCell>
-                            <Badge variant="outline">#{index + 1}</Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{salon.name}</TableCell>
-                          <TableCell>R$ {salon.revenue.toLocaleString()}</TableCell>
-                          <TableCell>{salon.appointments}</TableCell>
-                          <TableCell>
-                            <Badge variant="default" className="bg-green-600">
-                              +{salon.growth}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="plans" className="space-y-4">
+          <TabsContent value="plans" className="space-y-4 w-full max-w-full overflow-x-hidden">
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 w-full">
               <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
                 <CardHeader className="pb-3">
@@ -391,7 +393,7 @@ const Relatorios = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="usage" className="space-y-4">
+          <TabsContent value="usage" className="space-y-4 w-full max-w-full overflow-x-hidden">
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
               <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
                 <CardHeader className="pb-3">

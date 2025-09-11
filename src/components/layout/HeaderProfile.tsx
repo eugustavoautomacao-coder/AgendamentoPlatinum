@@ -6,7 +6,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuth } from "@/hooks/useAuth";
 
 export function HeaderProfile() {
-  const { signOut, profile } = useAuth();
+  try {
+    const { signOut, profile } = useAuth();
 
   return (
     <div className="flex items-center gap-2">
@@ -49,4 +50,8 @@ export function HeaderProfile() {
       </Button>
     </div>
   );
+  } catch (error) {
+    console.error('Erro no HeaderProfile:', error);
+    return null;
+  }
 }

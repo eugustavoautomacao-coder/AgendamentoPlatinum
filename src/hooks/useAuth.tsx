@@ -58,15 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Fetch user profile
-          setTimeout(async () => {
+          timeoutId = setTimeout(async () => {
+            if (!isMounted) return;
+            
             try {
               const { data: profile, error } = await supabase
                 .from('users')
@@ -75,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .single();
               
               if (error) throw error;
+              
+              if (!isMounted) return;
               
               // Adicionar nome do salão ao perfil
               const profileWithSalon = {
@@ -85,9 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               setProfile(profileWithSalon);
             } catch (error) {
+              if (!isMounted) return;
+              
               console.error('Error fetching profile:', error);
               
-              // Se for erro PGRST116 (perfil não encontrado), não fazer logout
+              // Se for erro PGRST116 (perfil não encontrado), apenas avisar
               if (error.code === 'PGRST116') {
                 console.warn('Usuário autenticado mas sem perfil na tabela users. Aguardando criação automática...');
                 setProfile(null);
@@ -98,21 +109,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }, 0);
         } else {
-          setProfile(null);
+          if (isMounted) {
+            setProfile(null);
+          }
         }
         
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []); // Remover dependência toast
 
   const signIn = async (email: string, password: string) => {

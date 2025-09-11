@@ -1,169 +1,299 @@
-import { useState, useEffect } from "react";
-import { Search, Filter, UserPlus, Edit, Trash2, Crown, Shield, User, Users } from "lucide-react";
-import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useProfiles } from "@/hooks/useProfiles";
-import { useSalons } from "@/hooks/useSalons";
-import { useRef } from "react";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Users, UserPlus, Shield, User, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
+
+interface UserProfile {
+  id: string;
+  nome: string;
+  email: string;
+  telefone: string;
+  tipo: string;
+  salao_id: string;
+  salao_nome: string;
+  criado_em: string;
+}
+
+interface Salon {
+  id: string;
+  nome: string;
+}
 
 const GestaoUsuarios = () => {
-  const [searchInput, setSearchInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [salonFilter, setSalonFilter] = useState("all");
-  
-  const { profiles, loading, fetchProfiles } = useProfiles();
-  const { salons } = useSalons();
-  const { toast } = useToast();
-  const [resetUser, setResetUser] = useState<any>(null);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [password, setPassword] = useState("");
-
-  // Estado do modal de cadastro
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [salons, setSalons] = useState<Salon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [salonFilter, setSalonFilter] = useState('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
-    nome: '',
-    email: '',
-    password: '',
-    tipo: 'admin',
-    salao_id: '',
-    telefone: ''
-  });
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  // Estado do modal de edição
-  const [editUser, setEditUser] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', salon_id: '' });
-  const [editLoading, setEditLoading] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
-
-  // Estado do modal de exclusão
-  const [deleteUser, setDeleteUser] = useState<any>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-
-  // Estado do modal de alteração de role
-  const [roleUser, setRoleUser] = useState<any>(null);
+  const [editUser, setEditUser] = useState<UserProfile | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserProfile | null>(null);
+  const [roleUser, setRoleUser] = useState<UserProfile | null>(null);
+  const [resetUser, setResetUser] = useState<UserProfile | null>(null);
+  const [password, setPassword] = useState('');
   const [newRole, setNewRole] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [roleLoading, setRoleLoading] = useState(false);
-  const [roleError, setRoleError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [editError, setEditError] = useState('');
+  const [roleError, setRoleError] = useState('');
 
-  // Validação visual simples
-  const isSalonRequired = newUser.tipo !== 'system_admin';
-  const isFormValid =
-    newUser.nome.trim() &&
-    newUser.email.trim() &&
-    newUser.password.trim() &&
-    newUser.tipo &&
-    newUser.telefone.trim() &&
-    (!isSalonRequired || newUser.salao_id);
-
-  // Ajustar validação do formulário de edição
-  const isEditFormValid = editForm.name.trim() && editForm.email.trim() && editForm.phone.trim();
-
-  // Buscar usuários apenas quando filtros principais mudarem
-  useEffect(() => {
-    fetchProfiles({
-      tipo: roleFilter,
-      salao_id: salonFilter
-    });
-  }, [roleFilter, salonFilter, fetchProfiles]);
-
-  // Filtro local instantâneo
-  const filteredProfiles = profiles.filter(profile => {
-    const search = searchInput.toLowerCase();
-    return (
-      profile.nome.toLowerCase().includes(search) ||
-      (profile.salao_nome && profile.salao_nome.toLowerCase().includes(search)) ||
-      (profile.telefone && profile.telefone.toLowerCase().includes(search))
-    );
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    role: 'cliente',
+    salon_id: ''
   });
 
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    salon_id: ''
+  });
+
+  const isCreateFormValid = createForm.name && createForm.email && createForm.phone && createForm.password && createForm.salon_id;
+  const isEditFormValid = editForm.name && editForm.phone && editForm.salon_id;
+
   useEffect(() => {
-    if (!resetUser) setPassword('');
-  }, [resetUser]);
+    loadProfiles();
+    loadSalons();
+  }, []);
 
-  const getRoleIcon = (tipo: string) => {
-    switch (tipo) {
-      case "system_admin":
-        return <Crown className="h-4 w-4" />;
-      case "admin":
-        return <Shield className="h-4 w-4" />;
-      case "funcionario":
-        return <User className="h-4 w-4" />;
-      default:
-        return <Users className="h-4 w-4" />;
+  const loadProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          nome,
+          email,
+          telefone,
+          tipo,
+          salao_id,
+          saloes(nome),
+          criado_em
+        `)
+        .order('criado_em', { ascending: false });
+
+      if (error) throw error;
+
+      const profilesWithSalon = data?.map(profile => ({
+        ...profile,
+        salao_nome: (profile.saloes as any)?.nome || ''
+      })) || [];
+
+      setProfiles(profilesWithSalon);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      toast.error('Erro ao carregar usuários');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getRoleBadge = (tipo: string) => {
-    switch (tipo) {
-      case "system_admin":
-        return <Badge variant="default" className="bg-purple-600">SuperAdmin</Badge>;
-      case "admin":
-        return <Badge variant="default" className="bg-blue-600">Admin</Badge>;
-      case "funcionario":
-        return <Badge variant="secondary">Funcionário</Badge>;
-      default:
-        return <Badge variant="outline">Cliente</Badge>;
+  const loadSalons = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('saloes')
+        .select('id, nome')
+        .order('nome');
+
+      if (error) throw error;
+      setSalons(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar salões:', error);
+      toast.error('Erro ao carregar salões');
     }
   };
 
-  // Função para redefinir senha via Edge Function
+  const handleCreateUser = async () => {
+    if (!isCreateFormValid) return;
+
+    setCreateLoading(true);
+    setCreateError('');
+
+    try {
+      // Usar edge function para criar usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Usuário não autenticado');
+
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          nome: createForm.name,
+          email: createForm.email,
+          password: createForm.password,
+          tipo: createForm.role,
+          salao_id: createForm.salon_id,
+          telefone: createForm.phone
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar usuário');
+      }
+
+      toast.success('Usuário criado com sucesso!');
+      setIsCreateOpen(false);
+      setCreateForm({ name: '', email: '', phone: '', password: '', role: 'cliente', salon_id: '' });
+      loadProfiles();
+    } catch (error: any) {
+      console.error('Erro ao criar usuário:', error);
+      setCreateError(error.message || 'Erro ao criar usuário');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleOpenEdit = (user: UserProfile) => {
+    setEditUser(user);
+    setEditForm({
+      name: user.nome,
+      email: user.email,
+      phone: user.telefone,
+      salon_id: user.salao_id
+    });
+  };
+
+  const handleEditUser = async () => {
+    if (!editUser || !isEditFormValid) return;
+
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          nome: editForm.name,
+          telefone: editForm.phone,
+          salao_id: editForm.salon_id
+        })
+        .eq('id', editUser.id);
+
+      if (error) throw error;
+
+      toast.success('Usuário atualizado com sucesso!');
+      setEditUser(null);
+      loadProfiles();
+    } catch (error: any) {
+      console.error('Erro ao editar usuário:', error);
+      setEditError(error.message || 'Erro ao editar usuário');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+
+    setDeleteLoading(true);
+
+    try {
+      // Usar edge function para deletar usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Usuário não autenticado');
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ userId: deleteUser.id })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao excluir usuário');
+      }
+
+      toast.success('Usuário excluído com sucesso!');
+      setDeleteUser(null);
+      loadProfiles();
+    } catch (error: any) {
+      console.error('Erro ao excluir usuário:', error);
+      toast.error(error.message || 'Erro ao excluir usuário');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleOpenRole = (user: UserProfile) => {
+    setRoleUser(user);
+    setNewRole(user.tipo);
+  };
+
+  const handleChangeRole = async () => {
+    if (!roleUser || !newRole || newRole === roleUser.tipo) return;
+
+    setRoleLoading(true);
+    setRoleError('');
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ tipo: newRole })
+        .eq('id', roleUser.id);
+
+      if (error) throw error;
+
+      toast.success('Tipo de usuário alterado com sucesso!');
+      setRoleUser(null);
+      loadProfiles();
+    } catch (error: any) {
+      console.error('Erro ao alterar tipo:', error);
+      setRoleError(error.message || 'Erro ao alterar tipo');
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
   const handleResetPassword = async () => {
     if (!resetUser || !password) return;
-    setResetLoading(true);
-    try {
-      // Obter access token do usuário logado
-      const session = await supabase.auth.getSession();
-      const accessToken = session.data.session?.access_token;
-      if (!accessToken) throw new Error("Token de acesso não encontrado");
 
-      const response = await fetch(
-        "https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/reset-user-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            userId: resetUser.id,
-            newPassword: password,
-          }),
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao redefinir senha");
-      }
-      toast({
-        title: "Senha redefinida com sucesso!",
-        description: `A senha do usuário foi atualizada.`
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(resetUser.id, {
+        password: password
       });
-      // Limpar busca e atualizar a lista de usuários após redefinir senha
-      setSearchTerm('');
-      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter, search: '' });
-      setPassword("");
+
+      if (error) throw error;
+
+      toast.success('Senha redefinida com sucesso!');
       setResetUser(null);
-      handleCloseModal();
+      setPassword('');
     } catch (error: any) {
-      toast({
-        title: "Erro ao redefinir senha",
-        description: error.message || "Erro inesperado ao processar a solicitação",
-        variant: "destructive"
-      });
+      console.error('Erro ao redefinir senha:', error);
+      toast.error('Erro ao redefinir senha');
     } finally {
       setResetLoading(false);
     }
@@ -172,168 +302,61 @@ const GestaoUsuarios = () => {
   const handleCloseModal = () => {
     setResetUser(null);
     setPassword('');
-    setSearchInput('');
   };
 
-  const handleCreateUser = async () => {
-    setCreateLoading(true);
-    setCreateError(null);
-    try {
-      // Obter access token do usuário logado
-      const session = await supabase.auth.getSession();
-      const accessToken = session.data.session?.access_token;
-      if (!accessToken) throw new Error("Token de acesso não encontrado");
-
-      // Montar payload
-      const payload = {
-        nome: newUser.nome.trim(),
-        email: newUser.email.trim(),
-        password: newUser.password,
-        tipo: newUser.tipo.trim().toLowerCase(),
-        salao_id: newUser.salao_id || null,
-        telefone: newUser.telefone.trim()
-      };
-      console.log("Payload enviado:", payload);
-      // Chamada para Edge Function
-      const response = await fetch(
-        "https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-user",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await response.json();
-      if (!response.ok) {
-        console.error("Erro detalhado da Edge Function:", data.error);
-        throw new Error(data.error || "Erro ao cadastrar usuário");
-      }
-      toast({
-        title: "Usuário cadastrado com sucesso!",
-        description: `O usuário ${newUser.nome} foi criado.`
-      });
-      setIsCreateOpen(false);
-      setNewUser({ nome: '', email: '', password: '', tipo: 'admin', salao_id: '', telefone: '' });
-      // Atualizar listagem
-      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
-    } catch (error: any) {
-      setCreateError(error.message || "Erro inesperado ao cadastrar usuário");
-    } finally {
-      setCreateLoading(false);
+  const getRoleIcon = (tipo: string) => {
+    switch (tipo) {
+      case 'system_admin':
+        return <Shield className="h-3 w-3 text-red-500" />;
+      case 'admin':
+        return <Shield className="h-3 w-3 text-blue-500" />;
+      case 'funcionario':
+        return <User className="h-3 w-3 text-green-500" />;
+      case 'cliente':
+        return <User className="h-3 w-3 text-gray-500" />;
+      default:
+        return <User className="h-3 w-3 text-gray-500" />;
     }
   };
 
-  // Função para abrir modal de edição
-  const handleOpenEdit = (user: any) => {
-    setEditUser(user);
-    setEditForm({
-      name: user.nome || '',
-      email: user.email || '',
-      phone: user.telefone || '',
-      salon_id: user.salao_id || ''
-    });
-    setEditError(null);
+  const getRoleBadge = (tipo: string) => {
+    const variants = {
+      system_admin: 'destructive',
+      admin: 'default',
+      funcionario: 'secondary',
+      cliente: 'outline'
+    } as const;
+
+    const labels = {
+      system_admin: 'SuperAdmin',
+      admin: 'Admin',
+      funcionario: 'Funcionário',
+      cliente: 'Cliente'
+    };
+
+    return (
+      <Badge variant={variants[tipo as keyof typeof variants] || 'outline'}>
+        {labels[tipo as keyof typeof labels] || tipo}
+      </Badge>
+    );
   };
 
-  // Função para salvar edição
-  const handleEditUser = async () => {
-    if (!editUser) return;
-    setEditLoading(true);
-    setEditError(null);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          nome: editForm.name,
-          email: editForm.email,
-          telefone: editForm.phone,
-          salao_id: editForm.salon_id || null
-        })
-        .eq('id', editUser.id);
-      if (error) throw error;
-      toast({ title: 'Usuário atualizado com sucesso!' });
-      setEditUser(null);
-      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
-    } catch (error: any) {
-      setEditError(error.message || 'Erro ao atualizar usuário');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  // Função para excluir usuário
-  const handleDeleteUser = async () => {
-    if (!deleteUser) return;
-    setDeleteLoading(true);
-    try {
-      // Chama a Edge Function para excluir de ambas as tabelas
-      const response = await fetch('https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/delete-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        },
-        body: JSON.stringify({ userId: deleteUser.id })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao excluir usuário');
-      }
-
-      toast({ title: 'Usuário excluído com sucesso!' });
-      setDeleteUser(null);
-      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao excluir usuário',
-        description: error.message || 'Erro inesperado',
-        variant: 'destructive'
-      });
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  // Função para abrir modal de alteração de tipo
-  const handleOpenRole = (user: any) => {
-    setRoleUser(user);
-    setNewRole(user.tipo);
-    setRoleError(null);
-  };
-
-  // Função para salvar alteração de tipo
-  const handleChangeRole = async () => {
-    if (!roleUser || !newRole) return;
-    setRoleLoading(true);
-    setRoleError(null);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ tipo: newRole })
-        .eq('id', roleUser.id);
-      if (error) throw error;
-      toast({ title: 'Tipo atualizado com sucesso!' });
-      setRoleUser(null);
-      await fetchProfiles({ tipo: roleFilter, salao_id: salonFilter });
-    } catch (error: any) {
-      setRoleError(error.message || 'Erro ao atualizar tipo');
-    } finally {
-      setRoleLoading(false);
-    }
-  };
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = profile.nome.toLowerCase().includes(searchInput.toLowerCase()) ||
+                         profile.email.toLowerCase().includes(searchInput.toLowerCase());
+    const matchesRole = roleFilter === 'all' || profile.tipo === roleFilter;
+    const matchesSalon = salonFilter === 'all' || profile.salao_id === salonFilter;
+    
+    return matchesSearch && matchesRole && matchesSalon;
+  });
 
   if (loading) {
     return (
       <SuperAdminLayout>
-        <div className="flex items-center justify-center min-h-96">
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Carregando usuários...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Carregando usuários...</p>
           </div>
         </div>
       </SuperAdminLayout>
@@ -342,77 +365,72 @@ const GestaoUsuarios = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
+      <div className="space-y-6 p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500 flex-shrink-0" />
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight truncate">Gestão de Usuários</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                Gerencie todos os usuários do sistema
-              </p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
+            <p className="text-muted-foreground">
+              Gerencie todos os usuários do sistema
+            </p>
           </div>
 
-          <div className="flex gap-2 flex-shrink-0">
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="text-xs sm:text-sm px-3 py-2">
-                  <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Novo Usuário</span>
-                  <span className="sm:hidden">Novo</span>
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
+          <div className="flex gap-2">
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Novo Usuário
+              </Button>
+            </DialogTrigger>
+              <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Novo Usuário</DialogTitle>
                 <DialogDescription>Preencha os dados para cadastrar um novo usuário.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 px-1">
                 <div className="space-y-2">
-                  <Label htmlFor="user-name">Nome</Label>
+                    <Label htmlFor="create-user-name">Nome</Label>
                   <Input
-                    id="user-name"
-                    value={newUser.nome}
-                    onChange={e => setNewUser(u => ({ ...u, nome: e.target.value }))}
+                      id="create-user-name"
+                      value={createForm.name}
+                      onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="Nome completo"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-email">E-mail</Label>
+                    <Label htmlFor="create-user-email">E-mail</Label>
                   <Input
-                    id="user-email"
+                      id="create-user-email"
                     type="email"
-                    value={newUser.email}
-                    onChange={e => setNewUser(u => ({ ...u, email: e.target.value }))}
+                      value={createForm.email}
+                      onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
                     placeholder="usuario@email.com"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-password">Senha</Label>
+                    <Label htmlFor="create-user-phone">Telefone</Label>
                   <Input
-                    id="user-password"
-                    type="password"
-                    value={newUser.password}
-                    onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))}
-                    placeholder="Senha"
+                      id="create-user-phone"
+                      value={createForm.phone}
+                      onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="Telefone"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-phone">Telefone</Label>
+                    <Label htmlFor="create-user-password">Senha</Label>
                   <Input
-                    id="user-phone"
-                    value={newUser.telefone}
-                    onChange={e => setNewUser(u => ({ ...u, telefone: e.target.value }))}
-                    placeholder="Telefone"
-                    required
+                      id="create-user-password"
+                      type="password"
+                      value={createForm.password}
+                      onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                      placeholder="Senha"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-role">Tipo</Label>
-                  <Select value={newUser.tipo} onValueChange={value => setNewUser(u => ({ ...u, tipo: value, salao_id: '' }))}>
-                    <SelectTrigger id="user-role" className="w-full">
+                    <Label htmlFor="create-user-role">Tipo</Label>
+                    <Select value={createForm.role} onValueChange={value => setCreateForm(f => ({ ...f, role: value }))}>
+                      <SelectTrigger id="create-user-role" className="w-full">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -424,9 +442,9 @@ const GestaoUsuarios = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="user-salon">Salão</Label>
-                  <Select value={newUser.salao_id} onValueChange={value => setNewUser(u => ({ ...u, salao_id: value }))} disabled={!isSalonRequired}>
-                    <SelectTrigger id="user-salon" className="w-full" disabled={!isSalonRequired}>
+                    <Label htmlFor="create-user-salon">Salão</Label>
+                    <Select value={createForm.salon_id} onValueChange={value => setCreateForm(f => ({ ...f, salon_id: value }))}>
+                      <SelectTrigger id="create-user-salon" className="w-full">
                       <SelectValue placeholder="Selecione o salão" />
                     </SelectTrigger>
                     <SelectContent>
@@ -439,35 +457,39 @@ const GestaoUsuarios = () => {
                 {createError && <div className="text-destructive text-sm mt-2">{createError}</div>}
               </div>
               <DialogFooter>
-                <Button disabled={!isFormValid || createLoading} onClick={handleCreateUser}>
-                  {createLoading ? "Salvando..." : "Cadastrar"}
+                  <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={createLoading}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateUser} disabled={createLoading || !isCreateFormValid}>
+                    {createLoading ? 'Criando...' : 'Criar usuário'}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 w-full">
-          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Usuários</CardTitle>
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="pt-1">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{profiles.length}</div>
+            <CardContent>
+              <div className="text-2xl font-bold">{profiles.length}</div>
               <p className="text-xs text-muted-foreground">
                 Usuários cadastrados
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Administradores</CardTitle>
-              <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="pt-1">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
+            <CardContent>
+              <div className="text-2xl font-bold">
                 {profiles.filter(u => u.tipo === 'admin').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -475,31 +497,31 @@ const GestaoUsuarios = () => {
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Profissionais</CardTitle>
-              <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profissionais</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="pt-1">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
+            <CardContent>
+              <div className="text-2xl font-bold">
                 {profiles.filter(u => u.tipo === 'funcionario').length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Prestadores de serviço
+                Funcionários
               </p>
             </CardContent>
           </Card>
-          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Clientes</CardTitle>
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Clientes</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="pt-1">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
+            <CardContent>
+              <div className="text-2xl font-bold">
                 {profiles.filter(u => u.tipo === 'cliente').length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Usuários finais
+                Clientes
               </p>
             </CardContent>
           </Card>
@@ -508,17 +530,17 @@ const GestaoUsuarios = () => {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-2 top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar usuários..."
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              className="pl-6 sm:pl-8 w-full text-xs sm:text-sm"
+              className="pl-8 w-full"
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm">
-              <Filter className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filtrar por role" />
             </SelectTrigger>
             <SelectContent>
@@ -530,8 +552,8 @@ const GestaoUsuarios = () => {
             </SelectContent>
           </Select>
           <Select value={salonFilter} onValueChange={setSalonFilter}>
-            <SelectTrigger className="w-full sm:w-[200px] text-xs sm:text-sm">
-              <Filter className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filtrar por salão" />
             </SelectTrigger>
             <SelectContent>
@@ -555,8 +577,8 @@ const GestaoUsuarios = () => {
                   <span className="truncate">Lista de Usuários</span>
                 </CardTitle>
                 <CardDescription className="text-xs sm:text-sm truncate">
-                  Todos os usuários cadastrados no sistema
-                </CardDescription>
+              Todos os usuários cadastrados no sistema
+            </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -630,8 +652,8 @@ const GestaoUsuarios = () => {
             </div>
 
             {/* Desktop View - Table */}
-            <div className="hidden md:block">
-              <Table>
+            <div className="hidden md:block overflow-x-auto">
+              <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuário</TableHead>
@@ -707,22 +729,24 @@ const GestaoUsuarios = () => {
             </Table>
             </div>
           </CardContent>
-          {/* Modal de redefinição de senha - FORA do map */}
+        </Card>
+
+        {/* Modal de redefinição de senha */}
           <Dialog open={!!resetUser} onOpenChange={handleCloseModal}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg">
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Redefinir senha</DialogTitle>
                 <DialogDescription>
                   Defina uma nova senha para o usuário <b>{resetUser?.nome}</b>.
                 </DialogDescription>
               </DialogHeader>
-              <input
+            <Input
                 type="password"
-                className="input input-bordered w-full mt-2"
+              className="w-full mt-2"
                 placeholder="Nova senha"
                 minLength={6}
                 required
-                value={password}
+              value={password || ''}
                 onChange={e => setPassword(e.target.value)}
               />
               <DialogFooter>
@@ -732,9 +756,10 @@ const GestaoUsuarios = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
           {/* Modal de edição de usuário */}
           <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
+          <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
               <DialogHeader>
                 <DialogTitle>Editar Usuário</DialogTitle>
                 <DialogDescription>Altere os dados do usuário e salve as modificações.</DialogDescription>
@@ -778,7 +803,7 @@ const GestaoUsuarios = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {salons.map(salon => (
-                        <SelectItem key={salon.id} value={salon.id}>{salon.name}</SelectItem>
+                        <SelectItem key={salon.id} value={salon.id}>{salon.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -792,13 +817,14 @@ const GestaoUsuarios = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
           {/* Modal de confirmação de exclusão */}
           <Dialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg">
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Excluir usuário</DialogTitle>
                 <DialogDescription>
-                  Tem certeza que deseja excluir o usuário <b>{deleteUser?.name}</b>? Esta ação não poderá ser desfeita.
+                Tem certeza que deseja excluir o usuário <b>{deleteUser?.nome}</b>? Esta ação não poderá ser desfeita.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
@@ -811,9 +837,10 @@ const GestaoUsuarios = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
           {/* Modal de alteração de tipo */}
           <Dialog open={!!roleUser} onOpenChange={() => setRoleUser(null)}>
-            <DialogContent className="max-w-[95vw] sm:max-w-lg">
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Alterar Tipo</DialogTitle>
                 <DialogDescription>
@@ -844,8 +871,6 @@ const GestaoUsuarios = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </Card>
-      </div>
       </div>
     </SuperAdminLayout>
   );

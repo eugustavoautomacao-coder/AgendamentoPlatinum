@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, Mail, Shield, Database, Globe, Bell } from "lucide-react";
+import { Save, Mail, Shield, Database, Globe, Bell, Settings } from "lucide-react";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
