@@ -342,24 +342,29 @@ const GestaoUsuarios = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
-            <p className="text-muted-foreground">
-              Gerencie todos os usuários do sistema
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight truncate">Gestão de Usuários</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                Gerencie todos os usuários do sistema
+              </p>
+            </div>
           </div>
 
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+          <div className="flex gap-2 flex-shrink-0">
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="text-xs sm:text-sm px-3 py-2">
+                  <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Novo Usuário</span>
+                  <span className="sm:hidden">Novo</span>
+                </Button>
+              </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
               <DialogHeader>
                 <DialogTitle>Novo Usuário</DialogTitle>
                 <DialogDescription>Preencha os dados para cadastrar um novo usuário.</DialogDescription>
@@ -443,26 +448,26 @@ const GestaoUsuarios = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 w-full">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Usuários</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profiles.length}</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{profiles.length}</div>
               <p className="text-xs text-muted-foreground">
                 Usuários cadastrados
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Administradores</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Administradores</CardTitle>
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'admin').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -470,13 +475,13 @@ const GestaoUsuarios = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profissionais</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Profissionais</CardTitle>
+              <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'funcionario').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -484,13 +489,13 @@ const GestaoUsuarios = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clientes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Clientes</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'cliente').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -501,19 +506,19 @@ const GestaoUsuarios = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 w-full">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2 top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar usuários..."
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
-              className="pl-8"
+              className="pl-6 sm:pl-8 w-full text-xs sm:text-sm"
             />
           </div>
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="mr-2 h-4 w-4" />
+            <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm">
+              <Filter className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <SelectValue placeholder="Filtrar por role" />
             </SelectTrigger>
             <SelectContent>
@@ -525,8 +530,8 @@ const GestaoUsuarios = () => {
             </SelectContent>
           </Select>
           <Select value={salonFilter} onValueChange={setSalonFilter}>
-            <SelectTrigger className="w-[200px]">
-              <Filter className="mr-2 h-4 w-4" />
+            <SelectTrigger className="w-full sm:w-[200px] text-xs sm:text-sm">
+              <Filter className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <SelectValue placeholder="Filtrar por salão" />
             </SelectTrigger>
             <SelectContent>
@@ -541,15 +546,92 @@ const GestaoUsuarios = () => {
         </div>
 
         {/* Users Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Usuários</CardTitle>
-            <CardDescription>
-              Todos os usuários cadastrados no sistema
-            </CardDescription>
+        <Card className="shadow-elegant w-full">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  <span className="truncate">Lista de Usuários</span>
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm truncate">
+                  Todos os usuários cadastrados no sistema
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="p-3 sm:p-6 w-full">
+            {/* Mobile View - Cards */}
+            <div className="block md:hidden space-y-3">
+              {filteredProfiles.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
+                >
+                  <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                      <AvatarImage src={""} />
+                      <AvatarFallback className="text-xs sm:text-sm">
+                        {(user.nome || '').split(' ').map(n => n[0]).join('').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-foreground text-sm sm:text-base truncate">{user.nome}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                        <div className="flex items-center gap-1">
+                          {getRoleIcon(user.tipo)}
+                          {getRoleBadge(user.tipo)}
+                        </div>
+                        {user.salao_nome && (
+                          <div className="truncate">
+                            <span className="font-medium">Salão:</span> {user.salao_nome}
+                          </div>
+                        )}
+                        {user.telefone && (
+                          <div className="truncate">
+                            <span className="font-medium">Tel:</span> {user.telefone}
+                          </div>
+                        )}
+                        <div className="text-xs">
+                          Criado em {new Date(user.criado_em).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="p-1 sm:p-2">
+                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenEdit(user)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenRole(user)}>
+                          <Shield className="mr-2 h-4 w-4" />
+                          Alterar Role
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteUser(user)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setResetUser(user)}>
+                          <User className="mr-2 h-4 w-4" />
+                          Redefinir senha
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View - Table */}
+            <div className="hidden md:block">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuário</TableHead>
@@ -623,10 +705,11 @@ const GestaoUsuarios = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
           {/* Modal de redefinição de senha - FORA do map */}
           <Dialog open={!!resetUser} onOpenChange={handleCloseModal}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Redefinir senha</DialogTitle>
                 <DialogDescription>
@@ -651,7 +734,7 @@ const GestaoUsuarios = () => {
           </Dialog>
           {/* Modal de edição de usuário */}
           <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
               <DialogHeader>
                 <DialogTitle>Editar Usuário</DialogTitle>
                 <DialogDescription>Altere os dados do usuário e salve as modificações.</DialogDescription>
@@ -711,7 +794,7 @@ const GestaoUsuarios = () => {
           </Dialog>
           {/* Modal de confirmação de exclusão */}
           <Dialog open={!!deleteUser} onOpenChange={() => setDeleteUser(null)}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Excluir usuário</DialogTitle>
                 <DialogDescription>
@@ -730,7 +813,7 @@ const GestaoUsuarios = () => {
           </Dialog>
           {/* Modal de alteração de tipo */}
           <Dialog open={!!roleUser} onOpenChange={() => setRoleUser(null)}>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Alterar Tipo</DialogTitle>
                 <DialogDescription>
@@ -762,6 +845,7 @@ const GestaoUsuarios = () => {
             </DialogContent>
           </Dialog>
         </Card>
+      </div>
       </div>
     </SuperAdminLayout>
   );

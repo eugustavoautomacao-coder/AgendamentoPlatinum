@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search, Edit, Trash2, MapPin, Phone, Mail, Users } from "lucide-react";
+import { Plus, Search, Edit, Trash2, MapPin, Phone, Mail, Users, Building2 } from "lucide-react";
 import SuperAdminLayout from "@/components/layout/SuperAdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -204,24 +204,28 @@ const GestaoSaloes = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestão de Salões</h1>
-            <p className="text-muted-foreground">
-              Gerencie todos os salões cadastrados no sistema
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Gestão de Salões</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                Gerencie todos os salões cadastrados no sistema
+              </p>
+            </div>
           </div>
-
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Salão
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+          <div className="flex gap-2 flex-shrink-0">
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="text-xs sm:text-sm px-3 py-2">
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Novo Salão</span>
+                  <span className="sm:hidden">Novo</span>
+                </Button>
+              </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
               <DialogHeader>
                 <DialogTitle>Criar Novo Salão</DialogTitle>
                 <DialogDescription>
@@ -311,53 +315,62 @@ const GestaoSaloes = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Salões</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 w-full">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Total de Salões
+              </CardTitle>
+              <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{salons?.length || 0}</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{salons?.length || 0}</div>
               <p className="text-xs text-muted-foreground">
                 +2 novos este mês
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Salões Ativos</CardTitle>
-              <Badge variant="default" className="h-4 w-4 p-0"></Badge>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Salões Ativos
+              </CardTitle>
+              <Badge variant="default" className="h-3 w-3 sm:h-4 sm:w-4 p-0"></Badge>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{salons?.length || 0}</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{salons?.length || 0}</div>
               <p className="text-xs text-muted-foreground">
                 100% dos salões
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Média de Profissionais</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Média de Profissionais
+              </CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3.2</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">3.2</div>
               <p className="text-xs text-muted-foreground">
                 Por salão
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              <Badge variant="secondary" className="h-4 w-4 p-0"></Badge>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Receita Total
+              </CardTitle>
+              <Badge variant="secondary" className="h-3 w-3 sm:h-4 sm:w-4 p-0"></Badge>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">R$ 124.580</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">R$ 124.580</div>
               <p className="text-xs text-muted-foreground">
                 +12% este mês
               </p>
@@ -365,92 +378,98 @@ const GestaoSaloes = () => {
           </Card>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar salões..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
-            />
+        <div className="grid gap-4 lg:grid-cols-3 w-full">
+          {/* Salons List */}
+          <div className="lg:col-span-3 w-full">
+            <Card className="shadow-elegant w-full">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                      <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                      <span className="truncate">Lista de Salões</span>
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm truncate">
+                      {filteredSalons.length} salões cadastrados no sistema
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:flex-none min-w-0">
+                      <Search className="absolute left-2 top-2.5 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar salões..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-6 sm:pl-8 w-full sm:w-64 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-3 sm:p-6 w-full">
+                <div className="space-y-3 sm:space-y-4 w-full">
+                  {filteredSalons.map((salon) => (
+                    <div
+                      key={salon.id}
+                      className="flex items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200 w-full min-w-0"
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground text-sm sm:text-base truncate">
+                            {salon.name}
+                          </div>
+                          <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                            {salon.email && (
+                              <div className="flex items-center gap-1">
+                                <Mail className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{salon.email}</span>
+                              </div>
+                            )}
+                            {salon.phone && (
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{salon.phone}</span>
+                              </div>
+                            )}
+                            {salon.cnpj && (
+                              <div className="flex items-center gap-1">
+                                <span className="font-medium">CNPJ:</span>
+                                <span className="truncate">{formatCnpj(salon.cnpj)}</span>
+                              </div>
+                            )}
+                            <div className="text-xs">
+                              Criado em {new Date(salon.created_at).toLocaleDateString('pt-BR')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <Badge variant="secondary" className="text-xs">
+                          Ativo
+                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditSalon(salon)} className="p-1 sm:p-2">
+                            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive p-1 sm:p-2" onClick={() => handleDeleteSalon(salon)}>
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Salons Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Salões</CardTitle>
-            <CardDescription>
-              Todos os salões cadastrados no sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>CNPJ</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSalons.map((salon) => (
-                  <TableRow key={salon.id}>
-                    <TableCell className="font-medium">{salon.name}</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {salon.email && (
-                          <div className="flex items-center text-sm">
-                            <Mail className="mr-1 h-3 w-3" />
-                            {salon.email}
-                          </div>
-                        )}
-                        {salon.phone && (
-                          <div className="flex items-center text-sm">
-                            <Phone className="mr-1 h-3 w-3" />
-                            {salon.phone}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {salon.cnpj && (
-                        <div className="flex items-center text-sm">
-                          <span className="truncate max-w-[200px]">{formatCnpj(salon.cnpj)}</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default">Ativo</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(salon.created_at).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditSalon(salon)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDeleteSalon(salon)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
         {/* Edit Salon Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
+          <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
             <DialogHeader>
               <DialogTitle>Editar Salão</DialogTitle>
               <DialogDescription>
@@ -501,7 +520,7 @@ const GestaoSaloes = () => {
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[95vw] sm:max-w-lg">
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
               <AlertDialogDescription asChild>

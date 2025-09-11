@@ -79,13 +79,13 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         });
       } else {
         // É um admin/profissional, usar Supabase Auth
-        const redirectTo = `${window.location.origin}/redefinir-senha`;
-        
-        const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: redirectTo,
-        });
+      const redirectTo = `${window.location.origin}/redefinir-senha`;
 
-        if (error) {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo,
+      });
+
+      if (error) {
           console.error('Erro ao enviar email de reset:', error);
         }
 

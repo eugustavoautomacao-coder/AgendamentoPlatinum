@@ -70,7 +70,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `📋 Solicitação de Agendamento Enviada - ${data.servico_nome}`,
+      subject: `Solicitação de Agendamento Enviada - ${data.servico_nome}`,
       html
     });
   }
@@ -82,7 +82,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `📋 Solicitação de Agendamento Enviada - Suas Credenciais de Acesso`,
+      subject: `Solicitação de Agendamento Enviada - Suas Credenciais de Acesso`,
       html
     });
   }
@@ -94,7 +94,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `✅ Agendamento Aprovado - ${data.servico_nome}`,
+      subject: `Agendamento Aprovado ✅ - ${data.servico_nome}`,
       html
     });
   }
@@ -106,7 +106,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `❌ Agendamento Rejeitado - ${data.servico_nome}`,
+      subject: `Agendamento Rejeitado ❌ - ${data.servico_nome}`,
       html
     });
   }
@@ -118,7 +118,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `⏰ Lembrete: Seu agendamento é amanhã!`,
+      subject: ` Lembrete: Seu agendamento é amanhã! ⏰`,
       html
     });
   }
@@ -130,7 +130,7 @@ export class EmailService {
 
     return await this.enviarEmail({
       to: data.cliente_email,
-      subject: `🚫 Agendamento Cancelado - ${data.servico_nome}`,
+      subject: ` Agendamento Cancelado 🚫 - ${data.servico_nome}`,
       html
     });
   }
@@ -139,7 +139,7 @@ export class EmailService {
   async sendPasswordResetEmail(data: { to: string; nome: string; resetLink: string }): Promise<boolean> {
     const content = `
       <div style="text-align: center; padding: 20px;">
-        <h2 style="color: #333; margin-bottom: 20px;">🔐 Redefinir Senha</h2>
+        <h2 style="color: #333; margin-bottom: 20px;">Redefinir Senha</h2>
         <p style="color: #666; font-size: 16px; margin-bottom: 20px;">
           Olá <strong>${data.nome}</strong>,
         </p>
