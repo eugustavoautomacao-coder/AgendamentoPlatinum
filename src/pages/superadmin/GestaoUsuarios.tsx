@@ -14,6 +14,7 @@ import { Users, UserPlus, Shield, User, Edit, Trash2, Search, Filter } from 'luc
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 interface UserProfile {
   id: string;
@@ -53,6 +54,8 @@ const GestaoUsuarios = () => {
   const [createError, setCreateError] = useState('');
   const [editError, setEditError] = useState('');
   const [roleError, setRoleError] = useState('');
+
+  const { handleError, handleSuccess } = useErrorHandler();
 
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -104,7 +107,7 @@ const GestaoUsuarios = () => {
       setProfiles(profilesWithSalon);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
-      toast.error('Erro ao carregar usuários');
+      handleError(error, 'Carregar usuários');
     } finally {
       setLoading(false);
     }
@@ -121,7 +124,7 @@ const GestaoUsuarios = () => {
       setSalons(data || []);
     } catch (error) {
       console.error('Erro ao carregar salões:', error);
-      toast.error('Erro ao carregar salões');
+      handleError(error, 'Carregar salões');
     }
   };
 
@@ -159,12 +162,13 @@ const GestaoUsuarios = () => {
         throw new Error(errorData.error || 'Erro ao criar usuário');
       }
 
-      toast.success('Usuário criado com sucesso!');
+      handleSuccess('Usuário criado com sucesso!');
       setIsCreateOpen(false);
       setCreateForm({ name: '', email: '', phone: '', password: '', role: 'cliente', salon_id: '' });
       loadProfiles();
     } catch (error: any) {
       console.error('Erro ao criar usuário:', error);
+      handleError(error, 'Criar usuário');
       setCreateError(error.message || 'Erro ao criar usuário');
     } finally {
       setCreateLoading(false);
@@ -367,22 +371,25 @@ const GestaoUsuarios = () => {
     <SuperAdminLayout>
       <div className="space-y-6 p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestão de Usuários</h1>
-            <p className="text-muted-foreground">
-              Gerencie todos os usuários do sistema
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <Users className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Gestão de Usuários</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                Gerencie todos os usuários do sistema
+              </p>
+            </div>
           </div>
-
-          <div className="flex gap-2">
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2 flex-shrink-0">
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="text-xs sm:text-sm px-3 py-2">
+                  <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Novo Usuário</span>
+                  <span className="sm:hidden">Novo</span>
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Novo Usuário</DialogTitle>
@@ -470,26 +477,26 @@ const GestaoUsuarios = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 w-full">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Usuários</CardTitle>
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profiles.length}</div>
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{profiles.length}</div>
               <p className="text-xs text-muted-foreground">
                 Usuários cadastrados
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Administradores</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Administradores</CardTitle>
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'admin').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -497,13 +504,13 @@ const GestaoUsuarios = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profissionais</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Profissionais</CardTitle>
+              <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'funcionario').length}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -511,13 +518,13 @@ const GestaoUsuarios = () => {
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Clientes</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Clientes</CardTitle>
+              <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="pt-1">
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
                 {profiles.filter(u => u.tipo === 'cliente').length}
               </div>
               <p className="text-xs text-muted-foreground">

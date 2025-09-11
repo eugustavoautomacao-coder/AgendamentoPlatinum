@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getErrorMessage, getErrorTitle, isCriticalError } from '@/utils/errorMessages';
 import { Cliente } from './useClientes';
 
 interface ClienteAuthContextType {
@@ -60,16 +61,19 @@ export const useClienteAuthProvider = () => {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          toast.error('Cliente não encontrado');
-          return false;
-        }
-        throw error;
+        const errorMessage = getErrorMessage(error);
+        const errorTitle = getErrorTitle(error);
+        const critical = isCriticalError(error);
+        
+        toast.error(errorMessage, {
+          description: critical ? 'Verifique suas credenciais e tente novamente.' : undefined
+        });
+        return false;
       }
 
       // Verificar senha (simplificado - em produção usar bcrypt)
       if (data.senha_hash !== senha) {
-        toast.error('Senha incorreta');
+        toast.error('Senha incorreta. Verifique sua senha e tente novamente.');
         return false;
       }
 
@@ -87,7 +91,12 @@ export const useClienteAuthProvider = () => {
       return true;
     } catch (error) {
       console.error('Erro no login:', error);
-      toast.error('Erro ao fazer login');
+      const errorMessage = getErrorMessage(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast.error(errorMessage, {
+        description: 'Tente novamente em alguns instantes.'
+      });
       return false;
     } finally {
       setLoading(false);

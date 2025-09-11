@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Phone, ArrowLeft, LogIn, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { getErrorMessage, getErrorTitle, isCriticalError } from '@/utils/errorMessages';
 
 interface Salon {
   id: string;
@@ -78,16 +79,19 @@ export default function ClienteLogin() {
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          toast.error('Cliente não encontrado');
-          return;
-        }
-        throw error;
+        const errorMessage = getErrorMessage(error);
+        const errorTitle = getErrorTitle(error);
+        const critical = isCriticalError(error);
+        
+        toast.error(errorMessage, {
+          description: critical ? 'Verifique suas credenciais e tente novamente.' : undefined
+        });
+        return;
       }
 
       // Verificar senha (simplificado - em produção usar bcrypt)
       if (data.senha_hash !== senha) {
-        toast.error('Senha incorreta');
+        toast.error('Senha incorreta. Verifique sua senha e tente novamente.');
         return;
       }
 
@@ -106,7 +110,12 @@ export default function ClienteLogin() {
       navigate(`/cliente/${salaoId}/agendamentos`);
     } catch (error) {
       console.error('Erro no login:', error);
-      toast.error('Erro ao fazer login');
+      const errorMessage = getErrorMessage(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast.error(errorMessage, {
+        description: 'Tente novamente em alguns instantes.'
+      });
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { useErrorHandler } from '@/hooks/useErrorHandler';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -22,6 +23,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { handleError, handleSuccess } = useErrorHandler();
 
   useEffect(() => {
     // Verificar se é um reset de cliente via token
@@ -148,12 +150,7 @@ export default function ResetPassword() {
         if (error) {
           setMessage(`Erro: ${error.message}`);
           setIsSuccess(false);
-          toast({
-            variant: 'destructive',
-            title: 'Erro ao alterar senha',
-            description: error.message,
-            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
-          });
+          handleError(error, 'Alterar senha');
         } else {
           // Limpar tokens de reset
           localStorage.removeItem(`reset_token_${token}`);

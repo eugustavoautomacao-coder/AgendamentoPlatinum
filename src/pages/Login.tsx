@@ -69,7 +69,7 @@ const Login = () => {
         localStorage.setItem('cliente_auth', JSON.stringify(clienteCompleto));
         
         toast({
-          title: "🎉  com sucesso!",
+          title: "Login realizado com sucesso!",
           description: `Bem-vindo, ${clienteCompleto.nome}! Redirecionando para seu painel...`,
           className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
         });
@@ -85,12 +85,7 @@ const Login = () => {
       const { error } = await signIn(email, password);
       
       if (error) {
-        toast({
-          variant: "destructive",
-          title: "❌ Erro no login",
-          description: error.message || "Erro ao fazer login. Verifique suas credenciais.",
-          className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
-        });
+        // O erro já foi tratado pelo useAuth, não precisa mostrar novamente
       } else {
         // Login de admin/profissional bem-sucedido
         toast({
@@ -104,10 +99,10 @@ const Login = () => {
       }
       
     } catch (error: any) {
-      console.error('💥 Erro inesperado no login:', error);
+      console.error('Erro inesperado no login:', error);
       toast({
         variant: "destructive",
-        title: "❌ Erro inesperado",
+        title: "Erro inesperado",
         description: "Ocorreu um erro inesperado. Tente novamente em alguns instantes.",
         className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
       });

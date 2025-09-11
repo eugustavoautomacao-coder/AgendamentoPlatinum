@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getErrorMessage, getErrorTitle, isCriticalError } from '@/utils/errorMessages';
 
 interface Profile {
   id: string;
@@ -144,8 +145,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
       });
+      
+      if (error) {
+        const errorMessage = getErrorMessage(error);
+        const errorTitle = getErrorTitle(error);
+        const critical = isCriticalError(error);
+        
+        toast({
+          variant: "destructive",
+          title: errorTitle,
+          description: errorMessage,
+          className: critical 
+            ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+            : 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+        });
+      }
+      
       return { error };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast({
+        variant: "destructive",
+        title: errorTitle,
+        description: errorMessage,
+        className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+      });
+      
       return { error };
     }
   };
@@ -164,8 +191,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       });
+      
+      if (error) {
+        const errorMessage = getErrorMessage(error);
+        const errorTitle = getErrorTitle(error);
+        const critical = isCriticalError(error);
+        
+        toast({
+          variant: "destructive",
+          title: errorTitle,
+          description: errorMessage,
+          className: critical 
+            ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+            : 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+        });
+      }
+      
       return { error };
     } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      const errorTitle = getErrorTitle(error);
+      
+      toast({
+        variant: "destructive",
+        title: errorTitle,
+        description: errorMessage,
+        className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+      });
+      
       return { error };
     }
   };

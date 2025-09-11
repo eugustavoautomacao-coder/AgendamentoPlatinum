@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSalons, Salon } from "@/hooks/useSalons";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 
 const GestaoSaloes = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -32,6 +34,16 @@ const GestaoSaloes = () => {
 
   const { salons, loading, createSalon, createSalonAdmin, updateSalon, deleteSalon, refetch } = useSalons();
   const { toast } = useToast();
+
+  // Verificar se deve abrir o modal de criação automaticamente
+  useEffect(() => {
+    const shouldCreate = searchParams.get('create');
+    if (shouldCreate === 'true') {
+      setIsCreateOpen(true);
+      // Limpar o parâmetro da URL após abrir o modal
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Formata CNPJ no padrão 00.000.000/0000-00
   const formatCnpj = (value: string) => {
