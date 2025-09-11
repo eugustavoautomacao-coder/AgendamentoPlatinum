@@ -204,7 +204,7 @@ const GestaoSaloes = () => {
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-4 sm:space-y-6 p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -429,10 +429,10 @@ const GestaoSaloes = () => {
                                 <span className="truncate">{salon.email}</span>
                               </div>
                             )}
-                            {salon.phone && (
+                            {(salon as any).phone && (
                               <div className="flex items-center gap-1">
                                 <Phone className="h-3 w-3 flex-shrink-0" />
-                                <span className="truncate">{salon.phone}</span>
+                                <span className="truncate">{(salon as any).phone}</span>
                               </div>
                             )}
                             {salon.cnpj && (
