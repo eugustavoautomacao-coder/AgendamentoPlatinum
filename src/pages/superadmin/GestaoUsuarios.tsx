@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { MobileDialogContent } from '@/components/ui/mobile-dialog-content';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -390,7 +391,10 @@ const GestaoUsuarios = () => {
                   <span className="sm:hidden">Novo</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <MobileDialogContent 
+                isOpen={isCreateOpen}
+                className="max-w-[600px] max-h-[90vh] overflow-y-auto"
+              >
               <DialogHeader>
                 <DialogTitle>Novo Usuário</DialogTitle>
                 <DialogDescription>Preencha os dados para cadastrar um novo usuário.</DialogDescription>
@@ -471,7 +475,7 @@ const GestaoUsuarios = () => {
                     {createLoading ? 'Criando...' : 'Criar usuário'}
                 </Button>
               </DialogFooter>
-            </DialogContent>
+            </MobileDialogContent>
           </Dialog>
           </div>
         </div>

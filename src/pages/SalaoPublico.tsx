@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { InputPhone } from '@/components/ui/input-phone';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -496,10 +497,11 @@ export default function SalaoPublico() {
                     variant="outline"
                     size="sm"
                     onClick={handleClienteLogout}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-start sm:self-end"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-start sm:self-end flex items-center gap-1"
                   >
-                    <LogOut className="h-3 w-3 mr-1" />
-                    Sair
+                    <LogOut className="h-3 w-3" />
+                    <span className="hidden sm:inline">Sair</span>
+                    <span className="sm:hidden">Sair</span>
                   </Button>
                 </div>
               ) : (
@@ -848,11 +850,10 @@ export default function SalaoPublico() {
 
                 <div>
                   <Label htmlFor="cliente_telefone">Telefone *</Label>
-                  <Input
+                  <InputPhone
                     id="cliente_telefone"
                     value={formData.cliente_telefone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, cliente_telefone: e.target.value }))}
-                    placeholder="(11) 99999-9999"
+                    onChange={(formattedValue, rawValue) => setFormData(prev => ({ ...prev, cliente_telefone: rawValue }))}
                     disabled={clienteLogado !== null}
                     className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
                   />

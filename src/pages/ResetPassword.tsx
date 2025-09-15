@@ -106,7 +106,7 @@ export default function ResetPassword() {
         title: 'Erro na validação',
         description: 'Por favor, corrija os campos destacados antes de continuar',
         variant: 'destructive',
-        className: 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20',
+        className: 'toast-orange-gradient',
       });
       return;
     }
@@ -161,7 +161,7 @@ export default function ResetPassword() {
           toast({
             title: 'Senha alterada com sucesso!',
             description: 'Sua senha foi atualizada com segurança. Redirecionando para o login...',
-            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+            className: 'toast-primary-gradient',
           });
           
           // Redirecionar para login principal (detecta automaticamente se é cliente)
@@ -212,7 +212,7 @@ export default function ResetPassword() {
             toast({
               title: 'Senha alterada com sucesso!',
               description: 'Faça login com sua nova senha. Redirecionando automaticamente...',
-              className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+              className: 'toast-primary-gradient',
             });
             
             // Redirecionar para login principal (detecta automaticamente se é cliente)
@@ -233,7 +233,7 @@ export default function ResetPassword() {
           variant: 'destructive',
             title: 'Erro ao alterar senha',
           description: error.message,
-            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
+            className: 'toast-error-gradient',
         });
       } else {
         setMessage('Senha alterada com sucesso! Redirecionando para o login...');
@@ -241,7 +241,7 @@ export default function ResetPassword() {
         toast({
             title: 'Senha alterada com sucesso!',
             description: 'Sua senha foi atualizada com segurança. Redirecionando para o login...',
-            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+            className: 'toast-primary-gradient',
         });
         
         // Fazer logout e redirecionar para login
@@ -251,7 +251,7 @@ export default function ResetPassword() {
         toast({
             title: 'Senha alterada com sucesso!',
             description: 'Faça login com sua nova senha. Redirecionando automaticamente...',
-            className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+            className: 'toast-primary-gradient',
           });
           
           // Detectar se é cliente ou admin e redirecionar para o login correto

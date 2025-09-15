@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MobileDialogContent } from "@/components/ui/mobile-dialog-content";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -237,7 +238,10 @@ const GestaoSaloes = () => {
                   <span className="sm:hidden">Novo</span>
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
+            <MobileDialogContent 
+              isOpen={isCreateOpen}
+              className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4"
+            >
               <DialogHeader>
                 <DialogTitle>Criar Novo Salão</DialogTitle>
                 <DialogDescription>
@@ -325,7 +329,7 @@ const GestaoSaloes = () => {
                   </Button>
                 </div>
               </div>
-            </DialogContent>
+            </MobileDialogContent>
           </Dialog>
           </div>
         </div>
@@ -537,7 +541,10 @@ const GestaoSaloes = () => {
 
         {/* Edit Salon Dialog */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4">
+          <MobileDialogContent 
+            isOpen={isEditOpen}
+            className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto mx-2 sm:mx-4"
+          >
             <DialogHeader>
               <DialogTitle>Editar Salão</DialogTitle>
               <DialogDescription>
@@ -583,7 +590,7 @@ const GestaoSaloes = () => {
                 </Button>
               </div>
             </div>
-          </DialogContent>
+          </MobileDialogContent>
         </Dialog>
 
         {/* Delete Confirmation Dialog */}

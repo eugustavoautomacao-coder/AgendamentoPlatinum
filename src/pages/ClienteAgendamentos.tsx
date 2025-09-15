@@ -169,25 +169,28 @@ export const ClienteAgendamentos: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
                 disabled={refreshing || loading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Atualizar
+                <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Atualizar</span>
+                <span className="sm:hidden">Atualizar</span>
               </Button>
               
               <Button
                 variant="outline"
+                size="sm"
                 onClick={handleLogout}
-                className="flex items-center gap-2"
+                className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
               >
-                <LogOut className="h-4 w-4" />
-                Sair
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Sair</span>
+                <span className="sm:hidden">Sair</span>
               </Button>
             </div>
           </div>

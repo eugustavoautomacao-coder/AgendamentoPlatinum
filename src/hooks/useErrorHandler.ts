@@ -15,9 +15,7 @@ export const useErrorHandler = () => {
       variant: "destructive",
       title,
       description: errorMessage,
-      className: critical 
-        ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
-        : 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+      className: critical ? 'toast-error-gradient' : 'toast-orange-gradient'
     });
   };
 
@@ -25,7 +23,7 @@ export const useErrorHandler = () => {
     toast({
       title: message,
       description,
-      className: 'border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
+      className: 'toast-success-gradient'
     });
   };
 
@@ -34,7 +32,7 @@ export const useErrorHandler = () => {
       variant: "destructive",
       title: message,
       description,
-      className: 'border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20'
+      className: 'toast-warning-gradient'
     });
   };
 
@@ -42,7 +40,7 @@ export const useErrorHandler = () => {
     toast({
       title: message,
       description,
-      className: 'border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20'
+      className: 'toast-info-gradient'
     });
   };
 

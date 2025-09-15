@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputPhone } from "@/components/ui/input-phone";
 import { Badge } from "@/components/ui/badge";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useSalonInfo } from '@/hooks/useSalonInfo';
@@ -1193,10 +1194,10 @@ const Agenda = () => {
                           <Phone className="h-4 w-4 text-primary" />
                           Telefone (Opcional)
                         </label>
-                        <Input 
+                        <InputPhone 
                           id="client-telefone" 
                           value={clientForm.telefone} 
-                          onChange={e => setClientForm({ ...clientForm, telefone: e.target.value })} 
+                          onChange={(formattedValue, rawValue) => setClientForm({ ...clientForm, telefone: rawValue })} 
                           disabled={creatingClient} 
                         />
                       </div>

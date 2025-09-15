@@ -8,6 +8,7 @@ import { useProfessionals } from "@/hooks/useProfessionals";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { InputPhone } from "@/components/ui/input-phone";
 import { Label } from "@/components/ui/label";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -456,7 +457,13 @@ const Profissionais = () => {
                   <Phone className="h-4 w-4 text-primary" />
                   Telefone
                 </Label>
-                <Input id="phone" name="telefone" value={form.telefone} onChange={handleChange} disabled={submitting} />
+                <InputPhone 
+                  id="phone" 
+                  name="telefone" 
+                  value={form.telefone} 
+                  onChange={(formattedValue, rawValue) => setForm({ ...form, telefone: rawValue })} 
+                  disabled={submitting} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cargo" className="flex items-center gap-2">
@@ -599,7 +606,13 @@ const Profissionais = () => {
                   <Phone className="h-4 w-4 text-primary" />
                   Telefone
                 </Label>
-                <Input id="edit-phone" name="telefone" value={editForm.telefone} onChange={handleEditChange} disabled={editLoading} />
+                <InputPhone 
+                  id="edit-phone" 
+                  name="telefone" 
+                  value={editForm.telefone} 
+                  onChange={(formattedValue, rawValue) => setEditForm({ ...editForm, telefone: rawValue })} 
+                  disabled={editLoading} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-cargo" className="flex items-center gap-2">

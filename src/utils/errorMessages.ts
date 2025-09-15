@@ -49,6 +49,12 @@ export const getErrorMessage = (error: any): string => {
       return 'Tempo limite excedido. Tente novamente em alguns instantes.';
     }
     
+    if (message.includes('session not found') || 
+        message.includes('session id') ||
+        message.includes('doesn\'t exist')) {
+      return 'Sessão expirada. Faça login novamente.';
+    }
+    
     if (message.includes('server error') || message.includes('internal error')) {
       return 'Erro interno do servidor. Tente novamente em alguns instantes.';
     }

@@ -75,7 +75,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         toast({
           title: 'Email de recuperação enviado!',
           description: 'Verifique sua caixa de entrada e pasta de spam. O link expira em 24 horas.',
-          className: 'border-l-4 border-l-[#c35d8f] bg-gradient-to-r from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d]',
+          className: 'toast-primary-gradient',
         });
       } else {
         // É um admin/profissional, usar Supabase Auth
@@ -95,7 +95,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
         toast({
           title: 'Email de recuperação enviado!',
           description: 'Verifique sua caixa de entrada e pasta de spam. O link expira em 24 horas.',
-          className: 'border-l-4 border-l-[#c35d8f] bg-gradient-to-r from-[#fdf2f8] to-white dark:from-[#1a0b1a] dark:to-[#2d1b2d]',
+          className: 'toast-primary-gradient',
         });
       }
     } catch (error: any) {
@@ -106,7 +106,7 @@ export function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProp
       toast({
         title: '📧 Email de recuperação enviado!',
         description: 'Verifique sua caixa de entrada e pasta de spam. O link expira em 24 horas.',
-        className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-white',
+        className: 'toast-primary-gradient',
       });
     } finally {
       setLoading(false);

@@ -1,15 +1,20 @@
-import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard } from "lucide-react";
+import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useServices } from "@/hooks/useServices";
-import { format, isToday, isTomorrow } from "date-fns";
+import { format, isToday, isTomorrow, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -17,9 +22,26 @@ const AdminDashboard = () => {
   const { clients, loading: clientsLoading } = useClients();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { services, loading: servicesLoading } = useServices();
+  
+  // Estado para data selecionada
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Verificar se a data selecionada é hoje (ou se não há data selecionada, considera hoje)
+  const isSelectedDateToday = !selectedDate || (selectedDate && isToday(selectedDate));
 
   // Calculate stats from real data
   const appointmentsArray = Array.isArray(appointments) ? appointments : [];
+  
+  // Filtrar agendamentos pela data selecionada (se não há data, usa hoje)
+  const selectedDateAppointments = selectedDate 
+    ? appointmentsArray.filter(apt => 
+        isSameDay(new Date(apt.data_hora), selectedDate)
+      )
+    : appointmentsArray.filter(apt => 
+        isToday(new Date(apt.data_hora))
+      );
+  
   const todayAppointments = appointmentsArray.filter(apt => 
     isToday(new Date(apt.data_hora))
   );
@@ -30,10 +52,12 @@ const AdminDashboard = () => {
 
   const stats = [
     {
-      title: "Agendamentos Hoje",
-      value: todayAppointments.length.toString(),
+      title: selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : "Agendamentos Hoje",
+      value: selectedDateAppointments.length.toString(),
       icon: Calendar,
-      description: `${todayAppointments.filter(apt => apt.status === 'confirmado').length} confirmados`,
+      description: isSelectedDateToday 
+        ? "Hoje" 
+        : `${selectedDateAppointments.filter(apt => apt.status === 'confirmado').length} confirmados`,
       trend: "up"
     },
     {
@@ -59,12 +83,9 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Get next appointments (today and tomorrow)
-  const nextAppointments = appointmentsArray
-    .filter(apt => 
-      (isToday(new Date(apt.data_hora)) || isTomorrow(new Date(apt.data_hora))) &&
-      apt.status !== 'cancelado'
-    )
+  // Get appointments for selected date
+  const nextAppointments = selectedDateAppointments
+    .filter(apt => apt.status !== 'cancelado')
     .slice(0, 5)
     .map(apt => ({
       id: apt.id,
@@ -126,12 +147,27 @@ const AdminDashboard = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Hoje
-            </Button>
-            <Button onClick={() => navigate('/admin/agenda?modal=new')}>
+          <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {isSelectedDateToday ? 'Hoje' : (selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Hoje')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button onClick={() => navigate('/admin/agenda?modal=new')} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
             </Button>
@@ -139,7 +175,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
             <Card key={index} className="shadow-soft hover:shadow-elegant transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -167,7 +203,7 @@ const AdminDashboard = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-primary" />
-                      Agendamentos de Hoje
+                      {selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : 'Agendamentos de Hoje'}
                     </CardTitle>
                     <CardDescription>
                       {nextAppointments.length} agendamentos programados
@@ -190,8 +226,8 @@ const AdminDashboard = () => {
                       className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 cursor-pointer"
                       onClick={() => navigate(`/admin/agenda?appointment=${appointment.id}`)}
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="text-center">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="text-center flex-shrink-0">
                           <div className="text-sm font-medium text-foreground">
                             {appointment.time}
                           </div>
@@ -199,16 +235,16 @@ const AdminDashboard = () => {
                             {appointment.duration}
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground truncate">
                             {appointment.client}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground truncate">
                             {appointment.service} • {appointment.professional}
                           </div>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(appointment.status)}>
+                      <Badge className={getStatusColor(appointment.status) + ' flex-shrink-0'}>
                         {capitalizeFirstLetter(appointment.status)}
                       </Badge>
                     </div>

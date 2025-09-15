@@ -258,19 +258,19 @@ export default function SolicitacoesAgendamento() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-pink-500" />
+            <MessageSquare className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Solicitações de Agendamento</h1>
-              <p className="text-muted-foreground mt-1">Gerencie as solicitações de agendamento online</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Solicitações de Agendamento</h1>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">Gerencie as solicitações de agendamento online</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={copyPublicLink}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
               title="Copiar link da página pública do salão"
             >
               {linkCopied ? (
@@ -291,7 +291,7 @@ export default function SolicitacoesAgendamento() {
               size="sm"
               onClick={loadRequests}
               disabled={isLoading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
@@ -301,7 +301,7 @@ export default function SolicitacoesAgendamento() {
 
         {/* Filtros e Busca */}
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Campo de Busca */}
               <div className="flex-1">
@@ -311,7 +311,7 @@ export default function SolicitacoesAgendamento() {
                     placeholder="Buscar por nome, telefone, email, serviço ou profissional..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full sm:max-w-sm"
                   />
                 </div>
               </div>
@@ -329,10 +329,12 @@ export default function SolicitacoesAgendamento() {
                       variant={filter === filterType ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setFilter(filterType)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 flex-1 sm:flex-none"
                     >
                       <Filter className="h-3 w-3" />
-                      {label} ({count})
+                      <span className="hidden sm:inline">{label}</span>
+                      <span className="sm:hidden">{label.charAt(0)}</span>
+                      <span>({count})</span>
                     </Button>
                   );
                 })}
@@ -374,40 +376,44 @@ export default function SolicitacoesAgendamento() {
               
               return (
                 <Card key={request.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-lg font-semibold text-foreground truncate">
+                                {request.cliente_nome}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(request.criado_em).toLocaleString('pt-BR')}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-foreground">
-                              {request.cliente_nome}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(request.criado_em).toLocaleString('pt-BR')}
-                            </p>
+                          <div className="flex-shrink-0">
+                            {getStatusBadge(request.status)}
                           </div>
-                          {getStatusBadge(request.status)}
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Calendar className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{date}</span>
+                            <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-medium truncate">{date}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Clock className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{time}</span>
+                            <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-medium truncate">{time}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <User className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{request.funcionario?.nome || 'Não definido'}</span>
+                            <User className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-medium truncate">{request.funcionario?.nome || 'Não definido'}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Phone className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{request.cliente_telefone}</span>
+                            <Phone className="h-4 w-4 text-primary flex-shrink-0" />
+                            <span className="font-medium truncate">{request.cliente_telefone}</span>
                           </div>
                         </div>
 
@@ -456,13 +462,13 @@ export default function SolicitacoesAgendamento() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 ml-4 min-w-[120px]">
+                      <div className="flex flex-col sm:flex-row lg:flex-col gap-2 w-full lg:w-auto lg:min-w-[120px]">
                         {request.status === 'pendente' && (
                           <>
                             <Button
                               size="sm"
                               onClick={() => handleApprove(request.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                              className="bg-green-600 hover:bg-green-700 text-white shadow-sm flex-1 sm:flex-none"
                             >
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Aprovar
@@ -479,7 +485,7 @@ export default function SolicitacoesAgendamento() {
                               }
                             }}>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" className="shadow-sm">
+                                <Button size="sm" variant="destructive" className="shadow-sm flex-1 sm:flex-none">
                                   <XCircle className="h-4 w-4 mr-2" />
                                   Rejeitar
                                 </Button>
@@ -514,7 +520,7 @@ export default function SolicitacoesAgendamento() {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="shadow-sm">
+                            <Button size="sm" variant="outline" className="shadow-sm flex-1 sm:flex-none">
                               <Eye className="h-4 w-4 mr-2" />
                               Ver
                             </Button>
@@ -665,7 +671,7 @@ export default function SolicitacoesAgendamento() {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 shadow-sm">
+                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 shadow-sm flex-1 sm:flex-none">
                               <Trash2 className="h-4 w-4 mr-2" />
                               Excluir
                             </Button>

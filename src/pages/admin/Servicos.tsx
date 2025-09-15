@@ -135,20 +135,21 @@ const Servicos = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Scissors className="h-8 w-8 text-pink-500" />
+            <Scissors className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Lista de Serviços</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Lista de Serviços</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Gerencie os serviços oferecidos pelo salão
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {services.length === 0 && (
               <Button
                 variant="outline"
                 onClick={handleAddDefaultServices}
                 disabled={addingDefaultServices}
+                className="w-full sm:w-auto"
               >
                 {addingDefaultServices ? (
                   <>
@@ -165,14 +166,14 @@ const Servicos = () => {
             )}
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button onClick={handleOpenNew}>
+                <Button onClick={handleOpenNew} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4 mr-2" />
                   Novo Serviço
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
-                  <DialogTitle>
+                  <DialogTitle className="text-lg sm:text-xl">
                     {editService ? 'Editar Serviço' : 'Novo Serviço'}
                   </DialogTitle>
                 </DialogHeader>
@@ -193,7 +194,7 @@ const Servicos = () => {
                       placeholder="Descrição detalhada do serviço"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Duração (minutos) *</label>
                       <Input
@@ -216,7 +217,7 @@ const Servicos = () => {
                   </div>
 
                   {/* Campos de Comissionamento */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Tipo de Taxa de Custo</label>
                       <Select
@@ -278,11 +279,11 @@ const Servicos = () => {
                     />
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="flex flex-col sm:flex-row gap-2">
                   <DialogClose asChild>
-                    <Button variant="outline">Cancelar</Button>
+                    <Button variant="outline" className="w-full sm:w-auto">Cancelar</Button>
                   </DialogClose>
-                  <Button onClick={handleSave} disabled={saving}>
+                  <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
                     {saving ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -311,7 +312,7 @@ const Servicos = () => {
                 placeholder="Buscar serviços por nome, categoria ou observações..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full sm:max-w-sm"
               />
             </div>
 
@@ -478,23 +479,23 @@ const Servicos = () => {
                 filteredServices.map((service) => (
                   <div
                     key={service.id}
-                    className="flex items-start gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
+                    className="flex flex-col sm:flex-row items-start gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                        <h3 className="font-semibold text-foreground truncate">
                           {service.nome}
                         </h3>
-                        {service.categoria && <Badge variant="secondary">{service.categoria}</Badge>}
+                        {service.categoria && <Badge variant="secondary" className="flex-shrink-0">{service.categoria}</Badge>}
                       </div>
 
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground mb-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground mb-2">
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 flex-shrink-0" />
                           {service.duracao_minutos} min
                         </div>
                         <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
+                          <DollarSign className="h-3 w-3 flex-shrink-0" />
                           Preço: R$ {Number(service.preco).toFixed(2)}
                         </div>
                       </div>
@@ -507,18 +508,20 @@ const Servicos = () => {
                       )}
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-foreground">
-                        R$ {Number(service.preco).toFixed(2)}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                      <div className="text-left sm:text-right">
+                        <div className="text-lg font-bold text-foreground">
+                          R$ {Number(service.preco).toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Preço final
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Preço final
-                      </div>
-                    </div>
 
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleOpenEdit(service)}>Editar</Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(service)}>Excluir</Button>
+                      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                        <Button size="sm" variant="outline" onClick={() => handleOpenEdit(service)} className="flex-1 sm:flex-none">Editar</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(service)} className="flex-1 sm:flex-none">Excluir</Button>
+                      </div>
                     </div>
                   </div>
                 ))

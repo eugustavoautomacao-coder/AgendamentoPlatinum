@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage, getErrorTitle, isCriticalError } from '@/utils/errorMessages';
+import { isMobile, clearAuthData, waitWithTimeout } from '@/utils/mobileUtils';
 
 interface Profile {
   id: string;
@@ -155,9 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
           title: errorTitle,
           description: errorMessage,
-          className: critical 
-            ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
-            : 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+        className: critical ? 'toast-error-gradient' : 'toast-orange-gradient'
         });
       }
       
@@ -170,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
         title: errorTitle,
         description: errorMessage,
-        className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+        className: 'toast-error-gradient'
       });
       
       return { error };
@@ -201,9 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
           title: errorTitle,
           description: errorMessage,
-          className: critical 
-            ? 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
-            : 'border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
+        className: critical ? 'toast-error-gradient' : 'toast-orange-gradient'
         });
       }
       
@@ -216,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
         title: errorTitle,
         description: errorMessage,
-        className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20'
+        className: 'toast-error-gradient'
       });
       
       return { error };
@@ -224,9 +221,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Erro ao fazer logout:', error);
+    const isMobileDevice = isMobile();
+    const timeoutMs = isMobileDevice ? 3000 : 5000; // Timeout menor no mobile
+    
+    try {
+      // Primeiro, limpar dados locais imediatamente para melhor UX
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      // Limpar dados de autenticação de forma robusta
+      clearAuthData();
+      
+      // Tentar logout do Supabase com timeout adaptativo
+      try {
+        const { error } = await waitWithTimeout(
+          supabase.auth.signOut({ scope: 'local' }),
+          timeoutMs
+        );
+        
+        if (error) {
+          // Verificar se é erro de sessão não encontrada (comum no mobile)
+          if (error.message?.includes('Session not found') || 
+              error.message?.includes('session id') ||
+              error.message?.includes('doesn\'t exist')) {
+            console.info('Sessão já expirada (comportamento esperado no mobile):', error.message);
+            // Sessão já expirada - isso é normal e esperado
+          } else {
+            console.warn('Erro no logout do Supabase (continuando):', error);
+          }
+        }
+        
+        toast({
+          title: "Logout realizado com sucesso!",
+          description: "Você foi desconectado com segurança.",
+          className: 'toast-success-gradient'
+        });
+        
+      } catch (timeoutError) {
+        console.warn('Timeout no logout do Supabase (continuando):', timeoutError);
+        
+        // Mesmo com timeout, consideramos o logout bem-sucedido
+        // pois já limpamos os dados locais
+        toast({
+          title: "Logout realizado com sucesso!",
+          description: isMobileDevice 
+            ? "Você foi desconectado. Recarregue a página se necessário."
+            : "Você foi desconectado com segurança.",
+          className: 'toast-success-gradient'
+        });
+      }
+      
+    } catch (error) {
+      console.error('Erro inesperado ao fazer logout:', error);
+      
+      // Mesmo com erro, tentamos limpar os dados locais
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      clearAuthData();
+      
+      toast({
+        variant: "destructive",
+        title: "Logout parcial",
+        description: isMobileDevice 
+          ? "Logout realizado localmente. Recarregue a página."
+          : "Logout realizado localmente. Recarregue a página se necessário.",
+        className: 'toast-orange-gradient'
+      });
     }
   };
 

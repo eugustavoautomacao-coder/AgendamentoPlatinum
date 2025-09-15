@@ -41,7 +41,7 @@ const Login = () => {
             variant: "destructive",
             title: "❌ Cliente não encontrado",
             description: "Cliente não encontrado ou conta inativa. Verifique seus dados.",
-            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
+            className: 'toast-error-gradient',
           });
           setLoading(false);
           return;
@@ -53,7 +53,7 @@ const Login = () => {
             variant: "destructive",
             title: "❌ Senha incorreta",
             description: "A senha informada está incorreta. Tente novamente.",
-            className: 'border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20',
+            className: 'toast-error-gradient',
           });
           setLoading(false);
           return;
@@ -71,7 +71,7 @@ const Login = () => {
         toast({
           title: "Login realizado com sucesso!",
           description: `Bem-vindo, ${clienteCompleto.nome}! Redirecionando para seu painel...`,
-          className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+          className: 'toast-primary-gradient',
         });
         
         // Redirecionar diretamente para o dashboard do cliente
@@ -91,7 +91,7 @@ const Login = () => {
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para seu painel...",
-          className: 'border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 dark:from-[#1a0b1a] dark:to-green-900/20',
+          className: 'toast-primary-gradient',
         });
         
         // O redirecionamento será feito automaticamente pelo App.tsx

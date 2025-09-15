@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getErrorMessage, getErrorTitle, isCriticalError } from '@/utils/errorMessages';
+import { isMobile, clearAuthData } from '@/utils/mobileUtils';
 import { Cliente } from './useClientes';
 
 interface ClienteAuthContextType {
@@ -105,9 +106,28 @@ export const useClienteAuthProvider = () => {
 
   // Logout do cliente
   const logout = () => {
-    localStorage.removeItem('cliente_auth');
-    setCliente(null);
-    toast.success('Logout realizado com sucesso!');
+    const isMobileDevice = isMobile();
+    
+    try {
+      // Limpar estado imediatamente para melhor UX
+      setCliente(null);
+      
+      // Limpar dados de autenticação de forma robusta
+      clearAuthData();
+      
+      toast.success('Logout realizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      
+      // Mesmo com erro, tentamos limpar o estado
+      setCliente(null);
+      clearAuthData();
+      
+      toast.success(isMobileDevice 
+        ? 'Logout realizado! Recarregue a página se necessário.'
+        : 'Logout realizado localmente!'
+      );
+    }
   };
 
   const isAuthenticated = !!cliente;

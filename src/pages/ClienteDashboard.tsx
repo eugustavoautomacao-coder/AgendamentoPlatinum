@@ -24,9 +24,14 @@ export default function ClienteDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">Dashboard do Cliente</h1>
             <p className="text-gray-600">Bem-vindo ao seu painel pessoal</p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2">
-            <LogOut className="h-4 w-4" />
-            Sair
+          <Button 
+            onClick={handleLogout} 
+            variant="outline" 
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+          >
+            <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Sair</span>
+            <span className="sm:hidden">Sair</span>
           </Button>
         </div>
 

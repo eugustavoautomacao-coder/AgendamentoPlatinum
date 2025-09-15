@@ -2,6 +2,7 @@ import { Settings, Save, Building, Clock, DollarSign, Mail, Phone, MapPin, Users
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputPhone } from "@/components/ui/input-phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -241,11 +242,11 @@ const Configuracoes = () => {
                     <Phone className="h-4 w-4 text-primary" />
                     Telefone
                   </Label>
-                  <Input
+                  <InputPhone
                     id="salon-phone"
                     placeholder="(11) 99999-9999"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={(formattedValue, rawValue) => setPhone(rawValue)}
                   />
                 </div>
 
