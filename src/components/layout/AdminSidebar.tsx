@@ -138,7 +138,7 @@ const AdminSidebar = () => {
       hasSubmenu: true,
       submenu: [
         {
-          title: "Relatórios",
+          title: "Relatórios Gerais",
           icon: BarChart3,
           href: "/admin/relatorios"
         },

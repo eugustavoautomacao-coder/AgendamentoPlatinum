@@ -176,6 +176,27 @@ const Produtos = () => {
 
   const hasActiveFilters = searchTerm || selectedCategory !== "all";
 
+  // Função para formatar unidade de medida (plural/singular)
+  const formatUnidade = (quantidade: number, unidade: string) => {
+    if (quantidade === 1) {
+      return `${quantidade} ${unidade}`;
+    }
+    
+    // Mapear unidades para plural
+    const unidadesPlural: { [key: string]: string } = {
+      'unidade': 'unidades',
+      'kg': 'kg',
+      'litro': 'litros',
+      'ml': 'ml',
+      'g': 'g',
+      'caixa': 'caixas',
+      'pacote': 'pacotes'
+    };
+    
+    const unidadePlural = unidadesPlural[unidade] || unidade;
+    return `${quantidade} ${unidadePlural}`;
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -229,12 +250,13 @@ const Produtos = () => {
         </div>
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleCreate}>
+            <Button onClick={handleCreate} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Produto
+              <span className="hidden sm:inline">Novo Produto</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto modal-scrollbar">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto modal-scrollbar">
             <DialogHeader>
               <DialogTitle>
                 {editingProduct ? "Editar Produto" : "Novo Produto"}
@@ -246,7 +268,7 @@ const Produtos = () => {
 
             <div className="grid gap-4 py-4">
               {/* Nome do Produto e Para Revenda */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Nome do Produto */}
                 <div className="grid gap-2">
                   <Label htmlFor="nome" className="flex items-center gap-2">
@@ -301,7 +323,7 @@ const Produtos = () => {
               </div>
 
               {/* Código Interno e Código de Barras */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="codigo_interno" className="flex items-center gap-2">
                     <Hash className="h-4 w-4 text-primary" />
@@ -332,7 +354,7 @@ const Produtos = () => {
 
 
               {/* Categoria e Preço de Venda */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="categoria" className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-primary" />
@@ -365,7 +387,7 @@ const Produtos = () => {
 
               {/* Preço de Custo e Preço Para Profissional - aparece apenas quando é para revenda */}
               {form.para_revenda && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="preco_custo" className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-primary" />
@@ -399,7 +421,7 @@ const Produtos = () => {
               )}
 
               {/* Estoque */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="estoque_atual" className="flex items-center gap-2">
                     <Package2 className="h-4 w-4 text-primary" />
@@ -451,7 +473,7 @@ const Produtos = () => {
               </div>
 
               {/* Marca e Fornecedor */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="marca" className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-primary" />
@@ -522,7 +544,7 @@ const Produtos = () => {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
@@ -546,9 +568,10 @@ const Produtos = () => {
         </Select>
 
         {hasActiveFilters && (
-          <Button variant="outline" onClick={clearFilters}>
-            <X className="h-4 w-4 mr-2" />
-            Limpar Filtros
+          <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
+            <X className="h-4 w-4" />
+            <span className="hidden sm:inline">Limpar Filtros</span>
+            <span className="sm:hidden">Limpar</span>
           </Button>
         )}
       </div>
@@ -568,116 +591,136 @@ const Produtos = () => {
               }
             </p>
             {!hasActiveFilters && (
-              <Button onClick={handleCreate}>
+              <Button onClick={handleCreate} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
-                Adicionar Produto
+                <span className="hidden sm:inline">Adicionar Produto</span>
+                <span className="sm:hidden">Adicionar</span>
               </Button>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="flex items-start gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-foreground">
-                    {product.nome}
-                  </h3>
-                  <Badge variant="default" className="text-xs">
-                    <Hash className="h-3 w-3 mr-1" />
-                    {product.codigo_interno}
-                  </Badge>
-                  {product.marca && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Building className="h-3 w-3 mr-1" />
-                      {product.marca}
-                    </Badge>
-                  )}
-                  {product.categoria && (
-                    <Badge variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      {product.categoria}
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-2">
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Preço: R$ {product.preco_venda.toFixed(2)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Package2 className="h-3 w-3" />
-                    Estoque: {product.estoque_atual} {product.unidade_medida}
-                  </div>
-                  {product.estoque_atual <= product.estoque_minimo && (
-                    <div className="flex items-center gap-1 text-destructive">
-                      <AlertCircle className="h-3 w-3" />
-                      Estoque Baixo
+            <Card key={product.id} className="hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  {/* Informações principais */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+                      <h3 className="font-semibold text-foreground text-base truncate">
+                        {product.nome}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="default" className="text-xs">
+                          <Hash className="h-3 w-3 mr-1" />
+                          {product.codigo_interno}
+                        </Badge>
+                        {product.marca && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Building className="h-3 w-3 mr-1" />
+                            {product.marca}
+                          </Badge>
+                        )}
+                        {product.categoria && (
+                          <Badge variant="outline" className="text-xs">
+                            <Tag className="h-3 w-3 mr-1" />
+                            {product.categoria}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
+                    
+                    {/* Informações de preço e estoque */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <DollarSign className="h-3 w-3 text-primary" />
+                        <span>R$ {product.preco_venda.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Package2 className="h-3 w-3 text-primary" />
+                        <span>{formatUnidade(product.estoque_atual, product.unidade_medida)}</span>
+                      </div>
+                      {product.estoque_atual <= product.estoque_minimo && (
+                        <div className="flex items-center gap-1 text-destructive text-sm col-span-2 sm:col-span-1">
+                          <AlertCircle className="h-3 w-3" />
+                          <span>Estoque Baixo</span>
+                        </div>
+                      )}
+                    </div>
 
-                {product.descricao && (
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/30 rounded-md p-2 mb-2">
-                    <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs">{product.descricao}</span>
+                    {/* Descrição */}
+                    {product.descricao && (
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/30 rounded-md p-2 mb-2">
+                        <FileText className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span className="text-xs line-clamp-2">{product.descricao}</span>
+                      </div>
+                    )}
+
+                    {/* Fornecedor */}
+                    {product.fornecedor && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span className="text-xs">Fornecedor: {product.fornecedor}</span>
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {product.fornecedor && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="h-3 w-3" />
-                    <span className="text-xs">Fornecedor: {product.fornecedor}</span>
-                  </div>
-                )}
-              </div>
+                  {/* Preço destacado e ações */}
+                  <div className="flex flex-col sm:items-end gap-3">
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-foreground">
+                        R$ {product.preco_venda.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Preço de venda
+                      </div>
+                    </div>
 
-              <div className="text-right">
-                <div className="text-lg font-bold text-foreground">
-                  R$ {product.preco_venda.toFixed(2)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Preço de venda
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(product)}>
-                  Editar
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="destructive">
-                      Excluir
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir o produto <strong>"{product.nome}"</strong>?
-                        <br />
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(product.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleEdit(product)}
+                        className="flex-1 sm:flex-none"
                       >
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
+                        <Edit className="h-3 w-3 mr-1" />
+                        <span className="hidden sm:inline">Editar</span>
+                        <span className="sm:hidden">Editar</span>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" className="flex-1 sm:flex-none">
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            <span className="hidden sm:inline">Excluir</span>
+                            <span className="sm:hidden">Excluir</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir o produto <strong>"{product.nome}"</strong>?
+                              <br />
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(product.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy, List } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy, List, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SolicitacoesAgendamento() {
@@ -522,10 +522,21 @@ export default function SolicitacoesAgendamento() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="flex items-center gap-2 text-foreground">
-                                <MessageSquare className="h-5 w-5 text-primary" />
-                                Detalhes da Solicitação
-                              </AlertDialogTitle>
+                              <div className="flex items-center justify-between">
+                                <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+                                  <MessageSquare className="h-5 w-5 text-primary" />
+                                  Detalhes da Solicitação
+                                </AlertDialogTitle>
+                                <AlertDialogCancel asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogCancel>
+                              </div>
                             </AlertDialogHeader>
                             <div className="space-y-4">
                               {/* Informações do Cliente */}
