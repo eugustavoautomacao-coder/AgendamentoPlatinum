@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +53,9 @@ export const ClienteLoginModal: React.FC<ClienteLoginModalProps> = ({
             <LogIn className="h-5 w-5 text-primary" />
             Login do Cliente
           </DialogTitle>
+          <DialogDescription>
+            Digite seu telefone e senha para acessar sua conta.
+          </DialogDescription>
         </DialogHeader>
         
         <Card className="border-primary/20">

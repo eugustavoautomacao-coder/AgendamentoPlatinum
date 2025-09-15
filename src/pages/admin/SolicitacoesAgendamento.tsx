@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy, List } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SolicitacoesAgendamento() {
@@ -318,23 +318,28 @@ export default function SolicitacoesAgendamento() {
               
               {/* Filtros de Status */}
               <div className="flex gap-2 flex-wrap">
-                {(['all', 'pendente', 'aprovado', 'rejeitado'] as const).map((filterType) => {
+                {([
+                  { key: 'all', label: 'Todas', icon: List },
+                  { key: 'pendente', label: 'Pendentes', icon: Clock },
+                  { key: 'aprovado', label: 'Aprovadas', icon: CheckCircle },
+                  { key: 'rejeitado', label: 'Rejeitadas', icon: XCircle }
+                ] as const).map(({ key, label, icon: Icon }) => {
                   const counts = getStatusCounts();
-                  const count = counts[filterType];
-                  const label = filterType === 'all' ? 'Todas' : filterType.charAt(0).toUpperCase() + filterType.slice(1);
+                  const count = counts[key];
                   
                   return (
                     <Button
-                      key={filterType}
-                      variant={filter === filterType ? 'default' : 'outline'}
+                      key={key}
+                      variant={filter === key ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setFilter(filterType)}
+                      onClick={() => setFilter(key)}
                       className="flex items-center gap-2 flex-1 sm:flex-none"
                     >
-                      <Filter className="h-3 w-3" />
-                      <span className="hidden sm:inline">{label}</span>
-                      <span className="sm:hidden">{label.charAt(0)}</span>
-                      <span>({count})</span>
+                      <Icon className="h-3 w-3" />
+                      <span>{label}</span>
+                      <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded-full text-xs font-medium">
+                        {count}
+                      </span>
                     </Button>
                   );
                 })}
@@ -376,102 +381,90 @@ export default function SolicitacoesAgendamento() {
               
               return (
                 <Card key={request.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary">
-                  <CardContent className="p-4 sm:p-6">
+                  <CardContent className="p-3 sm:p-4">
                     <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                              <User className="h-5 w-5 text-primary" />
+                      <div className="flex-1 w-full">
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="h-4 w-4 text-primary" />
                             </div>
-                            <div className="min-w-0">
-                              <h3 className="text-lg font-semibold text-foreground truncate">
-                                {request.cliente_nome}
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {new Date(request.criado_em).toLocaleString('pt-BR')}
-                              </p>
+                            <h3 className="text-base font-semibold text-foreground truncate flex-1">
+                              {request.cliente_nome}
+                            </h3>
+                            <div className="flex-shrink-0">
+                              {getStatusBadge(request.status)}
                             </div>
-                          </div>
-                          <div className="flex-shrink-0">
-                            {getStatusBadge(request.status)}
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="font-medium truncate">{date}</span>
+                        <div className="grid grid-cols-2 gap-2 mb-3 transition-all duration-300 w-full">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded w-full">
+                            <Calendar className="h-3 w-3 text-primary flex-shrink-0" />
+                            <span className="truncate">{date}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Clock className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="font-medium truncate">{time}</span>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded w-full">
+                            <Clock className="h-3 w-3 text-primary flex-shrink-0" />
+                            <span className="truncate">{time}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <User className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="font-medium truncate">{request.funcionario?.nome || 'Não definido'}</span>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded w-full">
+                            <User className="h-3 w-3 text-primary flex-shrink-0" />
+                            <span className="truncate">{request.funcionario?.nome || 'Não definido'}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                            <Phone className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="font-medium truncate">{request.cliente_telefone}</span>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 p-2 rounded w-full">
+                            <Phone className="h-3 w-3 text-primary flex-shrink-0" />
+                            <span className="truncate">{request.cliente_telefone}</span>
                           </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2 w-full">
                           {/* Serviço */}
-                          <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-                            <div className="flex items-center gap-2 mb-2">
+                          <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 w-full">
+                            <div className="flex items-center gap-2 mb-1">
                               <Scissors className="h-4 w-4 text-primary" />
-                              <span className="font-semibold text-foreground">Serviço</span>
+                              <span className="font-semibold text-foreground text-base">{request.servico?.nome}</span>
                             </div>
-                            <p className="text-foreground font-medium">{request.servico?.nome}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground ml-6">
                               {request.servico?.duracao_minutos} min • R$ {request.servico?.preco?.toFixed(2)}
                             </p>
                           </div>
                           
-                          {/* Email do Cliente */}
-                          {request.cliente_email && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                              <Mail className="h-4 w-4 text-primary" />
-                              <span className="font-medium">{request.cliente_email}</span>
-                            </div>
-                          )}
                           
                           {/* Observações */}
                           {request.observacoes && (
-                            <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                              <div className="flex items-center gap-2 mb-2">
+                            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800 w-full">
+                              <div className="flex items-center gap-2 mb-1">
                                 <MessageSquare className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                <span className="font-semibold text-amber-900 dark:text-amber-100">Observações</span>
+                                <span className="font-semibold text-amber-900 dark:text-amber-100 text-base">Observações</span>
                               </div>
-                              <p className="text-amber-800 dark:text-amber-200">{request.observacoes}</p>
+                              <p className="text-amber-800 dark:text-amber-200 text-sm ml-6">{request.observacoes}</p>
                             </div>
                           )}
 
                           {/* Motivo da Rejeição */}
                           {request.motivo_rejeicao && (
-                            <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
-                              <div className="flex items-center gap-2 mb-2">
+                            <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg border border-red-200 dark:border-red-800 w-full">
+                              <div className="flex items-center gap-2 mb-1">
                                 <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                <span className="font-semibold text-red-900 dark:text-red-100">Motivo da Rejeição</span>
+                                <span className="font-semibold text-red-900 dark:text-red-100 text-base">Motivo da Rejeição</span>
                               </div>
-                              <p className="text-red-800 dark:text-red-200">{request.motivo_rejeicao}</p>
+                              <p className="text-red-800 dark:text-red-200 text-sm ml-6">{request.motivo_rejeicao}</p>
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row lg:flex-col gap-2 w-full lg:w-auto lg:min-w-[120px]">
+                      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                         {request.status === 'pendente' && (
                           <>
                             <Button
                               size="sm"
                               onClick={() => handleApprove(request.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white shadow-sm flex-1 sm:flex-none"
+                              className="bg-green-600 hover:bg-green-700 text-white shadow-sm flex-1 sm:flex-none flex items-center"
                             >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Aprovar
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Aprovar</span>
+                              <span className="sm:hidden">Aprovar</span>
                             </Button>
                             
                             <AlertDialog open={rejectDialogOpen && selectedRequest?.id === request.id} onOpenChange={(open) => {
@@ -485,9 +478,10 @@ export default function SolicitacoesAgendamento() {
                               }
                             }}>
                               <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="destructive" className="shadow-sm flex-1 sm:flex-none">
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Rejeitar
+                                <Button size="sm" variant="destructive" className="shadow-sm flex-1 sm:flex-none flex items-center">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  <span className="hidden sm:inline">Rejeitar</span>
+                                  <span className="sm:hidden">Rejeitar</span>
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
@@ -520,9 +514,10 @@ export default function SolicitacoesAgendamento() {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="shadow-sm flex-1 sm:flex-none">
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver
+                            <Button size="sm" variant="outline" className="shadow-sm flex-1 sm:flex-none flex items-center">
+                              <Eye className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Ver</span>
+                              <span className="sm:hidden">Ver</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -671,9 +666,10 @@ export default function SolicitacoesAgendamento() {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 shadow-sm flex-1 sm:flex-none">
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
+                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 shadow-sm flex-1 sm:flex-none flex items-center">
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              <span className="hidden sm:inline">Excluir</span>
+                              <span className="sm:hidden">Excluir</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
