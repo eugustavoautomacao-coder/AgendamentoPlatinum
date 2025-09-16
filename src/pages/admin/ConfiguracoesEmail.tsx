@@ -107,10 +107,10 @@ export const ConfiguracoesEmail: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Settings className="h-8 w-8 text-pink-500" />
+            <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Configurações de Email</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Configurações de Email</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Configure as notificações por email do sistema
               </p>
             </div>
@@ -126,7 +126,7 @@ export const ConfiguracoesEmail: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Sistema de Email</p>
                 <div className="flex items-center gap-2 mt-1">
@@ -138,7 +138,7 @@ export const ConfiguracoesEmail: React.FC = () => {
                   )}
                 </div>
               </div>
-              <Button onClick={testarConexao} disabled={testando} variant="outline">
+              <Button onClick={testarConexao} disabled={testando} variant="outline" className="w-full sm:w-auto">
                 {testando ? "Testando..." : "Testar Conexão"}
               </Button>
             </div>
@@ -157,7 +157,7 @@ export const ConfiguracoesEmail: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <Label htmlFor="lembretesEnabled">Lembretes Automáticos</Label>
                 <p className="text-sm text-muted-foreground">
@@ -175,7 +175,7 @@ export const ConfiguracoesEmail: React.FC = () => {
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="intervaloVerificacao">Intervalo de Verificação (minutos)</Label>
                 <Input
@@ -196,7 +196,7 @@ export const ConfiguracoesEmail: React.FC = () => {
 
             <div className="space-y-3">
               <Label>Horários de Lembrete</Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="lembretes24h"
@@ -217,7 +217,7 @@ export const ConfiguracoesEmail: React.FC = () => {
                   />
                   <Label htmlFor="lembretes2h">2 horas antes</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 sm:col-span-2 lg:col-span-1">
                   <Switch
                     id="lembretes1h"
                     checked={configuracoes.lembretes1h}
@@ -244,7 +244,7 @@ export const ConfiguracoesEmail: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="confirmacaoCriacao"
@@ -301,7 +301,7 @@ export const ConfiguracoesEmail: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="nomeTeste">Nome do Cliente Teste</Label>
                 <Input
@@ -328,7 +328,7 @@ export const ConfiguracoesEmail: React.FC = () => {
             <Button 
               onClick={testarEnvio} 
               disabled={testando || !configuracoes.emailTeste}
-              className="w-full md:w-auto"
+              className="w-full sm:w-auto"
             >
               {testando ? "Enviando..." : "Enviar Email de Teste"}
             </Button>
@@ -336,13 +336,14 @@ export const ConfiguracoesEmail: React.FC = () => {
         </Card>
 
         {/* Botões de Ação */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Button onClick={salvarConfiguracoes} className="flex-1">
             Salvar Configurações
           </Button>
           <Button 
             variant="outline" 
             onClick={() => window.location.href = '/teste-email'}
+            className="w-full sm:w-auto"
           >
             Ir para Teste Completo
           </Button>

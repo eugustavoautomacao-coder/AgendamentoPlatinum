@@ -28,8 +28,7 @@ import {
   Plus,
   CreditCard,
   Wallet,
-  Receipt,
-  Calculator
+  Receipt
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -407,24 +406,21 @@ export default function ComissoesMensais() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <DollarSign className="h-8 w-8 text-pink-500" />
+            <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Comissões Mensais</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Comissões Mensais</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Gerencie comissões acumuladas mensalmente por profissional
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchComissoesMensais} disabled={loading} className="flex items-center gap-2">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={async () => {
                 if (!profile?.salao_id) return;
                 try {
                   setLoading(true);
+                  
                   // Buscar todos os funcionários do salão
                   const { data: funcionarios } = await supabase
                     .from('employees')
@@ -442,78 +438,84 @@ export default function ComissoesMensais() {
                       await recalcularComissoesMensais(funcionario.id, mes, ano);
                     }
                     
-                    toast.success('Comissões recalculadas com sucesso!');
+                    toast.success('Comissões recalculadas e atualizadas com sucesso!');
+                    fetchComissoesMensais();
+                  } else {
+                    // Se não há funcionários, apenas atualizar
                     fetchComissoesMensais();
                   }
                 } catch (error) {
                   console.error('Erro ao recalcular comissões:', error);
                   toast.error('Erro ao recalcular comissões');
+                  // Tentar apenas atualizar em caso de erro
+                  fetchComissoesMensais();
                 } finally {
                   setLoading(false);
                 }
               }}
               disabled={loading} 
-              variant="outline" 
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
-              <Calculator className="h-4 w-4" />
-              Recalcular
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Atualizar</span>
+              <span className="sm:hidden">Atualizar</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
               <Download className="h-4 w-4" />
-              Exportar
+              <span className="hidden sm:inline">Exportar</span>
+              <span className="sm:hidden">Exportar</span>
             </Button>
           </div>
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profissionais</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Profissionais</CardTitle>
+              <User className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totals.total_funcionarios}</div>
+              <div className="text-2xl font-bold text-foreground">{totals.total_funcionarios}</div>
               <p className="text-xs text-muted-foreground">
                 Com comissões no período
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Comissões</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Comissões</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_comissoes)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_comissoes)}</div>
               <p className="text-xs text-muted-foreground">
                 Valor total gerado
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Pago</CardTitle>
+              <CheckCircle className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_pago)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_pago)}</div>
               <p className="text-xs text-muted-foreground">
                 Valor já pago
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendente</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pendente</CardTitle>
+              <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_pendente)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_pendente)}</div>
               <p className="text-xs text-muted-foreground">
                 Valor a pagar
               </p>
@@ -523,9 +525,9 @@ export default function ComissoesMensais() {
 
         {/* Filtros e Busca */}
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -537,7 +539,7 @@ export default function ComissoesMensais() {
                 </div>
                 
                 <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <Calendar className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Período" />
                   </SelectTrigger>
@@ -561,17 +563,18 @@ export default function ComissoesMensais() {
                       variant={filter === filterType ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setFilter(filterType)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-xs sm:text-sm"
                     >
                       <Filter className="h-3 w-3" />
-                      {label} ({count})
+                      <span className="hidden sm:inline">{label} ({count})</span>
+                      <span className="sm:hidden">{label}</span>
                     </Button>
                   );
                 })}
               </div>
               
               {/* Contador de Resultados */}
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 {filteredComissoes.length} de {comissoesMensais.length} comissões mensais
                 {searchTerm && ` • Buscando por "${searchTerm}"`}
               </div>
@@ -605,66 +608,69 @@ export default function ComissoesMensais() {
             {filteredComissoes.map((comissao) => (
               <Card key={comissao.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        {comissao.funcionario_avatar ? (
-                          <img
-                            src={comissao.funcionario_avatar}
-                            alt={comissao.funcionario_nome}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-primary" />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3">
+                          {comissao.funcionario_avatar ? (
+                            <img
+                              src={comissao.funcionario_avatar}
+                              alt={comissao.funcionario_nome}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                              <User className="h-5 w-5 text-primary" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                              {comissao.funcionario_nome}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              {getMonthName(comissao.mes)} {comissao.ano}
+                            </p>
                           </div>
-                        )}
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {comissao.funcionario_nome}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {getMonthName(comissao.mes)} {comissao.ano}
-                          </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 sm:ml-auto">
                           {getStatusBadge(comissao.status)}
                           {comissao.saldo_pendente > 0 && (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
+                            <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200 text-xs">
                               <Clock className="h-3 w-3 mr-1" />
-                              Saldo Pendente
+                              <span className="hidden sm:inline">Saldo Pendente</span>
+                              <span className="sm:hidden">Pendente</span>
                             </Badge>
                           )}
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <Scissors className="h-4 w-4 text-primary" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <Scissors className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">{comissao.total_agendamentos} agendamentos</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <DollarSign className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">{formatCurrency(comissao.total_servicos)}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <TrendingUp className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">{formatCurrency(comissao.total_taxas)}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <Receipt className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <Receipt className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">{comissao.percentual_comissao}%</span>
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         {/* Resumo Financeiro */}
-                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
+                        <div className="bg-primary/5 p-3 sm:p-4 rounded-lg border border-primary/20">
                           <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="h-4 w-4 text-primary" />
-                            <span className="font-medium text-sm text-primary">Resumo Financeiro</span>
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                            <span className="font-medium text-xs sm:text-sm text-primary">Resumo Financeiro</span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                             <div>
                               <span className="text-muted-foreground">Base para Comissão:</span>
                               <p className="font-medium">{formatCurrency(comissao.base_calculo_total)}</p>
@@ -687,7 +693,7 @@ export default function ComissoesMensais() {
                     </div>
 
                     {/* Ações */}
-                    <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex flex-col gap-2 lg:ml-4">
                       {comissao.saldo_pendente > 0 && (
                         <Button
                           size="sm"
@@ -695,10 +701,10 @@ export default function ComissoesMensais() {
                             setSelectedComissao(comissao);
                             setPagamentoOpen(true);
                           }}
-                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 w-full lg:w-auto"
                         >
-                          <Plus className="h-4 w-4" />
-                          Registrar Pagamento
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Registrar Pagamento</span>
                         </Button>
                       )}
                       
@@ -710,10 +716,10 @@ export default function ComissoesMensais() {
                           fetchDetalhesAgendamentos(comissao.id);
                           setDetalhesOpen(true);
                         }}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 w-full lg:w-auto"
                       >
-                        <FileText className="h-4 w-4" />
-                        Ver Detalhes
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="text-xs sm:text-sm">Ver Detalhes</span>
                       </Button>
                       
                       {comissao.status === 'aberto' && (
@@ -722,15 +728,17 @@ export default function ComissoesMensais() {
                           variant={comissao.saldo_pendente > 0 ? "destructive" : "outline"}
                           onClick={() => fecharMes(comissao.mes, comissao.ano)}
                           disabled={comissao.saldo_pendente > 0}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 w-full lg:w-auto"
                           title={
                             comissao.saldo_pendente > 0 
                               ? `Não é possível fechar o mês com saldo pendente de ${formatCurrency(comissao.saldo_pendente)}`
                               : "Fechar o mês"
                           }
                         >
-                          <Calendar className="h-4 w-4" />
-                          {comissao.saldo_pendente > 0 ? 'Mês com Saldo Pendente' : 'Fechar Mês'}
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">
+                            {comissao.saldo_pendente > 0 ? 'Mês com Saldo Pendente' : 'Fechar Mês'}
+                          </span>
                         </Button>
                       )}
                     </div>
@@ -743,15 +751,15 @@ export default function ComissoesMensais() {
 
         {/* Modal de Pagamento */}
         <Dialog open={pagamentoOpen} onOpenChange={setPagamentoOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Registrar Pagamento de Comissão</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">Registrar Pagamento de Comissão</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {selectedComissao && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Resumo da Comissão</h4>
-                  <div className="text-sm space-y-1">
+                <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 text-sm sm:text-base">Resumo da Comissão</h4>
+                  <div className="text-xs sm:text-sm space-y-1">
                     <p><strong>Funcionário:</strong> {selectedComissao.funcionario_nome}</p>
                     <p><strong>Período:</strong> {getMonthName(selectedComissao.mes)} {selectedComissao.ano}</p>
                     <p><strong>Comissão Total:</strong> {formatCurrency(selectedComissao.valor_comissao_total)}</p>
@@ -761,7 +769,7 @@ export default function ComissoesMensais() {
               )}
               
               <div>
-                <Label htmlFor="valorPagamento">Valor do Pagamento</Label>
+                <Label htmlFor="valorPagamento" className="text-sm sm:text-base">Valor do Pagamento</Label>
                 <Input
                   id="valorPagamento"
                   type="number"
@@ -771,6 +779,7 @@ export default function ComissoesMensais() {
                   value={valorPagamento}
                   onChange={(e) => setValorPagamento(e.target.value)}
                   placeholder="0.00"
+                  className="text-sm sm:text-base"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Máximo: {formatCurrency(selectedComissao?.saldo_pendente || 0)}
@@ -778,7 +787,7 @@ export default function ComissoesMensais() {
               </div>
               
               <div>
-                <Label htmlFor="formaPagamento">Forma de Pagamento</Label>
+                <Label htmlFor="formaPagamento" className="text-sm sm:text-base">Forma de Pagamento</Label>
                 <Select value={formaPagamento} onValueChange={setFormaPagamento}>
                   <SelectTrigger>
                     <SelectValue />
@@ -794,21 +803,22 @@ export default function ComissoesMensais() {
               </div>
               
               <div>
-                <Label htmlFor="observacoes">Observações (Opcional)</Label>
+                <Label htmlFor="observacoes" className="text-sm sm:text-base">Observações (Opcional)</Label>
                 <Textarea
                   id="observacoes"
                   placeholder="Ex: Pagamento parcial, referente aos primeiros 15 dias..."
                   value={observacoesPagamento}
                   onChange={(e) => setObservacoesPagamento(e.target.value)}
                   rows={3}
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="outline" className="w-full sm:w-auto">Cancelar</Button>
               </DialogClose>
-              <Button onClick={registrarPagamento} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={registrarPagamento} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Registrar Pagamento
               </Button>
@@ -818,15 +828,15 @@ export default function ComissoesMensais() {
 
         {/* Modal de Detalhes */}
         <Dialog open={detalhesOpen} onOpenChange={setDetalhesOpen}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Detalhes dos Agendamentos</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">Detalhes dos Agendamentos</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {selectedComissao && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Resumo da Comissão</h4>
-                  <div className="text-sm space-y-1">
+                <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 text-sm sm:text-base">Resumo da Comissão</h4>
+                  <div className="text-xs sm:text-sm space-y-1">
                     <p><strong>Funcionário:</strong> {selectedComissao.funcionario_nome}</p>
                     <p><strong>Período:</strong> {getMonthName(selectedComissao.mes)} {selectedComissao.ano}</p>
                     <p><strong>Total de Agendamentos:</strong> {selectedComissao.total_agendamentos}</p>
@@ -838,20 +848,20 @@ export default function ComissoesMensais() {
               <div className="max-h-96 overflow-y-auto">
                 <div className="space-y-2">
                   {detalhesAgendamentos.map((detalhe) => (
-                    <div key={detalhe.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div key={detalhe.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/30 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Scissors className="h-4 w-4 text-primary" />
+                          <Scissors className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">Agendamento #{detalhe.appointment_id.slice(0, 8)}</p>
+                          <p className="font-medium text-xs sm:text-sm">Agendamento #{detalhe.appointment_id.slice(0, 8)}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(detalhe.criado_em)}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">{formatCurrency(detalhe.valor_comissao)}</p>
+                      <div className="text-left sm:text-right">
+                        <p className="font-medium text-xs sm:text-sm">{formatCurrency(detalhe.valor_comissao)}</p>
                         <p className="text-xs text-muted-foreground">
                           Base: {formatCurrency(detalhe.base_calculo)}
                         </p>
@@ -861,7 +871,7 @@ export default function ComissoesMensais() {
                 </div>
               </div>
             </div>
-            <DialogFooter className="flex justify-between">
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -869,13 +879,13 @@ export default function ComissoesMensais() {
                   setDetalhesOpen(false);
                   navigate(`/admin/comissoes?funcionario=${selectedComissao?.funcionario_id}&nome=${selectedComissao?.funcionario_nome}`);
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <DollarSign className="h-4 w-4" />
-                Ver Comissões Individuais
+                <span className="text-xs sm:text-sm">Ver Comissões Individuais</span>
               </Button>
               <DialogClose asChild>
-                <Button variant="outline">Fechar</Button>
+                <Button variant="outline" className="w-full sm:w-auto">Fechar</Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>

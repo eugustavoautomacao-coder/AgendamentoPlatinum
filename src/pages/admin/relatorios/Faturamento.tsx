@@ -247,34 +247,36 @@ const RelatorioFaturamento = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => navigate('/admin/relatorios')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 flex-shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              <span className="hidden sm:inline">Voltar</span>
             </Button>
-            <DollarSign className="h-8 w-8 text-green-500" />
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Relatório de Faturamento</h1>
-              <p className="text-muted-foreground">
+            <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Relatório de Faturamento</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Análise completa de receita e performance financeira
               </p>
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+            <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
               <Download className="h-4 w-4" />
-              Exportar Excel
+              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="sm:hidden">Excel</span>
             </Button>
-            <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
               <Download className="h-4 w-4" />
-              Exportar PDF
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
           </div>
         </div>
@@ -282,13 +284,13 @@ const RelatorioFaturamento = () => {
         {/* Filtros */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
               Filtros
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Período</label>
                 <Select value={periodFilter} onValueChange={setPeriodFilter}>
@@ -363,14 +365,14 @@ const RelatorioFaturamento = () => {
         </Card>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Faturamento Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Faturamento Total</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-foreground">
                 R$ {reportData.totalRevenue.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -379,13 +381,13 @@ const RelatorioFaturamento = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ticket Médio</CardTitle>
+              <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-foreground">
                 R$ {reportData.averageTicket.toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -394,13 +396,13 @@ const RelatorioFaturamento = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Serviços</CardTitle>
+              <BarChart3 className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-foreground">
                 {reportData.totalAppointments}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -411,15 +413,15 @@ const RelatorioFaturamento = () => {
         </div>
 
         {/* Gráficos e Tabelas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Gráfico de Faturamento Diário */}
           <Card>
             <CardHeader>
-              <CardTitle>Faturamento Diário</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Faturamento Diário</CardTitle>
             </CardHeader>
             <CardContent>
               {chartData.daily.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <RechartsLineChart data={chartData.daily}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
@@ -461,11 +463,11 @@ const RelatorioFaturamento = () => {
           {/* Gráfico de Faturamento por Serviço */}
           <Card>
             <CardHeader>
-              <CardTitle>Faturamento por Serviço</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Faturamento por Serviço</CardTitle>
             </CardHeader>
             <CardContent>
               {chartData.pie.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={250}>
                   <RechartsPieChart>
                     <Pie
                       data={chartData.pie}
@@ -499,11 +501,11 @@ const RelatorioFaturamento = () => {
         {/* Gráfico de Barras - Top Serviços */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Serviços por Faturamento</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Top Serviços por Faturamento</CardTitle>
           </CardHeader>
           <CardContent>
             {chartData.pie.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={250}>
                 <RechartsBarChart data={chartData.pie}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis 

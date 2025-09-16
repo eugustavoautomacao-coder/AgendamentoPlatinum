@@ -203,12 +203,12 @@ export default function Comissoes() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <DollarSign className="h-8 w-8 text-pink-500" />
+            <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                 {funcionarioNome ? `Comissões - ${funcionarioNome}` : 'Comissões'}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {funcionarioNome 
                   ? `Comissões individuais do profissional ${funcionarioNome}`
                   : 'Gerencie o sistema de comissões dos profissionais'
@@ -216,98 +216,88 @@ export default function Comissoes() {
               </p>
               {funcionarioNome && (
                 <div className="mt-2">
-                  <Badge variant="outline" className="text-sm">
+                  <Badge variant="outline" className="text-xs sm:text-sm">
                     Filtrado por Profissional
                   </Badge>
                 </div>
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {funcionarioNome && (
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/admin/comissoes-mensais')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 w-full sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Voltar Para Todas as Comissões
+                <span className="hidden sm:inline">Voltar Para Todas as Comissões</span>
+                <span className="sm:hidden">Voltar</span>
               </Button>
             )}
-            <Button onClick={fetchComissoes} disabled={loading} className="flex items-center gap-2">
+            <Button onClick={fetchComissoes} disabled={loading} className="flex items-center gap-2 w-full sm:w-auto">
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
+              <span className="hidden sm:inline">Atualizar</span>
+              <span className="sm:hidden">Atualizar</span>
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
               <Download className="h-4 w-4" />
-              Exportar
+              <span className="hidden sm:inline">Exportar</span>
+              <span className="sm:hidden">Exportar</span>
             </Button>
           </div>
         </div>
 
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Serviços</CardTitle>
-              <Scissors className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Serviços</CardTitle>
+              <Scissors className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_servicos)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_servicos)}</div>
               <p className="text-xs text-muted-foreground">
                 {comissoes.length} serviços realizados
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Taxas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Taxas</CardTitle>
+              <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_taxas)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_taxas)}</div>
               <p className="text-xs text-muted-foreground">
                 Custos deduzidos
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Comissões</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total de Comissões</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_comissoes)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_comissoes)}</div>
               <p className="text-xs text-muted-foreground">
                 Valor total a pagar
               </p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="shadow-soft hover:shadow-elegant transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-yellow-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
+              <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_pendente)}</div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(totals.total_pendente)}</div>
               <p className="text-xs text-muted-foreground">
                 {counts.pendente} comissões pendentes
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pagas</CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totals.total_pago)}</div>
-              <p className="text-xs text-muted-foreground">
-                {counts.paga} comissões pagas
               </p>
             </CardContent>
           </Card>
@@ -315,9 +305,9 @@ export default function Comissoes() {
 
         {/* Filtros e Busca */}
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -329,7 +319,7 @@ export default function Comissoes() {
                 </div>
                 
                 <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-48">
                     <Calendar className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Período" />
                   </SelectTrigger>
@@ -354,17 +344,18 @@ export default function Comissoes() {
                       variant={filter === filterType ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setFilter(filterType)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-xs sm:text-sm"
                     >
                       <Filter className="h-3 w-3" />
-                      {label} ({count})
+                      <span className="hidden sm:inline">{label} ({count})</span>
+                      <span className="sm:hidden">{label}</span>
                     </Button>
                   );
                 })}
               </div>
               
               {/* Contador de Resultados */}
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs sm:text-sm text-muted-foreground">
                 {filteredComissoes.length} de {comissoes.length} comissões
                 {searchTerm && ` • Buscando por "${searchTerm}"`}
               </div>
@@ -398,52 +389,56 @@ export default function Comissoes() {
             {filteredComissoes.map((comissao) => (
               <Card key={comissao.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-primary" />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-base sm:text-lg font-semibold text-foreground">
+                              {comissao.funcionario_nome || 'Funcionário não encontrado'}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                              {formatDateTime(comissao.data_calculo)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {comissao.funcionario_nome || 'Funcionário não encontrado'}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDateTime(comissao.data_calculo)}
-                          </p>
+                        <div className="flex justify-start sm:justify-end">
+                          {getStatusBadge(comissao.status)}
                         </div>
-                        {getStatusBadge(comissao.status)}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <Scissors className="h-4 w-4 text-primary" />
-                          <span className="font-medium">{comissao.servico_nome || 'Serviço não encontrado'}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <Scissors className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          <span className="font-medium truncate">{comissao.servico_nome || 'Serviço não encontrado'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <Calendar className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">
                             {comissao.data_agendamento ? formatDate(comissao.data_agendamento) : 'Data não informada'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <User className="h-4 w-4 text-primary" />
-                          <span className="font-medium">{comissao.cliente_nome || 'Cliente não informado'}</span>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          <span className="font-medium truncate">{comissao.cliente_nome || 'Cliente não informado'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                          <DollarSign className="h-4 w-4 text-primary" />
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 sm:p-3 rounded-lg">
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                           <span className="font-medium">{formatCurrency(comissao.valor_comissao)}</span>
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         {/* Detalhes do Cálculo */}
-                        <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
+                        <div className="bg-primary/5 p-3 sm:p-4 rounded-lg border border-primary/20">
                           <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="h-4 w-4 text-primary" />
-                            <span className="font-medium text-sm text-primary">Detalhes do Cálculo</span>
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                            <span className="font-medium text-xs sm:text-sm text-primary">Detalhes do Cálculo</span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
                             <div>
                               <span className="text-muted-foreground">Valor do Serviço:</span>
                               <p className="font-medium">{formatCurrency(comissao.valor_servico)}</p>
@@ -473,19 +468,19 @@ export default function Comissoes() {
 
                         {/* Observações */}
                         {comissao.observacoes && (
-                          <div className="bg-muted/30 p-4 rounded-lg">
+                          <div className="bg-muted/30 p-3 sm:p-4 rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium text-sm text-muted-foreground">Observações</span>
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                              <span className="font-medium text-xs sm:text-sm text-muted-foreground">Observações</span>
                             </div>
-                            <p className="text-foreground">{comissao.observacoes}</p>
+                            <p className="text-xs sm:text-sm text-foreground">{comissao.observacoes}</p>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Ações */}
-                    <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex flex-col gap-2 lg:ml-4">
                       {comissao.status === 'pendente' && (
                         <Button
                           size="sm"
@@ -493,16 +488,16 @@ export default function Comissoes() {
                             setSelectedComissao(comissao);
                             setMarcarPagaOpen(true);
                           }}
-                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 w-full lg:w-auto"
                         >
-                          <CheckCircle className="h-4 w-4" />
-                          Marcar como Paga
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <span className="text-xs sm:text-sm">Marcar como Paga</span>
                         </Button>
                       )}
                       
                       {comissao.status === 'paga' && comissao.data_pagamento && (
-                        <div className="text-sm text-muted-foreground text-center">
-                          <CheckCircle className="h-4 w-4 text-green-600 mx-auto mb-1" />
+                        <div className="text-xs sm:text-sm text-muted-foreground text-center">
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mx-auto mb-1" />
                           Paga em {formatDate(comissao.data_pagamento)}
                         </div>
                       )}
@@ -518,26 +513,27 @@ export default function Comissoes() {
 
         {/* Modal para Marcar como Paga */}
         <Dialog open={marcarPagaOpen} onOpenChange={setMarcarPagaOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Marcar Comissão como Paga</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">Marcar Comissão como Paga</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="observacoes">Observações (Opcional)</Label>
+                <Label htmlFor="observacoes" className="text-sm sm:text-base">Observações (Opcional)</Label>
                 <Textarea
                   id="observacoes"
                   placeholder="Ex: Pago via PIX, transferência bancária..."
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
                   rows={3}
+                  className="text-sm sm:text-base"
                 />
               </div>
               
               {selectedComissao && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Resumo da Comissão</h4>
-                  <div className="text-sm space-y-1">
+                <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 text-sm sm:text-base">Resumo da Comissão</h4>
+                  <div className="text-xs sm:text-sm space-y-1">
                     <p><strong>Funcionário:</strong> {selectedComissao.funcionario_nome}</p>
                     <p><strong>Serviço:</strong> {selectedComissao.servico_nome}</p>
                     <p><strong>Valor da Comissão:</strong> {formatCurrency(selectedComissao.valor_comissao)}</p>
@@ -546,11 +542,13 @@ export default function Comissoes() {
                 </div>
               )}
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
               <DialogClose asChild>
-                <Button variant="outline">Cancelar</Button>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  Cancelar
+                </Button>
               </DialogClose>
-              <Button onClick={marcarComissaoPaga} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={marcarComissaoPaga} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Confirmar Pagamento
               </Button>
