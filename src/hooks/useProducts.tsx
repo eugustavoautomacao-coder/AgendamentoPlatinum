@@ -112,7 +112,7 @@ export function useProducts() {
 
   // Atualizar produto
   const updateProduct = useMutation({
-    mutationFn: async ({ id, ...updateData }: UpdateProductData) => {
+    mutationFn: async ({ id, preco_profissional, ...updateData }: UpdateProductData) => {
       const { data, error } = await supabase
         .from('produtos')
         .update(updateData)
@@ -188,3 +188,4 @@ export function useProducts() {
     isDeleting: deleteProduct.isPending,
   };
 }
+

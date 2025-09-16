@@ -123,6 +123,7 @@ const Produtos = () => {
     });
   };
 
+
   // Salvar produto
   const handleSave = async () => {
     try {
@@ -377,7 +378,7 @@ const Produtos = () => {
                       id="preco_venda"
                       type="number"
                       step="0.01"
-                      value={form.preco_venda}
+                      value={form.preco_venda || ''}
                       onChange={(e) => setForm(f => ({ ...f, preco_venda: parseFloat(e.target.value) || 0 }))}
                       placeholder="0.00"
                     />
@@ -397,7 +398,7 @@ const Produtos = () => {
                       id="preco_custo"
                       type="number"
                       step="0.01"
-                      value={form.preco_custo}
+                      value={form.preco_custo || ''}
                       onChange={(e) => setForm(f => ({ ...f, preco_custo: parseFloat(e.target.value) || 0 }))}
                       placeholder="0.00"
                     />
@@ -412,7 +413,7 @@ const Produtos = () => {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={form.preco_profissional}
+                      value={form.preco_profissional || ''}
                       onChange={(e) => setForm(f => ({ ...f, preco_profissional: parseFloat(e.target.value) || 0 }))}
                       placeholder="0.00"
                     />
@@ -430,7 +431,7 @@ const Produtos = () => {
                   <Input
                     id="estoque_atual"
                     type="number"
-                    value={form.estoque_atual}
+                    value={form.estoque_atual || ''}
                     onChange={(e) => setForm(f => ({ ...f, estoque_atual: parseInt(e.target.value) || 0 }))}
                     placeholder="0"
                   />
@@ -443,7 +444,7 @@ const Produtos = () => {
                   <Input
                     id="estoque_minimo"
                     type="number"
-                    value={form.estoque_minimo}
+                    value={form.estoque_minimo || ''}
                     onChange={(e) => setForm(f => ({ ...f, estoque_minimo: parseInt(e.target.value) || 0 }))}
                     placeholder="0"
                   />
@@ -628,6 +629,12 @@ const Produtos = () => {
                             {product.categoria}
                           </Badge>
                         )}
+                        {product.fornecedor && (
+                          <Badge variant="secondary" className="text-xs">
+                            <User className="h-3 w-3 mr-1" />
+                            {product.fornecedor}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     
@@ -657,13 +664,6 @@ const Produtos = () => {
                       </div>
                     )}
 
-                    {/* Fornecedor */}
-                    {product.fornecedor && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        <span className="text-xs">Fornecedor: {product.fornecedor}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Preço destacado e ações */}
