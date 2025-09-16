@@ -8,16 +8,22 @@ export interface Product {
   codigo_interno: string;
   nome: string;
   descricao?: string;
-  categoria?: string;
+  categoria_id?: string;
+  categoria?: {
+    id: string;
+    nome: string;
+  };
   marca?: string;
   preco_custo: number;
   preco_venda: number;
+  preco_profissional?: number;
   estoque_atual: number;
   estoque_minimo: number;
   unidade_medida: string;
   codigo_barras?: string;
   fornecedor?: string;
   observacoes?: string;
+  para_revenda: boolean;
   ativo: boolean;
   criado_em: string;
   atualizado_em: string;
@@ -26,7 +32,7 @@ export interface Product {
 export interface CreateProductData {
   codigo_interno: string;
   nome: string;
-  categoria?: string;
+  categoria_id?: string;
   marca?: string;
   preco_custo: number;
   preco_venda: number;
@@ -64,10 +70,13 @@ export function useProducts() {
 
       if (!userData?.salao_id) return [];
 
-      // Buscar produtos do salão
+      // Buscar produtos do salão com categoria
       const { data, error } = await supabase
         .from('produtos')
-        .select('*')
+        .select(`
+          *,
+          categoria:categorias(id, nome)
+        `)
         .eq('salao_id', userData.salao_id)
         .eq('ativo', true)
         .order('nome');
@@ -92,6 +101,36 @@ export function useProducts() {
 
       if (!userData?.salao_id) throw new Error('Usuário não está associado a um salão');
 
+      // Verificar se código interno já existe
+      if (productData.codigo_interno) {
+        const { data: existingInternalCode } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('salao_id', userData.salao_id)
+          .eq('codigo_interno', productData.codigo_interno)
+          .eq('ativo', true)
+          .single();
+
+        if (existingInternalCode) {
+          throw new Error('Código interno já existe. Por favor, use um código diferente.');
+        }
+      }
+
+      // Verificar se código de barras já existe
+      if (productData.codigo_barras) {
+        const { data: existingBarcode } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('salao_id', userData.salao_id)
+          .eq('codigo_barras', productData.codigo_barras)
+          .eq('ativo', true)
+          .single();
+
+        if (existingBarcode) {
+          throw new Error('Código de barras já existe. Por favor, use um código diferente.');
+        }
+      }
+
       const { data, error } = await supabase
         .from('produtos')
         .insert([{
@@ -99,7 +138,10 @@ export function useProducts() {
           salao_id: userData.salao_id,
           ativo: productData.ativo ?? true,
         }])
-        .select()
+        .select(`
+          *,
+          categoria:categorias(id, nome)
+        `)
         .single();
 
       if (error) throw error;
@@ -112,12 +154,56 @@ export function useProducts() {
 
   // Atualizar produto
   const updateProduct = useMutation({
-    mutationFn: async ({ id, preco_profissional, ...updateData }: UpdateProductData) => {
+    mutationFn: async ({ id, ...updateData }: UpdateProductData) => {
+      // Buscar o salão do usuário
+      const { data: userData } = await supabase
+        .from('users')
+        .select('salao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!userData?.salao_id) throw new Error('Usuário não está associado a um salão');
+
+      // Verificar se código interno já existe (excluindo o produto atual)
+      if (updateData.codigo_interno) {
+        const { data: existingInternalCode } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('salao_id', userData.salao_id)
+          .eq('codigo_interno', updateData.codigo_interno)
+          .eq('ativo', true)
+          .neq('id', id)
+          .single();
+
+        if (existingInternalCode) {
+          throw new Error('Código interno já existe. Por favor, use um código diferente.');
+        }
+      }
+
+      // Verificar se código de barras já existe (excluindo o produto atual)
+      if (updateData.codigo_barras) {
+        const { data: existingBarcode } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('salao_id', userData.salao_id)
+          .eq('codigo_barras', updateData.codigo_barras)
+          .eq('ativo', true)
+          .neq('id', id)
+          .single();
+
+        if (existingBarcode) {
+          throw new Error('Código de barras já existe. Por favor, use um código diferente.');
+        }
+      }
+
       const { data, error } = await supabase
         .from('produtos')
         .update(updateData)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          categoria:categorias(id, nome)
+        `)
         .single();
 
       if (error) throw error;
@@ -143,46 +229,71 @@ export function useProducts() {
     },
   });
 
-  // Buscar categorias únicas
-  const { data: categories = [] } = useQuery({
-    queryKey: ['product-categories'],
-    queryFn: async () => {
-      if (!user) return [];
 
-      // Buscar o salão do usuário
-      const { data: userData } = await supabase
-        .from('users')
-        .select('salao_id')
-        .eq('id', user.id)
-        .single();
+  // Verificar se código interno existe
+  const checkInternalCodeExists = async (codigo_interno: string, excludeId?: string) => {
+    if (!user || !codigo_interno.trim()) return false;
 
-      if (!userData?.salao_id) return [];
+    const { data: userData } = await supabase
+      .from('users')
+      .select('salao_id')
+      .eq('id', user.id)
+      .single();
 
-      const { data, error } = await supabase
-        .from('produtos')
-        .select('categoria')
-        .eq('salao_id', userData.salao_id)
-        .eq('ativo', true)
-        .not('categoria', 'is', null);
+    if (!userData?.salao_id) return false;
 
-      if (error) throw error;
+    let query = supabase
+      .from('produtos')
+      .select('id')
+      .eq('salao_id', userData.salao_id)
+      .eq('codigo_interno', codigo_interno.trim())
+      .eq('ativo', true);
 
-      // Extrair categorias únicas
-      const uniqueCategories = [...new Set(data.map(item => item.categoria).filter(Boolean))];
-      return uniqueCategories.sort();
-    },
-    enabled: !!user,
-  });
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data } = await query.single();
+    return !!data;
+  };
+
+  // Verificar se código de barras existe
+  const checkBarcodeExists = async (codigo_barras: string, excludeId?: string) => {
+    if (!user || !codigo_barras.trim()) return false;
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('salao_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!userData?.salao_id) return false;
+
+    let query = supabase
+      .from('produtos')
+      .select('id')
+      .eq('salao_id', userData.salao_id)
+      .eq('codigo_barras', codigo_barras.trim())
+      .eq('ativo', true);
+
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data } = await query.single();
+    return !!data;
+  };
 
   return {
     products,
-    categories,
     loading,
     error,
     refetch,
     createProduct,
     updateProduct,
     deleteProduct,
+    checkInternalCodeExists,
+    checkBarcodeExists,
     isCreating: createProduct.isPending,
     isUpdating: updateProduct.isPending,
     isDeleting: deleteProduct.isPending,

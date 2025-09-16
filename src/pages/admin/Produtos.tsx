@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Plus, Search, Filter, Package, Edit, Trash2, Save, X, DollarSign, Hash, Building, Tag, FileText, Barcode, Package2, User, Clock, AlertCircle } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { Plus, Search, Filter, Package, Edit, Trash2, Save, X, DollarSign, Hash, Building, Tag, FileText, Barcode, Package2, User, Clock, AlertCircle, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +9,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useProducts, CreateProductData, UpdateProductData } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
 import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/layout/AdminLayout";
 
 const Produtos = () => {
-  const { products, categories, loading, createProduct, updateProduct, deleteProduct, isCreating, isUpdating, isDeleting } = useProducts();
+  const { products, loading, createProduct, updateProduct, deleteProduct, checkInternalCodeExists, checkBarcodeExists, isCreating, isUpdating, isDeleting } = useProducts();
+  const { categories, createCategory, deleteCategory } = useCategories();
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,7 +28,7 @@ const Produtos = () => {
   const [form, setForm] = useState<CreateProductData>({
     codigo_interno: "",
     nome: "",
-    categoria: "",
+    categoria_id: "",
     marca: "",
     preco_custo: 0,
     preco_venda: 0,
@@ -39,6 +42,17 @@ const Produtos = () => {
     para_revenda: true,
     ativo: true
   });
+  
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<any>(null);
+  const [validationErrors, setValidationErrors] = useState<{
+    codigo_interno?: string;
+    codigo_barras?: string;
+  }>({});
+  
+  const internalCodeTimeoutRef = useRef<NodeJS.Timeout>();
+  const barcodeTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Filtrar produtos
   const filteredProducts = useMemo(() => {
@@ -46,9 +60,9 @@ const Produtos = () => {
       const matchesSearch = product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.codigo_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            product.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.categoria?.toLowerCase().includes(searchTerm.toLowerCase());
+                           product.categoria?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesCategory = selectedCategory === "all" || product.categoria === selectedCategory;
+      const matchesCategory = selectedCategory === "all" || product.categoria_id === selectedCategory;
       
       return matchesSearch && matchesCategory;
     });
@@ -59,7 +73,7 @@ const Produtos = () => {
     setForm({
       codigo_interno: "",
       nome: "",
-      categoria: "",
+      categoria_id: "",
       marca: "",
       preco_custo: 0,
       preco_venda: 0,
@@ -74,6 +88,96 @@ const Produtos = () => {
       ativo: true
     });
     setEditingProduct(null);
+    setNewCategoryName("");
+    setShowCreateCategory(false);
+    setValidationErrors({});
+  };
+
+  // Criar nova categoria
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    try {
+      const newCategory = await createCategory.mutateAsync({ nome: newCategoryName.trim() });
+      setForm(f => ({ ...f, categoria_id: newCategory.id }));
+      setNewCategoryName("");
+      setShowCreateCategory(false);
+      
+      toast({
+        title: "Categoria criada",
+        description: `Categoria "${newCategory.nome}" foi criada com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao criar categoria",
+        description: "Não foi possível criar a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Excluir categoria
+  const handleDeleteCategory = async () => {
+    if (!deletingCategory) return;
+    
+    try {
+      await deleteCategory.mutateAsync(deletingCategory.id);
+      setDeletingCategory(null);
+      
+      // Se a categoria excluída estava selecionada, limpar a seleção
+      if (form.categoria_id === deletingCategory.id) {
+        setForm(f => ({ ...f, categoria_id: "" }));
+      }
+      
+      toast({
+        title: "Categoria excluída",
+        description: `Categoria "${deletingCategory.nome}" foi excluída com sucesso.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir categoria",
+        description: error.message || "Não foi possível excluir a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Validar código interno em tempo real
+  const validateInternalCode = async (codigo: string) => {
+    if (!codigo.trim()) {
+      setValidationErrors(prev => ({ ...prev, codigo_interno: undefined }));
+      return;
+    }
+
+    try {
+      const exists = await checkInternalCodeExists(codigo, editingProduct?.id);
+      if (exists) {
+        setValidationErrors(prev => ({ ...prev, codigo_interno: "Código interno já existe" }));
+      } else {
+        setValidationErrors(prev => ({ ...prev, codigo_interno: undefined }));
+      }
+    } catch (error) {
+      setValidationErrors(prev => ({ ...prev, codigo_interno: "Erro ao validar código" }));
+    }
+  };
+
+  // Validar código de barras em tempo real
+  const validateBarcode = async (codigo: string) => {
+    if (!codigo.trim()) {
+      setValidationErrors(prev => ({ ...prev, codigo_barras: undefined }));
+      return;
+    }
+
+    try {
+      const exists = await checkBarcodeExists(codigo, editingProduct?.id);
+      if (exists) {
+        setValidationErrors(prev => ({ ...prev, codigo_barras: "Código de barras já existe" }));
+      } else {
+        setValidationErrors(prev => ({ ...prev, codigo_barras: undefined }));
+      }
+    } catch (error) {
+      setValidationErrors(prev => ({ ...prev, codigo_barras: "Erro ao validar código" }));
+    }
   };
 
   // Abrir modal para criar produto
@@ -87,7 +191,7 @@ const Produtos = () => {
     setForm({
       codigo_interno: product.codigo_interno || "",
       nome: product.nome,
-      categoria: product.categoria || "",
+      categoria_id: product.categoria_id || "",
       marca: product.marca || "",
       preco_custo: product.preco_custo,
       preco_venda: product.preco_venda,
@@ -111,12 +215,14 @@ const Produtos = () => {
       const newForm = { ...prev, para_revenda: value };
       
       if (!value) {
-        // Se não é para revenda, setar categoria como "Consumo" e limpar preço de venda
-        newForm.categoria = "Consumo";
+        // Se não é para revenda, buscar categoria "Consumo" e limpar preço de venda
+        const consumoCategory = categories.find(cat => cat.nome === "Consumo");
+        newForm.categoria_id = consumoCategory?.id || "";
         newForm.preco_venda = 0;
+        // Mantém o preço de custo (não limpa)
       } else {
-        // Se é para revenda, limpar a categoria para permitir digitação livre
-        newForm.categoria = "";
+        // Se é para revenda, limpar a categoria
+        newForm.categoria_id = "";
       }
       
       return newForm;
@@ -126,6 +232,16 @@ const Produtos = () => {
 
   // Salvar produto
   const handleSave = async () => {
+    // Verificar se há erros de validação
+    if (validationErrors.codigo_interno || validationErrors.codigo_barras) {
+      toast({
+        title: "Erro de validação",
+        description: "Corrija os erros nos campos antes de salvar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       if (editingProduct) {
         await updateProduct.mutateAsync({ id: editingProduct.id, ...form });
@@ -142,10 +258,10 @@ const Produtos = () => {
       }
       setModalOpen(false);
       clearForm();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: "Erro ao salvar produto. Tente novamente.",
+        description: error.message || "Erro ao salvar produto. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -332,11 +448,25 @@ const Produtos = () => {
                   </Label>
                   <Input
                     id="codigo_interno"
-                    type="number"
+                    type="text"
                     value={form.codigo_interno}
-                    onChange={(e) => setForm(f => ({ ...f, codigo_interno: e.target.value }))}
+                    onChange={(e) => {
+                      setForm(f => ({ ...f, codigo_interno: e.target.value }));
+                      // Debounce da validação
+                      if (internalCodeTimeoutRef.current) {
+                        clearTimeout(internalCodeTimeoutRef.current);
+                      }
+                      internalCodeTimeoutRef.current = setTimeout(() => validateInternalCode(e.target.value), 500);
+                    }}
                     placeholder="Ex: 001, 123, 456"
+                    className={validationErrors.codigo_interno ? "border-red-500 focus:border-red-500" : ""}
                   />
+                  {validationErrors.codigo_interno && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.codigo_interno}
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="codigo_barras" className="flex items-center gap-2">
@@ -346,9 +476,23 @@ const Produtos = () => {
                   <Input
                     id="codigo_barras"
                     value={form.codigo_barras}
-                    onChange={(e) => setForm(f => ({ ...f, codigo_barras: e.target.value }))}
+                    onChange={(e) => {
+                      setForm(f => ({ ...f, codigo_barras: e.target.value }));
+                      // Debounce da validação
+                      if (barcodeTimeoutRef.current) {
+                        clearTimeout(barcodeTimeoutRef.current);
+                      }
+                      barcodeTimeoutRef.current = setTimeout(() => validateBarcode(e.target.value), 500);
+                    }}
                     placeholder="7891234567890"
+                    className={validationErrors.codigo_barras ? "border-red-500 focus:border-red-500" : ""}
                   />
+                  {validationErrors.codigo_barras && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {validationErrors.codigo_barras}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -361,12 +505,73 @@ const Produtos = () => {
                     <Tag className="h-4 w-4 text-primary" />
                     Categoria
                   </Label>
-                  <Input
-                    id="categoria"
-                    value={form.categoria}
-                    onChange={(e) => setForm(f => ({ ...f, categoria: e.target.value }))}
-                    placeholder="Ex: Cabelo, Unhas"
-                  />
+                  <div className="flex gap-2">
+                    <Select value={form.categoria_id} onValueChange={(value) => {
+                      if (value === "create-new") {
+                        setShowCreateCategory(true);
+                      } else {
+                        setForm(f => ({ ...f, categoria_id: value }));
+                      }
+                    }}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.nome}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="create-new" className="text-primary font-medium">
+                          + Criar nova categoria
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    {form.categoria_id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-10 w-10">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              const category = categories.find(cat => cat.id === form.categoria_id);
+                              if (category) {
+                                setDeletingCategory(category);
+                              }
+                            }}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir categoria
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                  
+                  {showCreateCategory && (
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Nome da nova categoria"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleCreateCategory()}
+                      />
+                      <Button size="sm" onClick={handleCreateCategory} disabled={!newCategoryName.trim()}>
+                        Criar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setShowCreateCategory(false);
+                        setNewCategoryName("");
+                      }}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 {form.para_revenda && (
                   <div className="grid gap-2">
@@ -386,38 +591,38 @@ const Produtos = () => {
                 )}
               </div>
 
-              {/* Preço de Custo e Preço Para Profissional - aparece apenas quando é para revenda */}
+              {/* Preço de Custo - sempre visível */}
+              <div className="grid gap-2">
+                <Label htmlFor="preco_custo" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Preço de Custo *
+                </Label>
+                <Input
+                  id="preco_custo"
+                  type="number"
+                  step="0.01"
+                  value={form.preco_custo || ''}
+                  onChange={(e) => setForm(f => ({ ...f, preco_custo: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+
+              {/* Preço Para Profissional - apenas quando é para revenda */}
               {form.para_revenda && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="preco_custo" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      Preço de Custo *
-                    </Label>
-                    <Input
-                      id="preco_custo"
-                      type="number"
-                      step="0.01"
-                      value={form.preco_custo || ''}
-                      onChange={(e) => setForm(f => ({ ...f, preco_custo: parseFloat(e.target.value) || 0 }))}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="preco_profissional" className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      Preço Para Profissional
-                    </Label>
-                    <Input
-                      id="preco_profissional"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={form.preco_profissional || ''}
-                      onChange={(e) => setForm(f => ({ ...f, preco_profissional: parseFloat(e.target.value) || 0 }))}
-                      placeholder="0.00"
-                    />
-                  </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="preco_profissional" className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    Preço Para Profissional
+                  </Label>
+                  <Input
+                    id="preco_profissional"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.preco_profissional || ''}
+                    onChange={(e) => setForm(f => ({ ...f, preco_profissional: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
                 </div>
               )}
 
@@ -563,7 +768,7 @@ const Produtos = () => {
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
             {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
+              <SelectItem key={category.id} value={category.id}>{category.nome}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -626,7 +831,7 @@ const Produtos = () => {
                         {product.categoria && (
                           <Badge variant="outline" className="text-xs">
                             <Tag className="h-3 w-3 mr-1" />
-                            {product.categoria}
+                            {product.categoria.nome}
                           </Badge>
                         )}
                         {product.fornecedor && (
@@ -642,7 +847,7 @@ const Produtos = () => {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <DollarSign className="h-3 w-3 text-primary" />
-                        <span>R$ {product.preco_venda.toFixed(2)}</span>
+                        <span>R$ {product.para_revenda ? product.preco_venda.toFixed(2) : product.preco_custo.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Package2 className="h-3 w-3 text-primary" />
@@ -668,14 +873,25 @@ const Produtos = () => {
 
                   {/* Preço destacado e ações */}
                   <div className="flex flex-col sm:items-end gap-3">
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-foreground">
-                        R$ {product.preco_venda.toFixed(2)}
+                    {product.para_revenda ? (
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-foreground">
+                          R$ {product.preco_venda.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Preço de venda
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Preço de venda
+                    ) : (
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Produto para consumo interno
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Não comercializado
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="flex gap-2 w-full sm:w-auto">
                       <Button 
@@ -725,6 +941,32 @@ const Produtos = () => {
         </div>
       )}
       </div>
+
+      {/* Modal de confirmação para exclusão de categoria */}
+      <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão de Categoria</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a categoria <strong>"{deletingCategory?.nome}"</strong>?
+              <br />
+              <br />
+              <span className="text-amber-600 font-medium">
+                ⚠️ Esta ação não pode ser desfeita e só será possível se não houver produtos associados a esta categoria.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCategory}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir Categoria
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
