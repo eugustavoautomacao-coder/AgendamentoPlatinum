@@ -1847,16 +1847,18 @@ const Agenda = () => {
             <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-[9999] w-[95vw] sm:max-w-[500px] max-h-[90vh] translate-x-[-50%] translate-y-[-50%] bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg overflow-y-auto">
             <DialogHeader className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   <div className="p-1.5 bg-primary/10 rounded-lg">
                     <CalendarIcon className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <DialogTitle className="text-lg font-semibold">Detalhes do Agendamento</DialogTitle>
                     <p className="text-xs text-muted-foreground">
                       {selectedApt && capitalizeFirstLetter(format(new Date(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }))}
                     </p>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <Button
                     type="button"
                     variant="outline"
@@ -1867,10 +1869,18 @@ const Agenda = () => {
                         setPhotosModalOpen(true);
                       }
                     }}
-                    className="ml-20"
                   >
                     <Camera className="h-4 w-4 mr-1" />
                     Fotos
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDetailOpen(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -1956,7 +1966,7 @@ const Agenda = () => {
                 </div>
               </div>
             )}
-            <DialogFooter className="flex items-center justify-between pt-3 border-t border-border">
+            <DialogFooter className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-border">
               <Button
                 variant="destructive"
                 size="sm"
@@ -1966,7 +1976,7 @@ const Agenda = () => {
                   await deleteAppointment(selectedApt.id);
                   setDetailOpen(false);
                 }}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 w-full sm:w-auto order-3 sm:order-1"
               >
                 {isDeleting ? (
                   <>
@@ -1980,8 +1990,14 @@ const Agenda = () => {
                   </>
                 )}
               </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setDetailOpen(false)} disabled={isUpdating}>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto order-1 sm:order-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setDetailOpen(false)} 
+                  disabled={isUpdating}
+                  className="w-full sm:w-auto"
+                >
                   <X className="h-3 w-3 mr-1" />
                   Cancelar
                 </Button>
@@ -1997,6 +2013,7 @@ const Agenda = () => {
                     } as any);
                     setDetailOpen(false);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   {isUpdating ? (
                     <>
