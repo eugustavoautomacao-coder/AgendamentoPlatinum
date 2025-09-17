@@ -357,34 +357,36 @@ const RelatorioHorarios = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => navigate('/admin/relatorios')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 flex-shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar
+              <span className="hidden sm:inline">Voltar</span>
             </Button>
-            <Clock className="h-8 w-8 text-cyan-500" />
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Relatório de Horários</h1>
-              <p className="text-muted-foreground">
+            <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-cyan-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">Relatório de Horários</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Análise de distribuição e ocupação dos horários
               </p>
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+            <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
               <Download className="h-4 w-4" />
-              Exportar Excel
+              <span className="hidden sm:inline">Exportar Excel</span>
+              <span className="sm:hidden">Excel</span>
             </Button>
-            <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
               <Download className="h-4 w-4" />
-              Exportar PDF
+              <span className="hidden sm:inline">Exportar PDF</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
           </div>
         </div>

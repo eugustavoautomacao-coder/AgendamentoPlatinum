@@ -174,9 +174,11 @@ const Agenda = () => {
   // estado de drag
   const [dragging, setDragging] = useState<{
     id: string;
+    startX: number;
     startY: number;
     initialTop: number;
     currentTop: number;
+    currentX: number;
     height: number;
     profId: string;
   } | null>(null);
@@ -495,7 +497,7 @@ const Agenda = () => {
       setHasDragged(true);
     }
     
-    // Detectar coluna atual durante o drag
+    // Detectar coluna atual durante o drag - usar posição atual do mouse
     let currentColumn = dragging.profId;
     for (const prof of professionals) {
       const el = columnRefs.current[prof.id];
@@ -508,13 +510,59 @@ const Agenda = () => {
     }
     setCurrentDragColumn(currentColumn);
     
-    const container = columnRefs.current[dragging.profId];
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const maxTop = rect.height - dragging.height - 2;
+    // Calcular movimento Y (vertical)
     const deltaY = e.clientY - dragging.startY;
-    const nextTop = Math.max(0, Math.min(dragging.initialTop + deltaY, maxTop));
-    setDragging({ ...dragging, currentTop: nextTop });
+    const nextTop = Math.max(0, dragging.initialTop + deltaY);
+    
+    // Calcular movimento X (horizontal) - permitir movimento livre
+    const deltaX = e.clientX - dragging.startX;
+    const nextX = deltaX;
+    
+    setDragging({ 
+      ...dragging, 
+      currentTop: nextTop,
+      currentX: nextX
+    });
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    if (!dragging || !e.touches[0]) return;
+    
+    e.preventDefault(); // Prevenir scroll durante drag
+    
+    // Marcar que houve movimento (drag)
+    if (!hasDragged) {
+      setHasDragged(true);
+    }
+    
+    const touch = e.touches[0];
+    
+    // Detectar coluna atual durante o drag
+    let currentColumn = dragging.profId;
+    for (const prof of professionals) {
+      const el = columnRefs.current[prof.id];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (touch.clientX >= r.left && touch.clientX <= r.right) {
+        currentColumn = prof.id;
+        break;
+      }
+    }
+    setCurrentDragColumn(currentColumn);
+    
+    // Calcular movimento Y (vertical)
+    const deltaY = touch.clientY - dragging.startY;
+    const nextTop = Math.max(0, dragging.initialTop + deltaY);
+    
+    // Calcular movimento X (horizontal) - permitir movimento livre
+    const deltaX = touch.clientX - dragging.startX;
+    const nextX = deltaX;
+    
+    setDragging({ 
+      ...dragging, 
+      currentTop: nextTop,
+      currentX: nextX
+    });
   };
 
   const onMouseUp = async (e: MouseEvent) => {
@@ -536,6 +584,52 @@ const Agenda = () => {
           break;
         }
       }
+
+      await handleDragEnd(targetProfId, targetProfName);
+    }
+
+    // Reset drag state
+    setDragging(null);
+    setHasDragged(false);
+    setDragStartTime(0);
+    setCurrentDragColumn(null);
+  };
+
+  const onTouchEnd = async (e: TouchEvent) => {
+    if (!dragging) return;
+
+    // Se houve drag, não abrir modal
+    if (hasDragged) {
+      // descobrir coluna alvo pelo X
+      let targetProfId = dragging.profId;
+      let targetProfName = '';
+      
+      if (e.changedTouches[0]) {
+        const touch = e.changedTouches[0];
+        for (const prof of professionals) {
+          const el = columnRefs.current[prof.id];
+          if (!el) continue;
+          const r = el.getBoundingClientRect();
+          if (touch.clientX >= r.left && touch.clientX <= r.right) {
+            targetProfId = prof.id;
+            targetProfName = prof.nome;
+            break;
+          }
+        }
+      }
+
+      await handleDragEnd(targetProfId, targetProfName);
+    }
+
+    // Reset drag state
+    setDragging(null);
+    setHasDragged(false);
+    setDragStartTime(0);
+    setCurrentDragColumn(null);
+  };
+
+  const handleDragEnd = async (targetProfId: string, targetProfName: string) => {
+    if (!dragging) return;
 
       // snap to grid
       const snappedRows = Math.round(dragging.currentTop / SLOT_HEIGHT);
@@ -574,13 +668,6 @@ const Agenda = () => {
           variant: 'destructive',
         });
       }
-    }
-
-    // Reset drag state
-    setDragging(null);
-    setHasDragged(false);
-    setDragStartTime(0);
-    setCurrentDragColumn(null);
   };
 
   const handleCardMouseDown = (e: React.MouseEvent, apt: any, prof: any, top: number) => {
@@ -589,17 +676,44 @@ const Agenda = () => {
     setHasDragged(false);
     setDragging({ 
       id: apt.id, 
+      startX: e.clientX,
       startY: e.clientY, 
       initialTop: top, 
-      currentTop: top, 
+      currentTop: top,
+      currentX: 0,
       height: (Math.max(30, (apt.servico_duracao || 60)) / SLOT_MINUTES) * SLOT_HEIGHT, 
       profId: prof.id 
     });
   };
 
+  const handleCardTouchStart = (e: React.TouchEvent, apt: any, prof: any, top: number) => {
+    e.preventDefault();
+    if (!e.touches[0]) return;
+    
+    const touch = e.touches[0];
+    setDragStartTime(Date.now());
+    setHasDragged(false);
+    setDragging({ 
+      id: apt.id, 
+      startX: touch.clientX,
+      startY: touch.clientY, 
+      initialTop: top, 
+      currentTop: top,
+      currentX: 0,
+      height: (Math.max(30, (apt.servico_duracao || 60)) / SLOT_MINUTES) * SLOT_HEIGHT, 
+      profId: prof.id 
+    });
+    
+    // Adicionar feedback tátil se disponível
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+
   const handleCardClick = (apt: any) => {
-    // Só abrir modal se não houve drag
-    if (!hasDragged) {
+    // Só abrir modal se não houve drag e passou tempo suficiente desde o início do toque
+    const timeSinceStart = Date.now() - dragStartTime;
+    if (!hasDragged && timeSinceStart > 100) {
       setSelectedApt(apt); 
       setEditForm({ 
         servico_id: apt.servico_id, 
@@ -614,9 +728,13 @@ const Agenda = () => {
     if (dragging) {
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd);
       return () => {
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('touchmove', onTouchMove);
+        window.removeEventListener('touchend', onTouchEnd);
       };
     }
   }, [dragging, hasDragged]);
@@ -1369,10 +1487,10 @@ const Agenda = () => {
         </div>
 
         {/* Controles de data da agenda */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="icon" onClick={goPrevDay} aria-label="Dia anterior"><ChevronLeft className="h-4 w-4" /></Button>
-            <Button variant="outline" onClick={goToday}>Hoje</Button>
+            <Button variant="outline" onClick={goToday} className="text-xs sm:text-sm">Hoje</Button>
             <Button variant="outline" size="icon" onClick={goNextDay} aria-label="Próximo dia"><ChevronRight className="h-4 w-4" /></Button>
             {/* Navegação de profissionais */}
             {filteredProfessionals.length > professionalsPerView && (
@@ -1386,7 +1504,7 @@ const Agenda = () => {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-xs sm:text-sm text-muted-foreground">
                   {currentProfIndex + 1}-{Math.min(currentProfIndex + professionalsPerView, filteredProfessionals.length)} de {filteredProfessionals.length}
                 </span>
                 <Button
@@ -1403,9 +1521,11 @@ const Agenda = () => {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-start">
-                <CalendarIcon className="h-4 w-4 mr-2" />
+              <Button variant="outline" className="justify-start w-full sm:w-auto min-w-0">
+                <CalendarIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate text-xs sm:text-sm">
                 {capitalizeFirstLetter(format(selectedDay, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR }))}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="p-0">
@@ -1449,19 +1569,51 @@ const Agenda = () => {
                 </div>
               )}
             </div>
-            {visibleProfessionals.map(prof => (
-              <div key={prof.id} className="p-4 text-center border-r border-border last:border-r-0 flex flex-col items-center">
-                {prof.avatar_url ? (
-                  <img src={prof.avatar_url} alt={prof.nome} className="w-12 h-12 rounded-full mb-2 object-cover border-2 border-primary" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full mb-2 bg-muted flex items-center justify-center text-lg font-bold border-2 border-primary text-primary">
-                    {prof.nome.split(' ').map(n => n[0]).join('').slice(0,2)}
-                  </div>
-                )}
-                <p className="font-bold text-foreground leading-tight">{prof.nome}</p>
-                <p className="text-xs text-muted-foreground">{prof.cargo || 'Profissional'}</p>
-              </div>
-            ))}
+            {visibleProfessionals.map(prof => {
+              const isDragTarget = dragging && currentDragColumn === prof.id && currentDragColumn !== dragging.profId;
+              const isDragSource = dragging && dragging.profId === prof.id;
+              
+              return (
+                <div 
+                  key={prof.id} 
+                  className={`p-4 text-center border-r border-border last:border-r-0 flex flex-col items-center transition-all duration-200 ${
+                    isDragTarget 
+                      ? 'bg-primary/10 border-primary/60 shadow-inner' 
+                      : isDragSource 
+                        ? 'bg-muted/30 border-muted-foreground/30' 
+                        : ''
+                  }`}
+                >
+                  {prof.avatar_url ? (
+                    <img 
+                      src={prof.avatar_url} 
+                      alt={prof.nome} 
+                      className={`w-12 h-12 rounded-full mb-2 object-cover border-2 transition-all duration-200 ${
+                        isDragTarget 
+                          ? 'border-primary shadow-lg' 
+                          : isDragSource 
+                            ? 'border-muted-foreground/50' 
+                            : 'border-primary'
+                      }`} 
+                    />
+                  ) : (
+                    <div className={`w-12 h-12 rounded-full mb-2 bg-muted flex items-center justify-center text-lg font-bold border-2 transition-all duration-200 ${
+                      isDragTarget 
+                        ? 'border-primary shadow-lg text-primary' 
+                        : isDragSource 
+                          ? 'border-muted-foreground/50 text-muted-foreground' 
+                          : 'border-primary text-primary'
+                    }`}>
+                      {prof.nome.split(' ').map(n => n[0]).join('').slice(0,2)}
+                    </div>
+                  )}
+                  <p className={`font-bold leading-tight transition-colors duration-200 ${
+                    isDragTarget ? 'text-primary' : 'text-foreground'
+                  }`}>{prof.nome}</p>
+                  <p className="text-xs text-muted-foreground">{prof.cargo || 'Profissional'}</p>
+                </div>
+              );
+            })}
           </div>
 
                      {/* Corpo da grade */}
@@ -1494,11 +1646,18 @@ const Agenda = () => {
             {visibleProfessionals.map(prof => {
               const profAppointments = appointmentsOfDay.filter(a => a.funcionario_id === prof.id);
               const isDragTarget = dragging && currentDragColumn === prof.id && currentDragColumn !== dragging.profId;
+              const isDragSource = dragging && dragging.profId === prof.id;
                   return (
                 <div 
                   key={prof.id} 
                   ref={(el) => (columnRefs.current[prof.id] = el)} 
-                                     className={`relative border-l border-border transition-colors duration-200 ${isDragTarget ? 'bg-primary/5 border-primary/40' : ''}`} 
+                  className={`relative border-l border-border transition-all duration-200 ${
+                    isDragTarget 
+                      ? 'bg-primary/10 border-primary/60 shadow-inner' 
+                      : isDragSource 
+                        ? 'bg-muted/30 border-muted-foreground/30' 
+                        : ''
+                  }`} 
                    style={{ height: allHours.length * SLOT_HEIGHT }}
                 >
                   {/* Linhas de hora de fundo */}
@@ -1613,6 +1772,7 @@ const Agenda = () => {
 
                     const isDragging = dragging?.id === apt.id;
                     const topStyle = isDragging ? dragging.currentTop : top;
+                    const leftStyle = isDragging ? dragging.currentX : 0;
 
                     const end = addMinutes(start, apt.servico_duracao || 60);
                     const timeRange = `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
@@ -1620,13 +1780,18 @@ const Agenda = () => {
                   return (
                       <div
                         key={apt.id}
-                        className={`absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md transition-shadow border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40' : ''}`}
-                        style={{ top: topStyle, height }}
+                        className={`absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md transition-shadow border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40 shadow-lg scale-105' : ''}`}
+                        style={{ 
+                          top: topStyle, 
+                          height,
+                          transform: isDragging ? `translateX(${leftStyle}px)` : 'none'
+                        }}
                         onMouseDown={(e) => handleCardMouseDown(e, apt, prof, top)}
+                        onTouchStart={(e) => handleCardTouchStart(e, apt, prof, top)}
                         onClick={() => handleCardClick(apt)}
                         title={`${apt.cliente_nome || 'Cliente'} • ${apt.servico_nome || ''}`}
                       >
-                        <div className="px-3 py-2 text-left cursor-grab active:cursor-grabbing select-none relative h-full">
+                        <div className={`px-3 py-2 text-left select-none relative h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab active:cursor-grabbing'}`}>
                           <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
                           <div className="flex items-center justify-between pr-1">
                             <div className="flex items-center gap-2 min-w-0">
