@@ -10,6 +10,12 @@ export interface Client {
   email: string;
   telefone?: string;
   observacoes?: string;
+  data_nascimento?: string;
+  endereco?: string;
+  ativo?: boolean;
+  total_atendimentos?: number;
+  ultimo_atendimento?: string;
+  avatar_url?: string;
   criado_em: string;
 }
 

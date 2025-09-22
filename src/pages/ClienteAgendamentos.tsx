@@ -206,7 +206,7 @@ export const ClienteAgendamentos: React.FC = () => {
 
       <div className="container mx-auto px-4 py-6">
         {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <Card className="border-l-4 border-l-yellow-500">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">

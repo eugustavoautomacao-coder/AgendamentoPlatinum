@@ -11,37 +11,31 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    // Autenticação do usuário
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    const supabaseClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    // Permitir admin e superadmin
-    const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-    if (profileError || !profile || (profile.role !== 'superadmin' && profile.role !== 'admin')) {
-      return new Response(JSON.stringify({ error: 'Insufficient permissions' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log('🚀 Edge Function create-professional iniciada');
+    
     // Obter dados do request
     const requestBody = await req.json();
-    const { name, email, phone, specialties, schedule, salon_id } = requestBody;
-    if (!name || !email || !salon_id) {
+    const { name, email, password, phone, cargo, percentual_comissao, salon_id } = requestBody;
+    
+    console.log('📝 Dados recebidos:', { name, email, phone, cargo, percentual_comissao, salon_id });
+
+    // Validação básica
+    if (!name || !email || !password || !salon_id) {
+      console.log('❌ Campos obrigatórios faltando');
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Validação de UUID para salon_id
+    function isUUID(str) {
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    }
+
+    if (!isUUID(salon_id)) {
+      console.log('❌ salon_id inválido:', salon_id);
+      return new Response(JSON.stringify({ error: 'salon_id inválido (não é UUID)' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -58,9 +52,7 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
-    // Gerar senha aleatória
-    const password = Math.random().toString(36).slice(-10) + 'Aa1!';
-    // Criar usuário
+    // Criar usuário com senha fornecida
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -79,48 +71,37 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    // Atualizar perfil
-    const { error: profileError2 } = await supabaseAdmin.from('profiles').update({
-      name,
-      role: 'profissional',
-      salon_id,
-      phone
-    }).eq('id', authData.user.id);
-    if (profileError2) {
-      // rollback
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return new Response(JSON.stringify({ error: `Failed to update profile: ${profileError2.message}` }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    // Esperar profile existir antes de inserir em professionals
-    let profileExists = false;
-    for(let i = 0; i < 10; i++){
-      const { data: profileCheck } = await supabaseAdmin.from('profiles').select('id').eq('id', authData.user.id).single();
-      if (profileCheck && profileCheck.id) {
-        profileExists = true;
-        break;
-      }
-      await new Promise((res)=>setTimeout(res, 500));
-    }
-    if (!profileExists) {
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return new Response(JSON.stringify({ error: 'Profile record not found after user creation. Tente novamente.' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    // Inserir em professionals
-    const { error: professionalError } = await supabaseAdmin.from('professionals').insert([
+    // Inserir na tabela users
+    const { error: userError } = await supabaseAdmin.from('users').insert([
       {
         id: authData.user.id,
-        salon_id,
-        specialties: specialties || [],
-        schedule: schedule || {},
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        email: email,
+        nome: name,
+        telefone: phone || 'Não informado',
+        tipo: 'funcionario',
+        salao_id: salon_id
+      }
+    ]);
+    if (userError) {
+      // rollback
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      return new Response(JSON.stringify({ error: `Failed to insert user: ${userError.message}` }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    // Inserir em employees
+    const { error: professionalError } = await supabaseAdmin.from('employees').insert([
+      {
+        id: authData.user.id,
+        user_id: authData.user.id,
+        salao_id: salon_id,
+        nome: name,
+        email: email,
+        telefone: phone || 'Não informado',
+        cargo: cargo || 'Profissional',
+        percentual_comissao: percentual_comissao || 0,
+        ativo: true
       }
     ]);
     if (professionalError) {

@@ -467,46 +467,49 @@ export default function SalaoPublico() {
     <div className="min-h-screen bg-background">
       {/* Header do Salão */}
       <div className="bg-card shadow-sm border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+          <div className="flex flex-col gap-4">
+            {/* Informações do Salão */}
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{salon.nome}</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">{salon.nome}</h1>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  <span className="text-sm sm:text-base">{salon.telefone}</span>
+                  <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm lg:text-base">{salon.telefone}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-sm sm:text-base">{salon.endereco}</span>
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="text-xs sm:text-sm lg:text-base">{salon.endereco}</span>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-start sm:items-end gap-3">
-              <Badge variant="outline" className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400 self-start sm:self-end">
+            
+            {/* Status e Login */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <Badge variant="outline" className="text-green-600 border-green-600 dark:text-green-400 dark:border-green-400 self-start sm:self-center">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Online
               </Badge>
+              
               {clienteLogado ? (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 self-start sm:self-end">
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200 self-start sm:self-center">
                     <User className="h-3 w-3 mr-1" />
-                    {clienteLogado.nome}
+                    <span className="truncate max-w-32 sm:max-w-none">{clienteLogado.nome}</span>
                   </Badge>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleClienteLogout}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-start sm:self-end flex items-center gap-1"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-start sm:self-center flex items-center gap-1 w-full sm:w-auto"
                   >
                     <LogOut className="h-3 w-3" />
-                    <span className="hidden sm:inline">Sair</span>
-                    <span className="sm:hidden">Sair</span>
+                    Sair
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
-                  <div className="text-xs text-muted-foreground self-start sm:self-end flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="text-xs text-muted-foreground self-start sm:self-center flex items-center gap-1.5">
                     <HelpCircle className="h-3 w-3" />
                     Já tem login?
                   </div>
@@ -514,7 +517,7 @@ export default function SalaoPublico() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowLoginModal(true)}
-                    className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 self-start sm:self-end"
+                    className="flex items-center gap-2 text-primary border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 self-start sm:self-center w-full sm:w-auto"
                   >
                     <LogIn className="h-4 w-4" />
                     Entrar
@@ -528,11 +531,11 @@ export default function SalaoPublico() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-center mb-6 sm:mb-8">
+          <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto w-full justify-center">
             {['services', 'professional', 'schedule', 'form'].map((stepName, index) => (
-              <div key={stepName} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              <div key={stepName} className="flex items-center flex-shrink-0">
+                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
                   step === 'success' ? 'bg-green-500 text-white' : // Todos verdes na tela de sucesso
                   step === stepName ? 'bg-primary text-primary-foreground' : 
                   ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'
@@ -540,7 +543,7 @@ export default function SalaoPublico() {
                   {index + 1}
                 </div>
                 {index < 3 && (
-                  <div className={`w-16 h-0.5 ${
+                  <div className={`w-8 sm:w-16 h-0.5 ${
                     step === 'success' ? 'bg-green-500' : // Todas as linhas verdes na tela de sucesso
                     ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500' : 'bg-muted'
                   }`} />
@@ -553,11 +556,11 @@ export default function SalaoPublico() {
         {/* Step 1: Seleção de Serviços */}
         {step === 'services' && (
           <div>
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-foreground">Escolha um Serviço</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Escolha um Serviço</h2>
               
               {/* Campo de Busca */}
-              <div className="relative w-full lg:w-80">
+              <div className="relative w-full sm:w-80">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Buscar serviços..."
@@ -576,21 +579,21 @@ export default function SalaoPublico() {
             )}
             
             {filteredServices.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredServices.map((service) => (
                   <Card key={service.id} className="cursor-pointer hover:shadow-lg transition-shadow border-border" onClick={() => handleServiceSelect(service)}>
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground">{service.nome}</CardTitle>
-                      <Badge variant="secondary">{service.categoria}</Badge>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base sm:text-lg text-foreground">{service.nome}</CardTitle>
+                      <Badge variant="secondary" className="text-xs w-fit">{service.categoria}</Badge>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-3">{service.descricao}</p>
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{service.descricao}</p>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
+                        <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span>{service.duracao_minutos} min</span>
                         </div>
-                        <div className="text-lg font-bold text-primary">
+                        <div className="text-base sm:text-lg font-bold text-primary">
                           R$ {service.preco.toFixed(2)}
                         </div>
                       </div>
@@ -599,10 +602,10 @@ export default function SalaoPublico() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum serviço encontrado</h3>
-                <p className="text-muted-foreground">
+              <div className="text-center py-8 sm:py-12">
+                <Search className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Nenhum serviço encontrado</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {serviceSearchTerm 
                     ? `Nenhum serviço encontrado para "${serviceSearchTerm}".`
                     : 'Não há serviços disponíveis no momento.'
@@ -612,7 +615,7 @@ export default function SalaoPublico() {
                   <Button 
                     variant="outline" 
                     onClick={() => setServiceSearchTerm('')}
-                    className="mt-4"
+                    className="mt-4 text-sm"
                   >
                     Limpar busca
                   </Button>
@@ -626,17 +629,17 @@ export default function SalaoPublico() {
         {step === 'professional' && selectedService && (
           <div>
             <div className="mb-6">
-              <Button variant="outline" onClick={() => setStep('services')} className="mb-4">
+              <Button variant="outline" onClick={() => setStep('services')} className="mb-4 text-sm">
                 ← Voltar
               </Button>
-              <h2 className="text-2xl font-bold text-foreground">Escolha um Profissional</h2>
-              <p className="text-muted-foreground">Serviço selecionado: <strong className="text-foreground">{selectedService.nome}</strong></p>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Escolha um Profissional</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Serviço selecionado: <strong className="text-foreground">{selectedService.nome}</strong></p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {professionals.map((professional) => (
                 <Card key={professional.id} className="cursor-pointer hover:shadow-lg transition-shadow border-border" onClick={() => handleProfessionalSelect(professional)}>
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 rounded-full mx-auto mb-4 overflow-hidden">
+                  <CardContent className="p-4 sm:p-6 text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full mx-auto mb-3 sm:mb-4 overflow-hidden">
                       {professional.avatar_url ? (
                         <img 
                           src={professional.avatar_url} 
@@ -645,14 +648,14 @@ export default function SalaoPublico() {
                         />
                       ) : (
                         <div className="w-full h-full bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="h-8 w-8 text-primary" />
+                          <User className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                         </div>
                       )}
                     </div>
-                    <h3 className="font-semibold text-lg text-foreground">{professional.nome}</h3>
+                    <h3 className="font-semibold text-base sm:text-lg text-foreground">{professional.nome}</h3>
                     <div className="flex items-center justify-center gap-1 mt-2">
-                      <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="text-sm text-muted-foreground">4.8</span>
+                      <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 fill-current" />
+                      <span className="text-xs sm:text-sm text-muted-foreground">4.8</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -665,26 +668,26 @@ export default function SalaoPublico() {
         {step === 'schedule' && selectedService && selectedProfessional && (
           <div>
             <div className="mb-6">
-              <Button variant="outline" onClick={() => setStep('professional')} className="mb-4">
+              <Button variant="outline" onClick={() => setStep('professional')} className="mb-4 text-sm">
                 ← Voltar
               </Button>
-              <h2 className="text-2xl font-bold text-foreground">Escolha Data e Horário</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Escolha Data e Horário</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Profissional: <strong className="text-foreground">{selectedProfessional.nome}</strong> • 
                 Serviço: <strong className="text-foreground">{selectedService.nome}</strong>
               </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Seleção de Data */}
               <Card className="border-border">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <CalendarIcon className="h-5 w-5 text-primary" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-base sm:text-lg">
+                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     Escolha a Data
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   <div className="space-y-3">
                     {/* Campo de data formatada (visual) */}
                     <div className="relative">
@@ -692,7 +695,7 @@ export default function SalaoPublico() {
                         type="text"
                         value={formatDate(selectedDate)}
                         readOnly
-                        className="w-full pr-10 cursor-pointer bg-muted/50"
+                        className="w-full pr-10 cursor-pointer bg-muted/50 text-sm"
                         onClick={() => {
                           const dateInput = document.getElementById('date-input') as HTMLInputElement;
                           if (dateInput) dateInput.showPicker();
@@ -705,14 +708,14 @@ export default function SalaoPublico() {
                     </div>
                     
                     {/* Campo de data nativo (funcional) */}
-                  <Input
+                    <Input
                       id="date-input"
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => handleDateSelect(e.target.value)}
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => handleDateSelect(e.target.value)}
                       min={getTodayDate()}
                       className="sr-only"
-                  />
+                    />
                     
                     <p className="text-xs text-muted-foreground">
                       Clique no campo para abrir o calendário e escolher uma data
@@ -724,64 +727,64 @@ export default function SalaoPublico() {
               {/* Seleção de Horário */}
               {selectedDate && (
                 <Card className="border-border">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
-                      <Clock className="h-5 w-5 text-primary" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-foreground text-base sm:text-lg">
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                       Horários Disponíveis
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Horários livres para {formatDate(selectedDate)}
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pt-0">
                     {loadingSlots ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                        <p className="text-muted-foreground">Carregando horários disponíveis...</p>
+                      <div className="text-center py-6 sm:py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto mb-3"></div>
+                        <p className="text-sm text-muted-foreground">Carregando horários disponíveis...</p>
                       </div>
                     ) : availableSlots.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                        <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum horário disponível</h3>
-                        <p className="text-muted-foreground text-sm mb-4">
+                      <div className="text-center py-6 sm:py-8">
+                        <Clock className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3" />
+                        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Nenhum horário disponível</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                           Não há horários disponíveis para esta data. 
                           Tente selecionar outra data ou entre em contato com o salão.
                         </p>
                         <Button 
                           variant="outline" 
                           onClick={() => setStep('professional')}
-                          className="text-sm"
+                          className="text-xs sm:text-sm"
                         >
                           Escolher Outro Profissional
                         </Button>
                       </div>
                     ) : (
                       <>
-                        <div className="mb-4 text-sm text-muted-foreground">
+                        <div className="mb-4 text-xs sm:text-sm text-muted-foreground">
                           {availableSlots.filter(slot => slot.available).length} de {availableSlots.length} horários disponíveis
                         </div>
-                    <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto modal-scrollbar">
-                      {availableSlots.map((slot) => (
-                        <Button
-                          key={slot.time}
-                          variant={slot.available ? "outline" : "secondary"}
-                          disabled={!slot.available}
-                          onClick={() => slot.available && handleTimeSelect(slot.time)}
-                              className={`text-sm ${
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 sm:max-h-60 overflow-y-auto modal-scrollbar">
+                          {availableSlots.map((slot) => (
+                            <Button
+                              key={slot.time}
+                              variant={slot.available ? "outline" : "secondary"}
+                              disabled={!slot.available}
+                              onClick={() => slot.available && handleTimeSelect(slot.time)}
+                              className={`text-xs sm:text-sm ${
                                 slot.available 
                                   ? 'hover:bg-primary hover:text-primary-foreground border-primary' 
                                   : 'cursor-not-allowed opacity-50'
                               }`}
                               title={slot.available ? `Agendar para ${slot.time}` : 'Horário indisponível'}
-                        >
-                          {slot.time}
-                        </Button>
-                      ))}
-                    </div>
+                            >
+                              {slot.time}
+                            </Button>
+                          ))}
+                        </div>
                         <div className="mt-3 text-xs text-muted-foreground">
-                          <span className="inline-block w-3 h-3 bg-primary border border-primary rounded mr-1"></span>
+                          <span className="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-primary border border-primary rounded mr-1"></span>
                           Disponível
-                          <span className="inline-block w-3 h-3 bg-muted border border-border rounded ml-3 mr-1"></span>
+                          <span className="inline-block w-2 h-2 sm:w-3 sm:h-3 bg-muted border border-border rounded ml-3 mr-1"></span>
                           Indisponível
                         </div>
                       </>
@@ -797,49 +800,47 @@ export default function SalaoPublico() {
         {step === 'form' && selectedService && selectedProfessional && selectedDate && selectedTime && (
           <div>
             <div className="mb-6">
-              <Button variant="outline" onClick={() => setStep('schedule')} className="mb-4">
+              <Button variant="outline" onClick={() => setStep('schedule')} className="mb-4 text-sm">
                 ← Voltar
               </Button>
-              <h2 className="text-2xl font-bold text-foreground">Seus Dados</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">Seus Dados</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {selectedProfessional.nome} • {selectedService.nome} • {formatDate(selectedDate)} às {selectedTime}
               </p>
             </div>
 
             <Card className="max-w-2xl mx-auto border-border">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center justify-between">
-                  <span>Informações para o Agendamento</span>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-foreground flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <span className="text-base sm:text-lg">Informações para o Agendamento</span>
                   {clienteLogado && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleClienteLogout}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <LogOut className="h-4 w-4 mr-1" />
-                        Sair
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClienteLogout}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs w-full sm:w-auto"
+                    >
+                      <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      Sair
+                    </Button>
                   )}
                 </CardTitle>
                 {clienteLogado && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Olá, <strong>{clienteLogado.nome}</strong>! Seus dados foram preenchidos automaticamente.
                   </p>
                 )}
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-0">
                 <div>
-                  <Label htmlFor="cliente_nome">Nome Completo *</Label>
+                  <Label htmlFor="cliente_nome" className="text-sm">Nome Completo *</Label>
                   <Input
                     id="cliente_nome"
                     value={formData.cliente_nome}
                     onChange={(e) => setFormData(prev => ({ ...prev, cliente_nome: e.target.value }))}
                     placeholder="Seu nome completo"
                     disabled={clienteLogado !== null}
-                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
+                    className={`text-sm ${clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}`}
                   />
                   {clienteLogado && (
                     <p className="text-xs text-muted-foreground mt-1">
@@ -849,13 +850,13 @@ export default function SalaoPublico() {
                 </div>
 
                 <div>
-                  <Label htmlFor="cliente_telefone">Telefone *</Label>
+                  <Label htmlFor="cliente_telefone" className="text-sm">Telefone *</Label>
                   <InputPhone
                     id="cliente_telefone"
                     value={formData.cliente_telefone}
                     onChange={(formattedValue, rawValue) => setFormData(prev => ({ ...prev, cliente_telefone: rawValue }))}
                     disabled={clienteLogado !== null}
-                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
+                    className={`text-sm ${clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}`}
                   />
                   {clienteLogado && (
                     <p className="text-xs text-muted-foreground mt-1">
@@ -865,14 +866,14 @@ export default function SalaoPublico() {
                 </div>
 
                 <div>
-                  <Label htmlFor="cliente_email">E-mail</Label>
+                  <Label htmlFor="cliente_email" className="text-sm">E-mail</Label>
                   <Input
                     id="cliente_email"
                     value={formData.cliente_email}
                     onChange={(e) => setFormData(prev => ({ ...prev, cliente_email: e.target.value }))}
                     placeholder="seu@email.com"
                     disabled={clienteLogado !== null}
-                    className={clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}
+                    className={`text-sm ${clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}`}
                   />
                   {clienteLogado && (
                     <p className="text-xs text-muted-foreground mt-1">
@@ -882,20 +883,21 @@ export default function SalaoPublico() {
                 </div>
 
                 <div>
-                  <Label htmlFor="observacoes">Observações</Label>
+                  <Label htmlFor="observacoes" className="text-sm">Observações</Label>
                   <Textarea
                     id="observacoes"
                     value={formData.observacoes}
                     onChange={(e) => setFormData(prev => ({ ...prev, observacoes: e.target.value }))}
                     placeholder="Alguma observação especial..."
                     rows={3}
+                    className="text-sm"
                   />
                 </div>
 
                 <Button 
                   onClick={handleSubmitRequest} 
                   disabled={isLoading}
-                  className="w-full"
+                  className="w-full text-sm"
                 >
                   {isLoading ? 'Enviando...' : 'Solicitar Agendamento'}
                 </Button>
@@ -907,22 +909,22 @@ export default function SalaoPublico() {
         {/* Step 5: Sucesso */}
         {step === 'success' && (
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">Solicitação Enviada!</h2>
-            <p className="text-muted-foreground mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-3 sm:mb-4">Solicitação Enviada!</h2>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
               Sua solicitação de agendamento foi enviada com sucesso. 
               O salão entrará em contato para confirmar o horário.
             </p>
 
             {/* Mensagem sobre credenciais enviadas por email */}
             {!clienteLogado && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 mt-0.5 flex-shrink-0" />
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-green-800">
+                    <p className="text-xs sm:text-sm font-medium text-green-800">
                       Suas credenciais foram enviadas por email!
                     </p>
                     <p className="text-xs text-green-700">
@@ -934,24 +936,24 @@ export default function SalaoPublico() {
             )}
             
             {/* Explicação sobre acompanhamento */}
-            <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 mb-6">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 mb-4 sm:mb-6">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
                     {clienteLogado ? (
-                      <User className="h-5 w-5 text-primary" />
+                      <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     ) : (
-                    <LogIn className="h-5 w-5 text-primary" />
+                      <LogIn className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                       {clienteLogado 
                         ? 'Quer ver seus agendamentos?'
                         : 'Quer acompanhar seu agendamento?'
                       }
                     </h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
+                    <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                       {clienteLogado 
                         ? 'Você pode acessar seu dashboard para ver o status da sua solicitação, receber notificações e gerenciar seus agendamentos futuros.'
                         : 'Você pode fazer login para ver o status da sua solicitação, receber notificações e gerenciar seus agendamentos futuros.'
@@ -963,7 +965,7 @@ export default function SalaoPublico() {
             </Card>
             
             {/* Botões centralizados */}
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
               <Button 
                 variant="outline"
                 onClick={() => {
@@ -975,7 +977,7 @@ export default function SalaoPublico() {
                     setShowLoginModal(true);
                   }
                 }}
-                className="flex items-center gap-2 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                className="flex items-center gap-2 w-full sm:w-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 text-sm"
               >
                 {clienteLogado ? (
                   <>
@@ -984,8 +986,8 @@ export default function SalaoPublico() {
                   </>
                 ) : (
                   <>
-                <LogIn className="h-4 w-4" />
-                Acompanhar Agendamentos
+                    <LogIn className="h-4 w-4" />
+                    Acompanhar Agendamentos
                   </>
                 )}
               </Button>
@@ -1004,7 +1006,7 @@ export default function SalaoPublico() {
                     observacoes: ''
                   });
                 }}
-                className="w-full sm:w-auto border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background transition-all duration-300"
+                className="w-full sm:w-auto border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-background transition-all duration-300 text-sm"
               >
                 Fazer Novo Agendamento
               </Button>
@@ -1034,4 +1036,6 @@ export default function SalaoPublico() {
       />
     </div>
   );
+}
+
 }

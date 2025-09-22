@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw } from 'lucide-react';
+import { ProfissionalLoadingScreen } from '@/components/ProfissionalLoadingScreen';
 
 // Importar rotas públicas
 import Login from '@/pages/Login';
@@ -29,12 +30,35 @@ import FuncionariosRelatorio from '@/pages/admin/relatorios/Funcionarios';
 import HorariosRelatorio from '@/pages/admin/relatorios/Horarios';
 
 // Importar páginas de outros tipos de usuário
-import ProfissionalDashboard from '@/pages/profissional/ProfissionalDashboard';
 import { ClienteAgendamentos } from '@/pages/ClienteAgendamentos';
 import SuperAdminDashboard from '@/pages/superadmin/SuperAdminDashboard';
 
+// Importar páginas do profissional
+import ProfissionalDashboard from '@/pages/profissional/Dashboard';
+import ProfissionalAgenda from '@/pages/profissional/Agenda';
+import ProfissionalClientes from '@/pages/profissional/Clientes';
+import ProfissionalServicos from '@/pages/profissional/Servicos';
+import ProfissionalProdutos from '@/pages/profissional/Produtos';
+import ProfissionalComissoes from '@/pages/profissional/Comissoes';
+import ProfissionalPerfil from '@/pages/profissional/Perfil';
+import ProfissionalLayout from '@/components/layout/ProfissionalLayout';
+
 // Componente de Loading
 function LoadingScreen() {
+  const { user } = useAuth();
+  
+  // Se há um usuário autenticado, mostrar loading específico do profissional
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <div className="p-4 lg:p-6 xl:p-8">
+          <ProfissionalLoadingScreen />
+        </div>
+      </div>
+    );
+  }
+  
+  // Loading genérico para usuários não autenticados
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
       <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
@@ -54,34 +78,6 @@ function LoadingScreen() {
   );
 }
 
-// Componente de Erro de Perfil
-function ProfileErrorScreen() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
-      <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
-        <CardContent className="p-8 text-center">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">⚠️</span>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Erro no Perfil
-            </h2>
-            <p className="text-sm text-gray-600">
-              Não foi possível carregar seu perfil. Tente fazer login novamente.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
-            >
-              Tentar Novamente
-            </button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 // Rotas Públicas
 function PublicRoutes() {
@@ -98,19 +94,26 @@ function PublicRoutes() {
 function AuthenticatedRoutes() {
   const { profile } = useAuth();
   
+  // Debug completo
+  console.log('AuthenticatedRoutes - Profile completo:', profile);
+  console.log('AuthenticatedRoutes - Profile tipo:', profile?.tipo);
+  console.log('AuthenticatedRoutes - URL atual:', window.location.pathname);
+  
   // Redirecionar baseado no tipo de usuário
   const getDefaultRoute = () => {
+    console.log('getDefaultRoute - Profile tipo:', profile?.tipo); // Debug
     switch (profile?.tipo) {
       case 'system_admin':
         return '/superadmin';
       case 'admin':
-        return '/dashboard';
+        return '/admin';
       case 'funcionario':
         return '/profissional';
       case 'cliente':
         return '/cliente';
       default:
-        return '/dashboard';
+        console.log('Tipo não reconhecido, redirecionando para admin');
+        return '/admin';
     }
   };
 
@@ -119,28 +122,63 @@ function AuthenticatedRoutes() {
       {/* Redirecionamento baseado no tipo de usuário */}
       <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
       
+      {/* Rotas de Profissional - página por página */}
+      <Route path="/profissional" element={
+        <ProfissionalLayout>
+          <ProfissionalDashboard />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/agenda" element={
+        <ProfissionalLayout>
+          <ProfissionalAgenda />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/clientes" element={
+        <ProfissionalLayout>
+          <ProfissionalClientes />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/servicos" element={
+        <ProfissionalLayout>
+          <ProfissionalServicos />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/produtos" element={
+        <ProfissionalLayout>
+          <ProfissionalProdutos />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/comissoes" element={
+        <ProfissionalLayout>
+          <ProfissionalComissoes />
+        </ProfissionalLayout>
+      } />
+      <Route path="/profissional/perfil" element={
+        <ProfissionalLayout>
+          <ProfissionalPerfil />
+        </ProfissionalLayout>
+      } />
+      
+      
       {/* Rotas de Admin */}
-      <Route path="/dashboard" element={<AdminDashboard />} />
-      <Route path="/agenda" element={<Agenda />} />
-      <Route path="/clientes" element={<Clientes />} />
-      <Route path="/funcionarios" element={<Profissionais />} />
-      <Route path="/servicos" element={<Servicos />} />
-      <Route path="/relatorios" element={<Relatorios />} />
-      <Route path="/comissoes-mensais" element={<ComissoesMensais />} />
-      <Route path="/comissoes" element={<Comissoes />} />
-      <Route path="/configuracoes" element={<Configuracoes />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/agenda" element={<Agenda />} />
+      <Route path="/admin/clientes" element={<Clientes />} />
+      <Route path="/admin/funcionarios" element={<Profissionais />} />
+      <Route path="/admin/servicos" element={<Servicos />} />
+      <Route path="/admin/relatorios" element={<Relatorios />} />
+      <Route path="/admin/comissoes-mensais" element={<ComissoesMensais />} />
+      <Route path="/admin/comissoes" element={<Comissoes />} />
+      <Route path="/admin/configuracoes" element={<Configuracoes />} />
       
       {/* Relatórios Detalhados */}
-      <Route path="/relatorios/faturamento" element={<Faturamento />} />
-      <Route path="/relatorios/comissoes" element={<ComissoesRelatorio />} />
-      <Route path="/relatorios/clientes" element={<ClientesRelatorio />} />
-      <Route path="/relatorios/servicos" element={<ServicosRelatorio />} />
-      <Route path="/relatorios/agendamentos" element={<AgendamentosRelatorio />} />
-      <Route path="/relatorios/funcionarios" element={<FuncionariosRelatorio />} />
-      <Route path="/relatorios/horarios" element={<HorariosRelatorio />} />
-      
-      {/* Rotas de Profissional */}
-      <Route path="/profissional" element={<ProfissionalDashboard />} />
+      <Route path="/admin/relatorios/faturamento" element={<Faturamento />} />
+      <Route path="/admin/relatorios/comissoes" element={<ComissoesRelatorio />} />
+      <Route path="/admin/relatorios/clientes" element={<ClientesRelatorio />} />
+      <Route path="/admin/relatorios/servicos" element={<ServicosRelatorio />} />
+      <Route path="/admin/relatorios/agendamentos" element={<AgendamentosRelatorio />} />
+      <Route path="/admin/relatorios/funcionarios" element={<FuncionariosRelatorio />} />
+      <Route path="/admin/relatorios/horarios" element={<HorariosRelatorio />} />
       
       {/* Rotas de Cliente */}
       <Route path="/cliente" element={<ClienteAgendamentos />} />
@@ -170,9 +208,9 @@ export default function AppRouter() {
     return <AuthenticatedRoutes />;
   }
 
-  // 3. Estado de Erro: usuário existe mas perfil não foi carregado
+  // 3. Estado de Carregamento: usuário existe mas perfil ainda está carregando
   if (user && !profile) {
-    return <ProfileErrorScreen />;
+    return <LoadingScreen />;
   }
 
   // 4. Estado Não Autenticado: se nenhuma das condições acima for atendida.

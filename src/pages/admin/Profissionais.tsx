@@ -1,4 +1,4 @@
-import { User, Plus, Clock, Star, Camera, Users, UserPlus, Edit, Trash2, Save, X, Phone, Mail, Briefcase, DollarSign } from "lucide-react";
+import { User, Plus, Clock, Star, Camera, Users, UserPlus, Edit, Trash2, Save, X, Phone, Mail, Briefcase, DollarSign, Lock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ const Profissionais = () => {
   const [form, setForm] = useState({
     nome: "",
     email: "",
+    senha: "",
     telefone: "",
     cargo: "",
     percentual_comissao: 0
@@ -93,6 +94,7 @@ const Profissionais = () => {
     const result = await createProfessional({
       nome: form.nome,
       email: form.email,
+      senha: form.senha,
       telefone: form.telefone,
       cargo: form.cargo,
       percentual_comissao: form.percentual_comissao
@@ -101,7 +103,7 @@ const Profissionais = () => {
     setSubmitting(false);
     if (!result.error) {
       setOpen(false);
-      setForm({ nome: "", email: "", telefone: "", cargo: "", percentual_comissao: 0 });
+      setForm({ nome: "", email: "", senha: "", telefone: "", cargo: "", percentual_comissao: 0 });
     }
   };
 
@@ -453,6 +455,16 @@ const Profissionais = () => {
                 <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} required disabled={submitting} />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="senha" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Senha
+                </Label>
+                <Input id="senha" name="senha" type="password" value={form.senha} onChange={handleChange} required disabled={submitting} placeholder="Senha para login do profissional" />
+                <span className="text-xs text-muted-foreground">
+                  O profissional usará esta senha para fazer login no sistema
+                </span>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="phone" className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-primary" />
                   Telefone
@@ -663,3 +675,4 @@ const Profissionais = () => {
 };
 
 export default Profissionais;
+

@@ -13,6 +13,11 @@ interface Profile {
   telefone?: string;
   email: string;
   salao_nome?: string;
+  ativo?: boolean;
+  cargo?: string;
+  percentual_comissao?: number;
+  avatar_url?: string;
+  criado_em?: string;
 }
 
 interface AuthContextType {
@@ -23,6 +28,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,22 +46,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data: profile, error } = await supabase
         .from('users')
-        .select('*')
+        .select('*, employees(ativo, cargo, percentual_comissao)')
         .eq('id', session.user.id)
         .single();
       
       if (error) throw error;
       
-      // Adicionar nome do salão ao perfil
+      // Adicionar nome do salão ao perfil e dados do employee
+      const employee = (profile as any)?.employees?.[0];
       const profileWithSalon = {
         ...profile,
         salao_nome: (profile as any)?.salao_nome || undefined,
-        email: (profile as any)?.email || session.user.email
+        email: (profile as any)?.email || session.user.email,
+        ativo: employee?.ativo ?? true,
+        cargo: employee?.cargo || '',
+        percentual_comissao: employee?.percentual_comissao || 0
       } as any;
       
+              console.log('Profile loaded:', profileWithSalon); // Debug
+              console.log('Profile tipo:', profileWithSalon?.tipo); // Debug
       setProfile(profileWithSalon);
     } catch (error) {
       console.error('Error refetching profile:', error);
+      // Em caso de erro, definir um perfil básico para evitar tela de erro
+      if (session?.user) {
+        setProfile({
+          id: session.user.id,
+          salao_id: null,
+          nome: session.user.user_metadata?.name || 'Usuário',
+          tipo: 'funcionario' as const,
+          email: session.user.email || '',
+          ativo: true,
+          cargo: '',
+          percentual_comissao: 0
+        });
+      }
     }
   };
 
@@ -79,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const { data: profile, error } = await supabase
                 .from('users')
-                .select('*')
+                .select('*, employees(ativo, cargo, percentual_comissao)')
                 .eq('id', session.user.id)
                 .single();
               
@@ -87,13 +112,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               
               if (!isMounted) return;
               
-              // Adicionar nome do salão ao perfil
+              // Adicionar nome do salão ao perfil e dados do employee
+              const employee = (profile as any)?.employees?.[0];
               const profileWithSalon = {
                 ...profile,
                 salao_nome: (profile as any)?.salao_nome || undefined,
-                email: (profile as any)?.email || session.user.email
+                email: (profile as any)?.email || session.user.email,
+                ativo: employee?.ativo ?? true,
+                cargo: employee?.cargo || '',
+                percentual_comissao: employee?.percentual_comissao || 0
               } as any;
               
+              console.log('Profile loaded:', profileWithSalon); // Debug
+              console.log('Profile tipo:', profileWithSalon?.tipo); // Debug
               setProfile(profileWithSalon);
             } catch (error) {
               if (!isMounted) return;
@@ -103,10 +134,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Se for erro PGRST116 (perfil não encontrado), apenas avisar
               if (error.code === 'PGRST116') {
                 console.warn('Usuário autenticado mas sem perfil na tabela users. Aguardando criação automática...');
-                setProfile(null);
+                // Criar perfil básico para evitar tela de erro
+                setProfile({
+                  id: session.user.id,
+                  salao_id: null,
+                  nome: session.user.user_metadata?.name || 'Usuário',
+                  tipo: 'funcionario' as const,
+                  email: session.user.email || '',
+                  ativo: true,
+                  cargo: '',
+                  percentual_comissao: 0
+                });
               } else {
                 console.error('Erro ao carregar perfil do usuário:', error);
-                setProfile(null);
+                // Criar perfil básico para evitar tela de erro
+                setProfile({
+                  id: session.user.id,
+                  salao_id: null,
+                  nome: session.user.user_metadata?.name || 'Usuário',
+                  tipo: 'funcionario' as const,
+                  email: session.user.email || '',
+                  ativo: true,
+                  cargo: '',
+                  percentual_comissao: 0
+                });
               }
             }
           }, 0);

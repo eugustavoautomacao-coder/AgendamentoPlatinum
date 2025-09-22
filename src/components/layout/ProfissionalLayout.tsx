@@ -1,86 +1,95 @@
-import { ReactNode, useState, useEffect } from "react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { HeaderProfile } from "./HeaderProfile";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ReactNode } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import ProfissionalSidebar from "./ProfissionalSidebar";
+import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface ProfissionalLayoutProps {
   children: ReactNode;
 }
 
 const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const { signOut, profile } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <ProfissionalSidebar 
-        isCollapsed={isCollapsed} 
-        setIsCollapsed={setIsCollapsed}
-      />
-      
-      {/* Collapse Button - Moved to layout level */}
-      {!isMobile && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`fixed top-6 z-[9999] h-6 w-6 bg-background/90 backdrop-blur-sm border border-border/60 shadow-sm hover:shadow-md hover:bg-accent/80 transition-all duration-200 ${
-            isCollapsed ? 'left-16' : 'left-60'
-          }`}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-3 w-3 text-muted-foreground/80 hover:text-foreground transition-colors" />
-          ) : (
-            <ChevronLeft className="h-3 w-3 text-muted-foreground/80 hover:text-foreground transition-colors" />
-          )}
-        </Button>
-      )}
-      
-      {/* Header */}
-      <header className={`h-12 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 transition-all duration-300 ${
-        isMobile 
-          ? 'ml-0' 
-          : isCollapsed 
-            ? 'lg:ml-20' 
-            : 'lg:ml-64'
-      }`}>
-        <div className="flex items-center px-4">
-          <h1 className="text-lg font-semibold text-foreground">Sistema AlveX</h1>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full transition-colors duration-200">
+        {/* Sidebar */}
+        <ProfissionalSidebar />
+        
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 overflow-x-hidden flex flex-col transition-colors duration-200">
+          {/* Header */}
+          <header className="h-12 flex items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 transition-colors duration-200">
+            <div className="flex h-full items-center justify-between px-4 w-full">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="h-9 w-9 transition-colors duration-200" />
+                <div className="hidden md:block">
+                  <h1 className="text-lg font-semibold transition-colors duration-200">Área do Profissional</h1>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <ThemeToggle size="sm" />
+                
+                {/* Foto do Profissional */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/profissional/perfil")}
+                  className="flex items-center gap-2 transition-colors duration-200 p-1"
+                >
+                  {profile?.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.nome || "Profissional"} 
+                      className="w-8 h-8 rounded-full object-cover border border-border hover:border-primary transition-colors duration-200" 
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold border border-border hover:border-primary transition-colors duration-200">
+                      {profile?.nome ? profile.nome.split(' ').map(n => n[0]).join('').slice(0,2) : "P"}
+                    </div>
+                  )}
+                  <span className="hidden sm:inline text-sm font-medium">
+                    {profile?.nome || "Profissional"}
+                  </span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 text-destructive hover:text-destructive transition-colors duration-200"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Sair</span>
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          {/* Page Content */}
+          <main className="flex-1 min-w-0 overflow-x-hidden transition-colors duration-200">
+            <div className="p-4 lg:p-6 xl:p-8 bg-background min-w-0 overflow-x-hidden w-full max-w-none transition-colors duration-200">
+              {children}
+            </div>
+          </main>
         </div>
-        <div className="flex items-center gap-2 pr-4">
-          <ThemeToggle size="sm" />
-          <HeaderProfile />
-        </div>
-      </header>
-      
-      {/* Main Content */}
-      <div 
-        className={`transition-all duration-300 ${
-          isMobile 
-            ? 'ml-0' 
-            : isCollapsed 
-              ? 'lg:ml-20' 
-              : 'lg:ml-64'
-        }`}
-      >
-        <main className="min-h-screen p-4 lg:p-6 xl:p-8">
-          {children}
-        </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
-export default ProfissionalLayout; 
+export default ProfissionalLayout;
+
+
+

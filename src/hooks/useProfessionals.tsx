@@ -67,6 +67,7 @@ export function useProfessionals() {
   const createProfessional = async (userData: {
     nome: string;
     email: string;
+    senha: string;
     telefone?: string;
     cargo?: string;
     percentual_comissao?: number;
@@ -74,29 +75,51 @@ export function useProfessionals() {
     if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
 
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .insert([{
-          ...userData,
-          salao_id: profile.salao_id
-        }])
-        .select()
-        .single();
+      // Obter token de autenticação do usuário logado
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
 
-      if (error) throw error;
+      // Chamar Edge Function para criar profissional com autenticação
+      const functionsUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-professional';
+      
+      const response = await fetch(functionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name: userData.nome,
+          email: userData.email,
+          password: userData.senha,
+          phone: userData.telefone || 'Não informado',
+          salon_id: profile.salao_id,
+          cargo: userData.cargo || 'Profissional',
+          percentual_comissao: userData.percentual_comissao || 0
+        })
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar profissional');
+      }
+
+      const result = await response.json();
+      
       await fetchProfessionals();
       toast({
         title: "Sucesso",
-        description: "Profissional criado com sucesso"
+        description: "Profissional criado com sucesso! Credenciais enviadas por email."
       });
-      return { data, error: null };
+      return { data: result, error: null };
     } catch (error: any) {
       console.error('Error creating professional:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao criar profissional"
+        description: error.message || "Erro ao criar profissional"
       });
       return { data: null, error };
     }

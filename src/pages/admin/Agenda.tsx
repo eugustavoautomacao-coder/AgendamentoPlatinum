@@ -497,31 +497,34 @@ const Agenda = () => {
       setHasDragged(true);
     }
     
-    // Detectar coluna atual durante o drag - usar posição atual do mouse
-    let currentColumn = dragging.profId;
-    for (const prof of professionals) {
-      const el = columnRefs.current[prof.id];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (e.clientX >= r.left && e.clientX <= r.right) {
-        currentColumn = prof.id;
-        break;
+    // Usar requestAnimationFrame para suavizar a animação
+    requestAnimationFrame(() => {
+      // Detectar coluna atual durante o drag - usar posição atual do mouse
+      let currentColumn = dragging.profId;
+      for (const prof of professionals) {
+        const el = columnRefs.current[prof.id];
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right) {
+          currentColumn = prof.id;
+          break;
+        }
       }
-    }
-    setCurrentDragColumn(currentColumn);
-    
-    // Calcular movimento Y (vertical)
-    const deltaY = e.clientY - dragging.startY;
-    const nextTop = Math.max(0, dragging.initialTop + deltaY);
-    
-    // Calcular movimento X (horizontal) - permitir movimento livre
-    const deltaX = e.clientX - dragging.startX;
-    const nextX = deltaX;
-    
-    setDragging({ 
-      ...dragging, 
-      currentTop: nextTop,
-      currentX: nextX
+      setCurrentDragColumn(currentColumn);
+      
+      // Calcular movimento Y (vertical)
+      const deltaY = e.clientY - dragging.startY;
+      const nextTop = Math.max(0, dragging.initialTop + deltaY);
+      
+      // Calcular movimento X (horizontal) - permitir movimento livre
+      const deltaX = e.clientX - dragging.startX;
+      const nextX = deltaX;
+      
+      setDragging({ 
+        ...dragging, 
+        currentTop: nextTop,
+        currentX: nextX
+      });
     });
   };
 
@@ -537,31 +540,34 @@ const Agenda = () => {
     
     const touch = e.touches[0];
     
-    // Detectar coluna atual durante o drag
-    let currentColumn = dragging.profId;
-    for (const prof of professionals) {
-      const el = columnRefs.current[prof.id];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (touch.clientX >= r.left && touch.clientX <= r.right) {
-        currentColumn = prof.id;
-        break;
+    // Usar requestAnimationFrame para suavizar a animação
+    requestAnimationFrame(() => {
+      // Detectar coluna atual durante o drag
+      let currentColumn = dragging.profId;
+      for (const prof of professionals) {
+        const el = columnRefs.current[prof.id];
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (touch.clientX >= r.left && touch.clientX <= r.right) {
+          currentColumn = prof.id;
+          break;
+        }
       }
-    }
-    setCurrentDragColumn(currentColumn);
-    
-    // Calcular movimento Y (vertical)
-    const deltaY = touch.clientY - dragging.startY;
-    const nextTop = Math.max(0, dragging.initialTop + deltaY);
-    
-    // Calcular movimento X (horizontal) - permitir movimento livre
-    const deltaX = touch.clientX - dragging.startX;
-    const nextX = deltaX;
-    
-    setDragging({ 
-      ...dragging, 
-      currentTop: nextTop,
-      currentX: nextX
+      setCurrentDragColumn(currentColumn);
+      
+      // Calcular movimento Y (vertical)
+      const deltaY = touch.clientY - dragging.startY;
+      const nextTop = Math.max(0, dragging.initialTop + deltaY);
+      
+      // Calcular movimento X (horizontal) - permitir movimento livre
+      const deltaX = touch.clientX - dragging.startX;
+      const nextX = deltaX;
+      
+      setDragging({ 
+        ...dragging, 
+        currentTop: nextTop,
+        currentX: nextX
+      });
     });
   };
 
@@ -1780,18 +1786,25 @@ const Agenda = () => {
                   return (
                       <div
                         key={apt.id}
-                        className={`absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md transition-shadow border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40 shadow-lg scale-105' : ''}`}
+                        className={`absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40 shadow-lg scale-105' : 'transition-shadow'}`}
                         style={{ 
                           top: topStyle, 
                           height,
-                          transform: isDragging ? `translateX(${leftStyle}px)` : 'none'
+                          transform: isDragging ? `translate3d(${leftStyle}px, 0, 0)` : 'translate3d(0, 0, 0)',
+                          transition: isDragging ? 'none' : 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
+                          pointerEvents: isDragging ? 'none' : 'auto'
                         }}
                         onMouseDown={(e) => handleCardMouseDown(e, apt, prof, top)}
                         onTouchStart={(e) => handleCardTouchStart(e, apt, prof, top)}
                         onClick={() => handleCardClick(apt)}
                         title={`${apt.cliente_nome || 'Cliente'} • ${apt.servico_nome || ''}`}
                       >
-                        <div className={`px-3 py-2 text-left select-none relative h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab active:cursor-grabbing'}`}>
+                        <div 
+                          className={`px-3 py-2 text-left select-none relative h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab active:cursor-grabbing'}`}
+                          style={{
+                            willChange: isDragging ? 'transform' : 'auto'
+                          }}
+                        >
                           <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
                           <div className="flex items-center justify-between pr-1">
                             <div className="flex items-center gap-2 min-w-0">
