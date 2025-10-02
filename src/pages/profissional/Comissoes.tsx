@@ -1,90 +1,77 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useComissoes } from '@/hooks/useComissoes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Calendar, TrendingUp, Download, Filter, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DollarSign, Calendar, TrendingUp, Download, Filter, RefreshCw, User, Scissors, Clock } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-interface Comissao {
-  id: string;
-  data: string;
-  cliente_nome: string;
-  servico_nome: string;
-  valor_servico: number;
-  percentual_comissao: number;
-  valor_comissao: number;
-  status: 'pendente' | 'pago' | 'cancelado';
-}
-
 const ProfissionalComissoes = () => {
   const { profile } = useAuth();
-  const [comissoes, setComissoes] = useState<Comissao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState<'todos' | 'pendente' | 'pago' | 'cancelado'>('todos');
+  const { 
+    comissoesMensais, 
+    detalhesComissao, 
+    loading, 
+    fetchComissoesMensais, 
+    fetchDetalhesComissao 
+  } = useComissoes(profile?.id);
+  
+  const [filtro, setFiltro] = useState<'todos' | 'aberto' | 'pago'>('todos');
+  const [mesSelecionado, setMesSelecionado] = useState<string>('');
+  const [anoSelecionado, setAnoSelecionado] = useState<string>('');
 
-  // Dados mockados para demonstração
-  const mockComissoes: Comissao[] = [
-    {
-      id: '1',
-      data: '2024-01-15',
-      cliente_nome: 'Maria Silva',
-      servico_nome: 'Corte e Escova',
-      valor_servico: 80.00,
-      percentual_comissao: 30,
-      valor_comissao: 24.00,
-      status: 'pago'
-    },
-    {
-      id: '2',
-      data: '2024-01-16',
-      cliente_nome: 'Ana Costa',
-      servico_nome: 'Coloração',
-      valor_servico: 120.00,
-      percentual_comissao: 30,
-      valor_comissao: 36.00,
-      status: 'pendente'
-    },
-    {
-      id: '3',
-      data: '2024-01-17',
-      cliente_nome: 'Joana Santos',
-      servico_nome: 'Manicure',
-      valor_servico: 50.00,
-      percentual_comissao: 30,
-      valor_comissao: 15.00,
-      status: 'pago'
-    }
+
+  // Filtrar comissões
+  const comissoesFiltradas = comissoesMensais.filter(comissao => {
+    const filtroStatus = filtro === 'todos' || comissao.status === filtro;
+    const filtroMes = !mesSelecionado || mesSelecionado === 'todos' || comissao.mes.toString() === mesSelecionado;
+    const filtroAno = !anoSelecionado || anoSelecionado === 'todos' || comissao.ano.toString() === anoSelecionado;
+    
+    return filtroStatus && filtroMes && filtroAno;
+  });
+
+  // Calcular estatísticas
+  const totalComissoes = comissoesFiltradas.reduce((acc, comissao) => acc + comissao.valor_comissao_total, 0);
+  const totalPago = comissoesFiltradas.reduce((acc, comissao) => acc + comissao.valor_pago, 0);
+  const saldoPendente = comissoesFiltradas.reduce((acc, comissao) => acc + comissao.saldo_pendente, 0);
+  const comissoesAbertas = comissoesFiltradas.filter(c => c.status === 'aberto').length;
+  const comissoesPagas = comissoesFiltradas.filter(c => c.status === 'pago').length;
+
+  // Gerar opções de mês e ano
+  const meses = [
+    { value: '1', label: 'Janeiro' },
+    { value: '2', label: 'Fevereiro' },
+    { value: '3', label: 'Março' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Maio' },
+    { value: '6', label: 'Junho' },
+    { value: '7', label: 'Julho' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
   ];
 
-  useEffect(() => {
-    // Simular carregamento
-    setTimeout(() => {
-      setComissoes(mockComissoes);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  const comissoesFiltradas = comissoes.filter(comissao => 
-    filtro === 'todos' || comissao.status === filtro
-  );
-
-  const totalComissoes = comissoesFiltradas.reduce((acc, comissao) => acc + comissao.valor_comissao, 0);
-  const comissoesPendentes = comissoesFiltradas.filter(c => c.status === 'pendente').length;
-  const comissoesPagas = comissoesFiltradas.filter(c => c.status === 'pago').length;
+  const anos = Array.from(new Set(comissoesMensais.map(c => c.ano))).sort((a, b) => b - a);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pago':
         return <Badge className="bg-green-100 text-green-800">Pago</Badge>;
-      case 'pendente':
+      case 'aberto':
         return <Badge className="bg-yellow-100 text-yellow-800">Pendente</Badge>;
-      case 'cancelado':
-        return <Badge className="bg-red-100 text-red-800">Cancelado</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const getNomeMes = (mes: number) => {
+    return meses.find(m => m.value === mes.toString())?.label || 'Mês';
   };
 
   if (loading) {
@@ -119,8 +106,8 @@ const ProfissionalComissoes = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Comissões</CardTitle>
             <DollarSign className="h-4 w-4 text-green-500" />
@@ -135,28 +122,45 @@ const ProfissionalComissoes = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-yellow-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">Saldo Pendente</CardTitle>
             <Calendar className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{comissoesPendentes}</div>
+            <div className="text-2xl font-bold text-yellow-600">
+              R$ {saldoPendente.toFixed(2).replace('.', ',')}
+            </div>
             <p className="text-xs text-muted-foreground">
               Aguardando pagamento
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pagas</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Pago</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{comissoesPagas}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              R$ {totalPago.toFixed(2).replace('.', ',')}
+            </div>
             <p className="text-xs text-muted-foreground">
               Comissões recebidas
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Comissões Abertas</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{comissoesAbertas}</div>
+            <p className="text-xs text-muted-foreground">
+              Aguardando pagamento
             </p>
           </CardContent>
         </Card>
@@ -171,43 +175,92 @@ const ProfissionalComissoes = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={filtro === 'todos' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFiltro('todos')}
-            >
-              Todos
-            </Button>
-            <Button
-              variant={filtro === 'pendente' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFiltro('pendente')}
-            >
-              Pendentes
-            </Button>
-            <Button
-              variant={filtro === 'pago' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFiltro('pago')}
-            >
-              Pagas
-            </Button>
-            <Button
-              variant={filtro === 'cancelado' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFiltro('cancelado')}
-            >
-              Canceladas
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Filtro por Status */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={filtro === 'todos' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFiltro('todos')}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={filtro === 'aberto' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFiltro('aberto')}
+                >
+                  Pendentes
+                </Button>
+                <Button
+                  variant={filtro === 'pago' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFiltro('pago')}
+                >
+                  Pagas
+                </Button>
+              </div>
+            </div>
+
+            {/* Filtro por Mês */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mês</label>
+              <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os meses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os meses</SelectItem>
+                  {meses.map(mes => (
+                    <SelectItem key={mes.value} value={mes.value}>
+                      {mes.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Filtro por Ano */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os anos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os anos</SelectItem>
+                  {anos.map(ano => (
+                    <SelectItem key={ano} value={ano.toString()}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botão de Refresh */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ações</label>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchComissoesMensais}
+                className="w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Atualizar
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Lista de Comissões */}
+      {/* Lista de Comissões Mensais */}
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Comissões</CardTitle>
+          <CardTitle>Comissões Mensais</CardTitle>
         </CardHeader>
         <CardContent>
           {comissoesFiltradas.length === 0 ? (
@@ -220,28 +273,68 @@ const ProfissionalComissoes = () => {
               {comissoesFiltradas.map((comissao) => (
                 <div
                   key={comissao.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-pink-100 rounded-lg">
-                      <DollarSign className="h-5 w-5 text-pink-600" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={comissao.funcionario_avatar} alt={comissao.funcionario_nome} />
+                          <AvatarFallback className="bg-pink-100 text-pink-600">
+                            {comissao.funcionario_nome.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="p-2 bg-pink-100 rounded-lg">
+                          <Calendar className="h-5 w-5 text-pink-600" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-lg">
+                          {getNomeMes(comissao.mes)} de {comissao.ano}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {comissao.total_agendamentos} agendamentos • {comissao.percentual_comissao}% de comissão
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium">{comissao.cliente_nome}</h3>
-                      <p className="text-sm text-muted-foreground">{comissao.servico_nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(comissao.data), "dd/MM/yyyy", { locale: ptBR })}
-                      </p>
+                    <div className="text-right">
+                      <div className="font-medium text-lg">
+                        R$ {comissao.valor_comissao_total.toFixed(2).replace('.', ',')}
+                      </div>
+                      {getStatusBadge(comissao.status)}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-medium">
-                      R$ {comissao.valor_comissao.toFixed(2).replace('.', ',')}
+
+                  {/* Detalhes da comissão */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Total de Serviços:</span>
+                      <span className="font-medium">R$ {comissao.total_servicos.toFixed(2).replace('.', ',')}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {comissao.percentual_comissao}% de R$ {comissao.valor_servico.toFixed(2).replace('.', ',')}
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Valor Pago:</span>
+                      <span className="font-medium text-green-600">R$ {comissao.valor_pago.toFixed(2).replace('.', ',')}</span>
                     </div>
-                    {getStatusBadge(comissao.status)}
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Saldo Pendente:</span>
+                      <span className="font-medium text-yellow-600">R$ {comissao.saldo_pendente.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  </div>
+
+                  {/* Botão para ver detalhes */}
+                  <div className="mt-3 pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchDetalhesComissao(comissao.id)}
+                      className="w-full"
+                    >
+                      <Scissors className="h-4 w-4 mr-2" />
+                      Ver Detalhes dos Agendamentos
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -249,9 +342,53 @@ const ProfissionalComissoes = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      {detalhesComissao.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Scissors className="h-5 w-5" />
+              Detalhes dos Agendamentos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {detalhesComissao.map((detalhe) => (
+                <div
+                  key={detalhe.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <User className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{detalhe.cliente_nome}</h4>
+                      <p className="text-sm text-muted-foreground">{detalhe.servico_nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {detalhe.data_agendamento && format(new Date(detalhe.data_agendamento), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">
+                      R$ {detalhe.valor_comissao.toFixed(2).replace('.', ',')}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {((detalhe.valor_comissao / detalhe.valor_servico) * 100).toFixed(1)}% de R$ {detalhe.valor_servico.toFixed(2).replace('.', ',')}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
 export default ProfissionalComissoes;
+
 

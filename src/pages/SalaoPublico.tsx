@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { InputPhone } from '@/components/ui/input-phone';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -851,11 +850,13 @@ export default function SalaoPublico() {
 
                 <div>
                   <Label htmlFor="cliente_telefone" className="text-sm">Telefone *</Label>
-                  <InputPhone
+                  <Input
                     id="cliente_telefone"
+                    type="tel"
                     value={formData.cliente_telefone}
-                    onChange={(formattedValue, rawValue) => setFormData(prev => ({ ...prev, cliente_telefone: rawValue }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cliente_telefone: e.target.value }))}
                     disabled={clienteLogado !== null}
+                    placeholder="(11) 99999-9999"
                     className={`text-sm ${clienteLogado ? 'bg-muted/50 cursor-not-allowed' : ''}`}
                   />
                   {clienteLogado && (
@@ -1036,6 +1037,4 @@ export default function SalaoPublico() {
       />
     </div>
   );
-}
-
 }

@@ -81,6 +81,7 @@ const Agenda = () => {
   const [editForm, setEditForm] = useState<{ servico_id?: string; status?: string; observacoes?: string }>({});
   const [dragStartTime, setDragStartTime] = useState<number>(0);
   const [hasDragged, setHasDragged] = useState(false);
+  const hasDraggedRef = useRef(false);
 
   // Estados para fotos do processo
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
@@ -182,6 +183,7 @@ const Agenda = () => {
     height: number;
     profId: string;
   } | null>(null);
+  const pendingClickAptRef = useRef<any | null>(null);
   
   // estado para detectar coluna atual durante drag
   const [currentDragColumn, setCurrentDragColumn] = useState<string | null>(null);
@@ -495,6 +497,7 @@ const Agenda = () => {
     // Marcar que houve movimento (drag)
     if (!hasDragged) {
       setHasDragged(true);
+      hasDraggedRef.current = true;
     }
     
     // Usar requestAnimationFrame para suavizar a animação
@@ -536,6 +539,7 @@ const Agenda = () => {
     // Marcar que houve movimento (drag)
     if (!hasDragged) {
       setHasDragged(true);
+      hasDraggedRef.current = true;
     }
     
     const touch = e.touches[0];
@@ -575,7 +579,7 @@ const Agenda = () => {
     if (!dragging) return;
 
     // Se houve drag, não abrir modal
-    if (hasDragged) {
+    if (hasDraggedRef.current) {
       // descobrir coluna alvo pelo X
       let targetProfId = dragging.profId;
       let targetProfName = '';
@@ -592,6 +596,18 @@ const Agenda = () => {
       }
 
       await handleDragEnd(targetProfId, targetProfName);
+    } else {
+      const timeSinceStart = Date.now() - dragStartTime;
+      const apt = pendingClickAptRef.current;
+      if (apt && timeSinceStart > 100) {
+        setSelectedApt(apt);
+        setEditForm({
+          servico_id: apt.servico_id,
+          status: apt.status,
+          observacoes: apt.observacoes || ''
+        });
+        setDetailOpen(true);
+      }
     }
 
     // Reset drag state
@@ -599,6 +615,8 @@ const Agenda = () => {
     setHasDragged(false);
     setDragStartTime(0);
     setCurrentDragColumn(null);
+    hasDraggedRef.current = false;
+    pendingClickAptRef.current = null;
   };
 
   const onTouchEnd = async (e: TouchEvent) => {
@@ -680,6 +698,8 @@ const Agenda = () => {
     e.preventDefault();
     setDragStartTime(Date.now());
     setHasDragged(false);
+    hasDraggedRef.current = false;
+    pendingClickAptRef.current = apt;
     setDragging({ 
       id: apt.id, 
       startX: e.clientX,
@@ -699,6 +719,8 @@ const Agenda = () => {
     const touch = e.touches[0];
     setDragStartTime(Date.now());
     setHasDragged(false);
+    hasDraggedRef.current = false;
+    pendingClickAptRef.current = apt;
     setDragging({ 
       id: apt.id, 
       startX: touch.clientX,
@@ -719,7 +741,7 @@ const Agenda = () => {
   const handleCardClick = (apt: any) => {
     // Só abrir modal se não houve drag e passou tempo suficiente desde o início do toque
     const timeSinceStart = Date.now() - dragStartTime;
-    if (!hasDragged && timeSinceStart > 100) {
+    if (!hasDraggedRef.current && timeSinceStart > 100) {
       setSelectedApt(apt); 
       setEditForm({ 
         servico_id: apt.servico_id, 
@@ -1786,7 +1808,7 @@ const Agenda = () => {
                   return (
                       <div
                         key={apt.id}
-                        className={`absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40 shadow-lg scale-105' : 'transition-shadow'}`}
+                        className={`group absolute left-1 right-1 rounded-md shadow-sm overflow-hidden hover:shadow-md border ${getCardColorByStatus(apt.status)} ${isDragging ? 'z-20 ring-2 ring-primary/40 shadow-lg scale-105' : 'transition-shadow'}`}
                         style={{ 
                           top: topStyle, 
                           height,
@@ -1799,29 +1821,64 @@ const Agenda = () => {
                         onClick={() => handleCardClick(apt)}
                         title={`${apt.cliente_nome || 'Cliente'} • ${apt.servico_nome || ''}`}
                       >
-                        <div 
-                          className={`px-3 py-2 text-left select-none relative h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab active:cursor-grabbing'}`}
-                          style={{
-                            willChange: isDragging ? 'transform' : 'auto'
+                      <div 
+                        className={`px-3 py-2 text-left select-none relative h-full ${isDragging ? 'cursor-grabbing' : 'cursor-grab active:cursor-grabbing'}`}
+                        style={{
+                          willChange: isDragging ? 'transform' : 'auto'
+                        }}
+                      >
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
+                        
+                        {/* Botão de detalhes - aparece no hover */}
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Botão clicado, abrindo modal para:', apt.cliente_nome);
+                            console.log('Estado detailOpen antes:', detailOpen);
+                            setSelectedApt(apt);
+                            setEditForm({
+                              servico_id: apt.servico_id,
+                              status: apt.status,
+                              observacoes: apt.observacoes || ''
+                            });
+                            setDetailOpen(true);
+                            console.log('setDetailOpen(true) chamado');
                           }}
+                          onTouchStart={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Botão tocado, abrindo modal para:', apt.cliente_nome);
+                            setSelectedApt(apt);
+                            setEditForm({
+                              servico_id: apt.servico_id,
+                              status: apt.status,
+                              observacoes: apt.observacoes || ''
+                            });
+                            setDetailOpen(true);
+                          }}
+                          className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-primary/10 hover:bg-primary/20 rounded-full p-1.5 z-50 cursor-pointer"
+                          title="Ver detalhes"
                         >
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
-                          <div className="flex items-center justify-between pr-1">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Users className="h-3.5 w-3.5 text-primary min-w-[14px]" />
-                              <span className="text-sm font-semibold text-foreground truncate">{apt.cliente_nome || 'Cliente'}</span>
-                            </div>
-                            <span className={`ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${getStatusColor(apt.status)}`}>{apt.status}</span>
+                          <Eye className="h-3 w-3 text-primary" />
+                        </button>
+                        
+                        <div className="flex items-center justify-between pr-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Users className="h-3.5 w-3.5 text-primary min-w-[14px]" />
+                            <span className="text-sm font-semibold text-foreground truncate">{apt.cliente_nome || 'Cliente'}</span>
                           </div>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                            <Scissors className="h-3.5 w-3.5 text-primary min-w-[14px]" />
-                            <span className="truncate">{apt.servico_nome || 'Serviço'}</span>
-                          </div>
-                          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                            <Phone className="h-3.5 w-3.5 text-primary" />
-                            <span>{apt.cliente_telefone ? formatPhoneNumber(apt.cliente_telefone) : 'Sem telefone'}</span>
-                          </div>
+                          <span className={`ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${getStatusColor(apt.status)}`}>{apt.status}</span>
                         </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                          <Scissors className="h-3.5 w-3.5 text-primary min-w-[14px]" />
+                          <span className="truncate">{apt.servico_nome || 'Serviço'}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 text-primary" />
+                          <span>{apt.cliente_telefone ? formatPhoneNumber(apt.cliente_telefone) : 'Sem telefone'}</span>
+                        </div>
+                      </div>
                       </div>
                     );
                   })}

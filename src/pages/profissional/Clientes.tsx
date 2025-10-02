@@ -15,11 +15,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 const ProfissionalClientes = () => {
   const { clients, loading, createClient, updateClient, deleteClient, refetch } = useClients();
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [editClient, setEditClient] = useState(null);
@@ -96,7 +97,11 @@ const ProfissionalClientes = () => {
       setOpen(false);
       refetch();
     } catch (error) {
-      toast.error("Erro ao salvar cliente", { description: error.message });
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
     }
@@ -110,7 +115,11 @@ const ProfissionalClientes = () => {
       refetch();
       setDeleteId(null);
     } catch (error) {
-      toast.error("Erro ao excluir cliente", { description: error.message });
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive"
+      });
     } finally {
       setDeleteLoading(false);
     }
@@ -167,8 +176,8 @@ const ProfissionalClientes = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="border-l-4 border-l-pink-500">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-lg">
@@ -182,7 +191,7 @@ const ProfissionalClientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-100 rounded-lg">
@@ -198,7 +207,7 @@ const ProfissionalClientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">
@@ -342,17 +351,17 @@ const ProfissionalClientes = () => {
 
       {/* Modal de Cadastro/Edição de Cliente */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
+        <DialogContent className="w-[95vw] max-w-md mx-auto sm:w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-[85vh] overflow-y-auto my-4 modal-scrollbar">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               {editClient ? 'Editar Cliente' : 'Novo Cliente'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               {editClient ? 'Atualize os dados do cliente.' : 'Preencha os dados para cadastrar um novo cliente.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-2 sm:space-y-3 md:space-y-4 py-1 sm:py-2">
             <div>
               <Label htmlFor="nome">Nome *</Label>
               <Input

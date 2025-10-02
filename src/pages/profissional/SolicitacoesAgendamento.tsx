@@ -11,10 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
+import { fixTimezone } from '@/utils/dateUtils';
 
 export default function SolicitacoesAgendamento() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { 
     fetchAppointmentRequests, 
     approveAppointmentRequest, 
@@ -61,7 +63,11 @@ export default function SolicitacoesAgendamento() {
     const salaoId = user?.user_metadata?.salao_id;
     
     if (!salaoId) {
-      toast.error('ID do salão não encontrado. Faça login novamente.');
+      toast({
+        title: "Erro",
+        description: "ID do salão não encontrado. Faça login novamente.",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -79,7 +85,10 @@ export default function SolicitacoesAgendamento() {
         document.body.removeChild(textArea);
         
         setLinkCopied(true);
-        toast.success('Link copiado para a área de transferência!');
+        toast({
+          title: "Sucesso",
+          description: "Link copiado para a área de transferência!"
+        });
         
         setTimeout(() => {
           setLinkCopied(false);
@@ -115,43 +124,78 @@ export default function SolicitacoesAgendamento() {
 
   const handleApprove = async (requestId: string) => {
     if (!requestId || requestId.trim() === '') {
-      toast.error('ID da solicitação inválido');
+      toast({
+        title: "Erro",
+        description: "ID da solicitação inválido",
+        variant: "destructive"
+      });
       return;
     }
     if (!user?.id || user.id.trim() === '') {
-      toast.error('ID do usuário inválido');
+      toast({
+        title: "Erro",
+        description: "ID do usuário inválido",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       const success = await approveAppointmentRequest(requestId, user.id);
       if (success) {
-        toast.success('Solicitação aprovada com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Solicitação aprovada com sucesso!"
+        });
         loadRequests();
       } else {
-        toast.error('Erro ao aprovar solicitação');
+        toast({
+          title: "Erro",
+          description: "Erro ao aprovar solicitação",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao aprovar solicitação:', error);
-      toast.error(`Erro ao aprovar solicitação: ${error}`);
+      toast({
+        title: "Erro",
+        description: `Erro ao aprovar solicitação: ${error}`,
+        variant: "destructive"
+      });
     }
   };
 
   const handleReject = async () => {
     if (!selectedRequest) {
-      toast.error('Nenhuma solicitação selecionada');
+      toast({
+        title: "Erro",
+        description: "Nenhuma solicitação selecionada",
+        variant: "destructive"
+      });
       return;
     }
     if (!selectedRequest.id || selectedRequest.id.trim() === '') {
-      toast.error('ID da solicitação inválido');
+      toast({
+        title: "Erro",
+        description: "ID da solicitação inválido",
+        variant: "destructive"
+      });
       return;
     }
     if (!user?.id || user.id.trim() === '') {
-      toast.error('ID do usuário inválido');
+      toast({
+        title: "Erro",
+        description: "ID do usuário inválido",
+        variant: "destructive"
+      });
       return;
     }
     if (!rejectReason || rejectReason.trim() === '') {
-      toast.error('Por favor, informe o motivo da rejeição');
+      toast({
+        title: "Erro",
+        description: "Por favor, informe o motivo da rejeição",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -164,42 +208,68 @@ export default function SolicitacoesAgendamento() {
     try {
       const success = await rejectAppointmentRequest(selectedRequest.id, rejectReason, user.id);
       if (success) {
-        toast.success('Solicitação rejeitada com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Solicitação rejeitada com sucesso!"
+        });
         setRejectDialogOpen(false);
         setSelectedRequest(null);
         setRejectReason('');
         loadRequests();
       } else {
-        toast.error('Erro ao rejeitar solicitação');
+        toast({
+          title: "Erro",
+          description: "Erro ao rejeitar solicitação",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao rejeitar solicitação:', error);
-      toast.error(`Erro ao rejeitar solicitação: ${error}`);
+      toast({
+        title: "Erro",
+        description: `Erro ao rejeitar solicitação: ${error}`,
+        variant: "destructive"
+      });
     }
   };
 
   const handleDelete = async (requestId: string) => {
     if (!requestId || requestId.trim() === '') {
-      toast.error('ID da solicitação inválido');
+      toast({
+        title: "Erro",
+        description: "ID da solicitação inválido",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       const success = await deleteAppointmentRequest(requestId);
       if (success) {
-        toast.success('Solicitação excluída com sucesso!');
+        toast({
+          title: "Sucesso",
+          description: "Solicitação excluída com sucesso!"
+        });
         loadRequests();
       } else {
-        toast.error('Erro ao excluir solicitação');
+        toast({
+          title: "Erro",
+          description: "Erro ao excluir solicitação",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Erro ao excluir solicitação:', error);
-      toast.error(`Erro ao excluir solicitação: ${error}`);
+      toast({
+        title: "Erro",
+        description: `Erro ao excluir solicitação: ${error}`,
+        variant: "destructive"
+      });
     }
   };
 
   const formatDateTime = (dateTimeString: string) => {
-    const date = new Date(dateTimeString);
+    const date = fixTimezone(dateTimeString);
     return {
       date: date.toLocaleDateString('pt-BR'),
       time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })

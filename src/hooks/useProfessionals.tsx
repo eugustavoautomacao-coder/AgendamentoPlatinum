@@ -32,7 +32,10 @@ export function useProfessionals() {
       
       const { data, error } = await supabase
         .from('employees')
-        .select('*')
+        .select(`
+          *,
+          users(avatar_url)
+        `)
         .eq('salao_id', profile.salao_id)
         .order('criado_em');
 
@@ -47,7 +50,7 @@ export function useProfessionals() {
         cargo: prof.cargo,
         percentual_comissao: prof.percentual_comissao,
         ativo: prof.ativo,
-        avatar_url: prof.avatar_url,
+        avatar_url: prof.users?.avatar_url || null,
         criado_em: prof.criado_em
       })) || [];
       

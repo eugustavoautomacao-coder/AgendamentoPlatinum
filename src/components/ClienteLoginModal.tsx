@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useClienteAuth } from '@/hooks/useClienteAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Eye, EyeOff, LogIn, User, Lock } from 'lucide-react';
 
@@ -25,10 +26,11 @@ export const ClienteLoginModal: React.FC<ClienteLoginModalProps> = ({
   clienteEmail = '',
   senhaTemporaria = ''
 }) => {
-  const { login, loading } = useClienteAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState(clienteEmail);
   const [senha, setSenha] = useState(senhaTemporaria);
   const [showSenha, setShowSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +40,49 @@ export const ClienteLoginModal: React.FC<ClienteLoginModalProps> = ({
       return;
     }
 
-    const success = await login(email, senha, salaoId);
-    if (success) {
+    setLoading(true);
+    try {
+      // Buscar cliente no banco
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('email', email)
+        .eq('ativo', true)
+        .single();
+
+      if (error) {
+        toast.error('Cliente não encontrado ou conta inativa');
+        return;
+      }
+
+      // Verificar senha (simplificado - em produção usar bcrypt)
+      if (data.senha_hash !== senha) {
+        toast.error('Senha incorreta');
+        return;
+      }
+
+      // Atualizar último login
+      await supabase
+        .from('clientes')
+        .update({ ultimo_login: new Date().toISOString() })
+        .eq('id', data.id);
+
+      // Armazenar no localStorage
+      localStorage.setItem('cliente_auth', JSON.stringify(data));
+      
+      toast.success('Login realizado com sucesso!');
+      
+      // Redirecionar para o dashboard de agendamentos
+      navigate(`/cliente/${salaoId}/agendamentos`);
+      
       onSuccess();
       onClose();
+    } catch (error) {
+      console.error('Erro no login:', error);
+      toast.error('Erro ao fazer login. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -62,22 +62,24 @@ export function useAppointments() {
       }
 
       // Processar dados para incluir nomes dos clientes e funcionários
+      // SEMPRE buscar dados atualizados da tabela users para garantir sincronização
       const appointmentsWithNames = await Promise.all(
         (data || []).map(async (apt) => {
-          if (apt.cliente_nome) { // Use direct client data if available
-            const professionalData = await supabase
-              .from('employees')
-              .select('nome')
-              .eq('id', apt.funcionario_id)
-              .single();
-            return { ...apt, funcionario_nome: professionalData.data?.nome, servico_nome: apt.servico?.nome, servico_duracao: apt.servico?.duracao_minutos, servico_preco: apt.servico?.preco } as Appointment;
-          }
-          // Fallback to fetching from users table if client_id is present
+          // Sempre buscar dados atualizados do cliente e funcionário
           const [clientData, professionalData] = await Promise.all([
             supabase.from('users').select('nome, telefone').eq('id', apt.cliente_id).single(),
             supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
           ]);
-          return { ...apt, cliente_nome: clientData.data?.nome, cliente_telefone: clientData.data?.telefone || undefined, funcionario_nome: professionalData.data?.nome, servico_nome: apt.servico?.nome, servico_duracao: apt.servico?.duracao_minutos, servico_preco: apt.servico?.preco } as Appointment;
+          
+          return { 
+            ...apt, 
+            cliente_nome: clientData.data?.nome, 
+            cliente_telefone: clientData.data?.telefone || undefined, 
+            funcionario_nome: professionalData.data?.nome, 
+            servico_nome: apt.servico?.nome, 
+            servico_duracao: apt.servico?.duracao_minutos, 
+            servico_preco: apt.servico?.preco 
+          } as Appointment;
         })
       );
 
@@ -112,6 +114,8 @@ export function useAppointments() {
         criado_em: new Date().toISOString()
       };
 
+      console.log('Dados sendo inseridos no agendamento:', dataToInsert);
+
       const { data, error } = await supabase
         .from('appointments')
         .insert([dataToInsert])
@@ -139,9 +143,15 @@ export function useAppointments() {
     },
     onError: (error) => {
       console.error('Erro ao criar agendamento:', error);
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       toast({
         title: "Erro",
-        description: "Erro ao criar agendamento. Tente novamente.",
+        description: `Erro ao criar agendamento: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       });
     },

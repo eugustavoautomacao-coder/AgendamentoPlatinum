@@ -8,7 +8,8 @@ import {
   Package,
   DollarSign,
   User,
-  Sparkles
+  Sparkles,
+  MessageSquare
 } from "lucide-react";
 import {
   Sidebar,
@@ -68,6 +69,11 @@ const ProfissionalSidebar = () => {
       title: "Minhas Comissões",
       icon: DollarSign,
       href: "/profissional/comissoes"
+    },
+    {
+      title: "Solicitações",
+      icon: MessageSquare,
+      href: "/profissional/solicitacoes"
     },
     {
       title: "Meu Perfil",

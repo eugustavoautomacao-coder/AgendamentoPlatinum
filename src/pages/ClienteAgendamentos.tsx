@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useClienteAuth } from '@/hooks/useClienteAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useClienteAgendamentos } from '@/hooks/useClienteAgendamentos';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,47 @@ import {
 export const ClienteAgendamentos: React.FC = () => {
   const navigate = useNavigate();
   const { salaoId } = useParams<{ salaoId: string }>();
-  const { cliente, isAuthenticated, logout } = useClienteAuth();
+  
+  // Estado para cliente autenticado
+  const [cliente, setCliente] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Verificar autenticação do cliente
+  useEffect(() => {
+    const checkAuth = () => {
+      const storedCliente = localStorage.getItem('cliente_auth');
+      if (storedCliente) {
+        try {
+          const clienteData = JSON.parse(storedCliente);
+          if (clienteData.salao_id === salaoId) {
+            setCliente(clienteData);
+            setIsAuthenticated(true);
+          } else {
+            // Cliente de outro salão, redirecionar
+            navigate(`/salao/${salaoId}`);
+          }
+        } catch (error) {
+          console.error('Erro ao verificar autenticação:', error);
+          localStorage.removeItem('cliente_auth');
+          navigate(`/salao/${salaoId}`);
+        }
+      } else {
+        // Não autenticado, redirecionar para página pública
+        navigate(`/salao/${salaoId}`);
+      }
+    };
+
+    checkAuth();
+  }, [salaoId, navigate]);
+
+  // Função de logout
+  const logout = () => {
+    localStorage.removeItem('cliente_auth');
+    setCliente(null);
+    setIsAuthenticated(false);
+    navigate(`/salao/${salaoId}`);
+  };
+
   const { 
     agendamentos, 
     loading, 

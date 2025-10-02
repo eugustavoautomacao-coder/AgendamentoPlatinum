@@ -279,7 +279,7 @@ const Profissionais = () => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total de Profissionais
@@ -291,7 +291,7 @@ const Profissionais = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Avaliação Média
@@ -303,7 +303,7 @@ const Profissionais = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Serviços Realizados
@@ -405,19 +405,30 @@ const Profissionais = () => {
                             {professional.email}
                           </div>
                         </div>
-                        <div className="flex gap-2 w-full">
+                        <div className="flex flex-col md:flex-row gap-2 w-full">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            className="flex-1"
+                            className="flex-1 text-xs md:text-sm"
                             onClick={() => navigate(`/admin/agenda?filter=professional&id=${professional.id}`)}
                           >
-                            Ver Agenda
+                            <span className="hidden md:inline">Ver Agenda</span>
+                            <span className="md:hidden">Agenda</span>
                           </Button>
-                          <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(professional)}>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1 text-xs md:text-sm" 
+                            onClick={() => openEdit(professional)}
+                          >
                             Editar
                           </Button>
-                          <Button size="sm" variant="destructive" className="flex-1" onClick={() => setDeleteId(professional.id)}>
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            className="flex-1 text-xs md:text-sm" 
+                            onClick={() => setDeleteId(professional.id)}
+                          >
                             Excluir
                           </Button>
                         </div>
@@ -675,4 +686,9 @@ const Profissionais = () => {
 };
 
 export default Profissionais;
+
+
+
+
+
 

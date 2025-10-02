@@ -247,7 +247,7 @@ const Clientes = () => {
         </div>
 
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -260,7 +260,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" />
@@ -273,7 +273,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-pink-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />

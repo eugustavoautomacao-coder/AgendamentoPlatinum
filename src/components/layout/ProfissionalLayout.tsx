@@ -15,6 +15,11 @@ const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
 
+  // Função para extrair apenas o primeiro nome
+  const getFirstName = (fullName: string) => {
+    return fullName?.split(' ')[0] || fullName;
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate("/login");
@@ -60,7 +65,7 @@ const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
                     </div>
                   )}
                   <span className="hidden sm:inline text-sm font-medium">
-                    {profile?.nome || "Profissional"}
+                    {getFirstName(profile?.nome || "Profissional")}
                   </span>
                 </Button>
                 
@@ -90,6 +95,7 @@ const ProfissionalLayout = ({ children }: ProfissionalLayoutProps) => {
 };
 
 export default ProfissionalLayout;
+
 
 
 

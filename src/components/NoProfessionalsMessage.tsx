@@ -11,7 +11,7 @@ export const NoProfessionalsMessage = ({ className = "" }: NoProfessionalsMessag
   const navigate = useNavigate();
 
   const handleGoToProfessionals = () => {
-    navigate('/admin/profissionais');
+    navigate('/admin/funcionarios');
   };
 
   return (

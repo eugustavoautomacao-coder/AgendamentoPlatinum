@@ -8,6 +8,7 @@ import { ProfissionalLoadingScreen } from '@/components/ProfissionalLoadingScree
 // Importar rotas públicas
 import Login from '@/pages/Login';
 import ResetPassword from '@/pages/ResetPassword';
+import SalaoPublico from '@/pages/SalaoPublico';
 
 // Importar rotas autenticadas
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -19,6 +20,8 @@ import Relatorios from '@/pages/admin/Relatorios';
 import ComissoesMensais from '@/pages/admin/ComissoesMensais';
 import Comissoes from '@/pages/admin/Comissoes';
 import Configuracoes from '@/pages/admin/Configuracoes';
+import SolicitacoesAgendamento from '@/pages/admin/SolicitacoesAgendamento';
+import Produtos from '@/pages/admin/Produtos';
 
 // Importar relatórios
 import Faturamento from '@/pages/admin/relatorios/Faturamento';
@@ -32,6 +35,12 @@ import HorariosRelatorio from '@/pages/admin/relatorios/Horarios';
 // Importar páginas de outros tipos de usuário
 import { ClienteAgendamentos } from '@/pages/ClienteAgendamentos';
 import SuperAdminDashboard from '@/pages/superadmin/SuperAdminDashboard';
+import GestaoUsuarios from '@/pages/superadmin/GestaoUsuarios';
+import GestaoSaloes from '@/pages/superadmin/GestaoSaloes';
+import SuperAdminConfiguracoes from '@/pages/superadmin/Configuracoes';
+import SuperAdminRelatorios from '@/pages/superadmin/Relatorios';
+import Assinaturas from '@/pages/superadmin/Assinaturas';
+import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 
 // Importar páginas do profissional
 import ProfissionalDashboard from '@/pages/profissional/Dashboard';
@@ -41,41 +50,13 @@ import ProfissionalServicos from '@/pages/profissional/Servicos';
 import ProfissionalProdutos from '@/pages/profissional/Produtos';
 import ProfissionalComissoes from '@/pages/profissional/Comissoes';
 import ProfissionalPerfil from '@/pages/profissional/Perfil';
+import ProfissionalSolicitacoes from '@/pages/profissional/Solicitacoes';
 import ProfissionalLayout from '@/components/layout/ProfissionalLayout';
+import { BeautifulLoadingScreen } from '@/components/BeautifulLoadingScreen';
 
 // Componente de Loading
 function LoadingScreen() {
-  const { user } = useAuth();
-  
-  // Se há um usuário autenticado, mostrar loading específico do profissional
-  if (user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-        <div className="p-4 lg:p-6 xl:p-8">
-          <ProfissionalLoadingScreen />
-        </div>
-      </div>
-    );
-  }
-  
-  // Loading genérico para usuários não autenticados
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
-      <Card className="w-full max-w-md mx-auto shadow-elegant border-border">
-        <CardContent className="p-8 text-center">
-          <div className="flex flex-col items-center space-y-4">
-            <RefreshCw className="h-8 w-8 animate-spin text-pink-600" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              Carregando...
-            </h2>
-            <p className="text-sm text-gray-600">
-              Verificando autenticação e carregando perfil
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <BeautifulLoadingScreen />;
 }
 
 
@@ -85,6 +66,8 @@ function PublicRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/redefinir-senha" element={<ResetPassword />} />
+      <Route path="/salao/:salaoId" element={<SalaoPublico />} />
+      <Route path="/cliente/:salaoId/agendamentos" element={<ClienteAgendamentos />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
@@ -158,6 +141,11 @@ function AuthenticatedRoutes() {
           <ProfissionalPerfil />
         </ProfissionalLayout>
       } />
+      <Route path="/profissional/solicitacoes" element={
+        <ProfissionalLayout>
+          <ProfissionalSolicitacoes />
+        </ProfissionalLayout>
+      } />
       
       
       {/* Rotas de Admin */}
@@ -170,6 +158,8 @@ function AuthenticatedRoutes() {
       <Route path="/admin/comissoes-mensais" element={<ComissoesMensais />} />
       <Route path="/admin/comissoes" element={<Comissoes />} />
       <Route path="/admin/configuracoes" element={<Configuracoes />} />
+      <Route path="/admin/solicitacoes" element={<SolicitacoesAgendamento />} />
+      <Route path="/admin/produtos" element={<Produtos />} />
       
       {/* Relatórios Detalhados */}
       <Route path="/admin/relatorios/faturamento" element={<Faturamento />} />
@@ -183,8 +173,16 @@ function AuthenticatedRoutes() {
       {/* Rotas de Cliente */}
       <Route path="/cliente" element={<ClienteAgendamentos />} />
       
-      {/* Rotas de Super Admin */}
+      {/* Rotas de Super Admin
+          Importante: as páginas de superadmin já incluem SuperAdminLayout
+          internamente. Portanto, NÃO devemos embrulhá-las novamente aqui
+          para evitar navbar duplicada e problemas de responsividade. */}
       <Route path="/superadmin" element={<SuperAdminDashboard />} />
+      <Route path="/superadmin/usuarios" element={<GestaoUsuarios />} />
+      <Route path="/superadmin/saloes" element={<GestaoSaloes />} />
+      <Route path="/superadmin/configuracoes" element={<SuperAdminConfiguracoes />} />
+      <Route path="/superadmin/relatorios" element={<SuperAdminRelatorios />} />
+      <Route path="/superadmin/assinaturas" element={<Assinaturas />} />
       {/* Redirecionamento padrão */}
       <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
     </Routes>

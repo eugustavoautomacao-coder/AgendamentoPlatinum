@@ -12,6 +12,7 @@ import {
   Package,
   MessageSquare,
   DollarSign,
+  TrendingUp,
   ChevronDown
 } from "lucide-react";
 import {
@@ -114,7 +115,7 @@ const AdminSidebar = () => {
     {
       title: "Profissionais",
       icon: User,
-      href: "/admin/profissionais"
+      href: "/admin/funcionarios"
     },
     {
       title: "Serviços",
@@ -129,7 +130,7 @@ const AdminSidebar = () => {
     {
       title: "Solicitações",
       icon: MessageSquare,
-      href: "/admin/solicitacoes-agendamento"
+      href: "/admin/solicitacoes"
     },
     {
       title: "Relatórios",
@@ -146,7 +147,7 @@ const AdminSidebar = () => {
           title: "Comissões",
           icon: DollarSign,
           href: "/admin/comissoes-mensais"
-        }
+        },
       ]
     },
     {

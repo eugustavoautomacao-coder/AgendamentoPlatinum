@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon } from "lucide-react";
+import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon, UserIcon, Phone } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { format, isToday, isTomorrow, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { fixTimezone } from "@/utils/dateUtils";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -36,14 +37,14 @@ const AdminDashboard = () => {
   // Filtrar agendamentos pela data selecionada (se não há data, usa hoje)
   const selectedDateAppointments = selectedDate 
     ? appointmentsArray.filter(apt => 
-        isSameDay(new Date(apt.data_hora), selectedDate)
+        isSameDay(fixTimezone(apt.data_hora), selectedDate)
       )
     : appointmentsArray.filter(apt => 
-        isToday(new Date(apt.data_hora))
+        isToday(fixTimezone(apt.data_hora))
       );
   
   const todayAppointments = appointmentsArray.filter(apt => 
-    isToday(new Date(apt.data_hora))
+    isToday(fixTimezone(apt.data_hora))
   );
   
   const thisMonthRevenue = appointmentsArray
@@ -89,7 +90,7 @@ const AdminDashboard = () => {
     .slice(0, 5)
     .map(apt => ({
       id: apt.id,
-      time: format(new Date(apt.data_hora), 'HH:mm', { locale: ptBR }),
+      time: format(fixTimezone(apt.data_hora), 'HH:mm', { locale: ptBR }),
       client: apt.cliente_nome || 'Cliente',
       service: apt.servico_nome || 'Serviço',
       professional: apt.funcionario_nome || 'Profissional',
@@ -177,7 +178,7 @@ const AdminDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <Card key={index} className="border-l-4 border-l-pink-500 shadow-soft hover:shadow-elegant transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
@@ -228,18 +229,22 @@ const AdminDashboard = () => {
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="text-center flex-shrink-0">
-                          <div className="text-sm font-medium text-foreground">
+                          <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                            <Clock className="h-4 w-4 text-primary" />
                             {appointment.time}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
                             {appointment.duration}
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground truncate">
+                          <div className="flex items-center gap-2 font-medium text-foreground truncate">
+                            <UserIcon className="h-4 w-4 text-primary flex-shrink-0" />
                             {appointment.client}
                           </div>
-                          <div className="text-sm text-muted-foreground truncate">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                            <Scissors className="h-3 w-3 flex-shrink-0" />
                             {appointment.service} • {appointment.professional}
                           </div>
                         </div>

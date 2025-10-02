@@ -6,6 +6,8 @@ import { EmailNotificationManager } from "@/components/EmailNotificationManager"
 import { AuthProvider } from "./hooks/useAuth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { Toaster as ToastToaster } from "@/components/ui/toaster";
+import { useDataSync } from "./hooks/useDataSync";
 
 // Configuração do QueryClient
 const queryClient = new QueryClient({
@@ -30,7 +32,9 @@ function App() {
             <BrowserRouter>
               <AppRoutes />
               <EmailNotificationManager />
+              <DataSyncWrapper />
               <Toaster />
+              <ToastToaster />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
@@ -39,5 +43,12 @@ function App() {
   );
 }
 
+// Componente wrapper para usar o hook de sincronização
+function DataSyncWrapper() {
+  useDataSync();
+  return null;
+}
+
 export default App;
+
 

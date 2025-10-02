@@ -11,6 +11,11 @@ export function HeaderProfile() {
     const { signOut, profile } = useAuth();
     const { toast } = useToast();
 
+    // Função para extrair apenas o primeiro nome
+    const getFirstName = (fullName: string) => {
+      return fullName?.split(' ')[0] || fullName;
+    };
+
     const handleLogout = async () => {
       try {
         // Mostrar feedback imediato para o usuário
@@ -41,7 +46,7 @@ export function HeaderProfile() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 sm:w-56">
             <div className="px-2 py-1.5 border-b">
-              <p className="text-xs sm:text-sm font-medium text-foreground truncate">{profile?.nome || 'Usuário'}</p>
+              <p className="text-xs sm:text-sm font-medium text-foreground truncate">{getFirstName(profile?.nome || 'Usuário')}</p>
               <p className="text-xs text-muted-foreground truncate">{profile?.tipo || 'Usuário'}</p>
             </div>
             <DropdownMenuItem asChild>

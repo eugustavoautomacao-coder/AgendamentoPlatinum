@@ -8,10 +8,10 @@ import { InputPhone } from '@/components/ui/input-phone';
 import { Label } from '@/components/ui/label';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { useToast } from '@/hooks/use-toast';
-import { setupAvatarStorage } from '@/utils/setupStorage';
 import { LogOut, User, Mail, Phone, Building, DollarSign, Calendar, Save, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { fixTimezone } from '@/utils/dateUtils';
 
 const ProfissionalPerfil = () => {
   const { profile, loading, refetch, signOut } = useAuth();
@@ -39,9 +39,6 @@ const ProfissionalPerfil = () => {
         percentual_comissao: profile.percentual_comissao || 0
       });
     }
-    
-    // Configurar storage de avatars
-    setupAvatarStorage();
   }, [profile]);
 
   if (loading || !profile) {
@@ -190,23 +187,33 @@ const ProfissionalPerfil = () => {
             Informações Pessoais
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Avatar */}
-          <div className="flex flex-col sm:flex-row items-start gap-6">
-            <AvatarUpload
-              currentAvatarUrl={form.avatar_url}
-              userName={form.nome}
-              userId={profile?.id || ''}
-              onAvatarChange={handleAvatarChange}
-              size="xl"
-              showUploadButton={editing}
-              disabled={!editing}
-            />
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center lg:items-start space-y-4">
+              <AvatarUpload
+                currentAvatarUrl={form.avatar_url}
+                userName={form.nome}
+                userId={profile?.id || ''}
+                onAvatarChange={handleAvatarChange}
+                size="xl"
+                showUploadButton={editing}
+                disabled={!editing}
+              />
+              {editing && (
+                <p className="text-xs text-muted-foreground text-center lg:text-left">
+                  Clique na foto para alterar
+                </p>
+              )}
+            </div>
 
-            <div className="flex-1 space-y-4">
+            {/* Form Fields */}
+            <div className="lg:col-span-2 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nome">Nome Completo *</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="nome" className="text-sm font-medium">
+                    Nome Completo *
+                  </Label>
                   <Input
                     id="nome"
                     name="nome"
@@ -217,8 +224,11 @@ const ProfissionalPerfil = () => {
                     className={!editing ? "bg-muted text-muted-foreground" : "bg-background text-foreground"}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     name="email"
@@ -228,14 +238,16 @@ const ProfissionalPerfil = () => {
                     placeholder="seu@email.com"
                     className="bg-muted"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground">
                     O email não pode ser alterado
                   </p>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="telefone">Telefone</Label>
+              <div className="space-y-2">
+                <Label htmlFor="telefone" className="text-sm font-medium">
+                  Telefone
+                </Label>
                 <InputPhone
                   id="telefone"
                   value={form.telefone}
@@ -309,7 +321,7 @@ const ProfissionalPerfil = () => {
               <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  {profile.criado_em ? format(new Date(profile.criado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Não informado'}
+                  {profile.criado_em ? format(fixTimezone(profile.criado_em), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : 'Não informado'}
                 </span>
               </div>
             </div>
