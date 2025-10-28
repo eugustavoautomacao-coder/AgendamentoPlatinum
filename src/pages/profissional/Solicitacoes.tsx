@@ -5,12 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Eye, MessageSquare, Search, Filter, RefreshCw, Trash2, Scissors, Link, Copy, List, X } from 'lucide-react';
+import { Calendar, Clock, User, Phone, MessageSquare, Search, Filter, RefreshCw, Scissors, List, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,41 +16,15 @@ import { fixTimezone } from '@/utils/dateUtils';
 export default function ProfissionalSolicitacoes() {
   const { user, profile } = useAuth();
   const { 
-    fetchAppointmentRequests, 
-    approveAppointmentRequest, 
-    rejectAppointmentRequest, 
-    deleteAppointmentRequest,
+    fetchAppointmentRequests,
     isLoading 
   } = useAppointmentRequests();
   
   const [requests, setRequests] = useState<AppointmentRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<AppointmentRequest | null>(null);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
   const [filter, setFilter] = useState<'all' | 'pendente' | 'aprovado' | 'rejeitado'>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
 
-  // Calcular contadores para cada status
-  const getStatusCounts = () => {
-    const counts = {
-      all: requests.length,
-      pendente: requests.filter(r => r.status === 'pendente').length,
-      aprovado: requests.filter(r => r.status === 'aprovado').length,
-      rejeitado: requests.filter(r => r.status === 'rejeitado').length
-    };
-    return counts;
-  };
-
-  useEffect(() => {
-    // Tentar usar profile.salao_id se user.user_metadata.salao_id não estiver disponível
-    const salaoId = user?.user_metadata?.salao_id || profile?.salao_id;
-    
-    if (salaoId && profile?.id) {
-      loadRequests();
-    }
-  }, [user?.user_metadata?.salao_id, profile?.salao_id, profile?.id]);
-
+  // Função para carregar solicitações
   const loadRequests = async () => {
     try {
       const salaoId = user?.user_metadata?.salao_id || profile?.salao_id;
@@ -91,46 +62,26 @@ export default function ProfissionalSolicitacoes() {
     }
   };
 
-  const handleApprove = async (requestId: string) => {
-    try {
-      await approveAppointmentRequest(requestId);
-      toast.success('Solicitação aprovada com sucesso!');
-      loadRequests();
-    } catch (error) {
-      console.error('Erro ao aprovar solicitação:', error);
-      toast.error('Erro ao aprovar solicitação');
-    }
+  // Calcular contadores para cada status
+  const getStatusCounts = () => {
+    const counts = {
+      all: requests.length,
+      pendente: requests.filter(r => r.status === 'pendente').length,
+      aprovado: requests.filter(r => r.status === 'aprovado').length,
+      rejeitado: requests.filter(r => r.status === 'rejeitado').length
+    };
+    return counts;
   };
 
-  const handleReject = async () => {
-    if (!selectedRequest || !rejectReason.trim()) {
-      toast.error('Por favor, informe o motivo da rejeição');
-      return;
-    }
-
-    try {
-      await rejectAppointmentRequest(selectedRequest.id, rejectReason);
-      toast.success('Solicitação rejeitada');
-      setRejectDialogOpen(false);
-      setRejectReason('');
-      setSelectedRequest(null);
+  useEffect(() => {
+    // Tentar usar profile.salao_id se user.user_metadata.salao_id não estiver disponível
+    const salaoId = user?.user_metadata?.salao_id || profile?.salao_id;
+    
+    if (salaoId && profile?.id) {
       loadRequests();
-    } catch (error) {
-      console.error('Erro ao rejeitar solicitação:', error);
-      toast.error('Erro ao rejeitar solicitação');
     }
-  };
+  }, [user?.user_metadata?.salao_id, profile?.salao_id, profile?.id]);
 
-  const handleDelete = async (requestId: string) => {
-    try {
-      await deleteAppointmentRequest(requestId);
-      toast.success('Solicitação excluída com sucesso!');
-      loadRequests();
-    } catch (error) {
-      console.error('Erro ao excluir solicitação:', error);
-      toast.error('Erro ao excluir solicitação');
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -140,9 +91,16 @@ export default function ProfissionalSolicitacoes() {
       cancelado: 'bg-gray-100 text-gray-800 border-gray-200'
     };
 
+    const statusText = {
+      pendente: 'Aprovação Pendente',
+      aprovado: 'Aprovado',
+      rejeitado: 'Rejeitado',
+      cancelado: 'Cancelado'
+    };
+
     return (
       <Badge className={`${variants[status as keyof typeof variants] || variants.pendente} border`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {statusText[status as keyof typeof statusText] || status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
@@ -368,57 +326,6 @@ export default function ProfissionalSolicitacoes() {
                     <div className="flex items-center gap-2">
                       {getStatusBadge(request.status)}
                     </div>
-
-                    <div className="flex gap-2">
-                      {request.status === 'pendente' && (
-                        <>
-                          <Button
-                            size="sm"
-                            onClick={() => handleApprove(request.id)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Aprovar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setSelectedRequest(request);
-                              setRejectDialogOpen(true);
-                            }}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Rejeitar
-                          </Button>
-                        </>
-                      )}
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Solicitação</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir esta solicitação? Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(request.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -427,37 +334,6 @@ export default function ProfissionalSolicitacoes() {
         )}
       </div>
 
-      {/* Dialog de Rejeição */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rejeitar Solicitação</DialogTitle>
-            <DialogDescription>
-              Informe o motivo da rejeição para o cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="rejectReason">Motivo da Rejeição *</Label>
-              <Textarea
-                id="rejectReason"
-                placeholder="Ex: Horário não disponível, serviço não oferecido, etc."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleReject} disabled={!rejectReason.trim()}>
-              Rejeitar Solicitação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

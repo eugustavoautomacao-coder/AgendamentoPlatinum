@@ -145,6 +145,8 @@ export const useAppointmentRequests = () => {
       }
       
 
+      
+
       // Enviar email de confirmação da solicitação para o cliente (se tiver email)
       if (data.cliente_email) {
         try {
@@ -268,6 +270,7 @@ export const useAppointmentRequests = () => {
         const ano = appointmentDate.getFullYear();
         await recalcularComissoesMensais(request.funcionario_id, mes, ano);
       }
+
 
       // Enviar email de confirmação para o cliente
       try {

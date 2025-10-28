@@ -35,3 +35,6 @@ CREATE POLICY "Avatars are publicly readable" ON storage.objects
 FOR SELECT USING (bucket_id = 'avatars');
 
 
+
+
+

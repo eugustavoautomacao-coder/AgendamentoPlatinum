@@ -92,7 +92,7 @@ export function useComissoes(funcionarioId?: string) {
           )
         `)
         .eq('comissao_mensal_id', comissaoId)
-        .order('appointments.data_hora', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 

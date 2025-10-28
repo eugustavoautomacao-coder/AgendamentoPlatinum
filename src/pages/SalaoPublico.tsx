@@ -278,14 +278,14 @@ export default function SalaoPublico() {
     setLoadingSlots(true);
 
     try {
-      // Buscar agendamentos existentes para o dia
+      // Buscar agendamentos existentes para o dia (apenas confirmados)
       const { data: appointments, error } = await supabase
         .from('appointments')
         .select('data_hora, servico:services(duracao_minutos)')
         .eq('funcionario_id', selectedProfessional.id)
+        .eq('status', 'confirmado')
         .gte('data_hora', `${date}T00:00:00`)
-        .lt('data_hora', `${date}T23:59:59`)
-        .in('status', ['confirmado', 'pendente']);
+        .lt('data_hora', `${date}T23:59:59`);
 
       if (error) throw error;
 
@@ -355,6 +355,7 @@ export default function SalaoPublico() {
           const aptEndTime = new Date(aptTime.getTime() + aptServiceDuration * 60000);
           const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
           
+          // Verificar sobreposição de horários
           return (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
                  (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
                  (slotDateTime <= aptTime && slotEndTime >= aptEndTime);
@@ -1015,6 +1016,7 @@ export default function SalaoPublico() {
           </div>
         )}
       </div>
+
 
       {/* Modal de Login */}
       <ClienteLoginModal
