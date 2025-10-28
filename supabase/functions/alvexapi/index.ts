@@ -358,6 +358,7 @@ async function handleGetAvailability(supabaseClient, salonId, searchParams) {
 
     console.log(`🔍 Consultando disponibilidade para ${date}`)
     console.log(`📅 Agendamentos encontrados:`, appointments?.length || 0)
+    console.log(`🧩 Duração do serviço selecionado: ${service.duracao_minutos}min`)
     if (appointments?.length > 0) {
       appointments.forEach(apt => {
         console.log(`  - ${apt.data_hora} (duração: ${apt.services.duracao_minutos}min)`)
