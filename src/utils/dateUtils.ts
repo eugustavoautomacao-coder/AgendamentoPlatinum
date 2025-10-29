@@ -14,6 +14,11 @@ export const fixTimezone = (dateStr: string): Date => {
   let localDateStr = dateStr;
   if (dateStr.includes('+00:00')) {
     localDateStr = dateStr.replace('+00:00', '');
+  } else if (dateStr.endsWith('Z')) {
+    // Se termina com Z - simplesmente remover o Z e tratar como horário local
+    // Ex: "2025-10-29T09:00:00.000Z" -> "2025-10-29T09:00:00" -> getHours() = 09 ✅
+    // Isso funciona porque a API agora salva o horário exatamente como enviado
+    localDateStr = dateStr.slice(0, -1);
   }
   
   // Criar data sem conversão de fuso horário
@@ -45,6 +50,29 @@ export const formatFixedDate = (
   
   const fixedDate = fixTimezone(dateStr);
   return format(fixedDate, formatStr, { locale: locale || ptBR });
+};
+
+/**
+ * Converte hora local do Brasil (UTC-3) para UTC no formato ISO
+ * Usado ao salvar agendamentos no banco de dados
+ * 
+ * @param dateStr - String da data no formato 'YYYY-MM-DDTHH:mm:ss' ou 'YYYY-MM-DDTHH:mm'
+ * @returns String ISO em UTC para salvar no banco
+ */
+export const convertBrazilTimeToUTC = (dateStr: string): string => {
+  if (!dateStr) return new Date().toISOString();
+  
+  // Se já tem timezone, usar como está
+  if (dateStr.includes('+') || dateStr.includes('Z')) {
+    return new Date(dateStr).toISOString();
+  }
+  
+  // Adicionar timezone do Brasil (UTC-3)
+  const brazilTimeStr = `${dateStr}-03:00`;
+  const date = new Date(brazilTimeStr);
+  
+  // Retornar em UTC
+  return date.toISOString();
 };
 
 

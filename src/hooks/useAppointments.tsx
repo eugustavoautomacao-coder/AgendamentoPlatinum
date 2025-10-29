@@ -66,16 +66,21 @@ export function useAppointments() {
       const appointmentsWithNames = await Promise.all(
         (data || []).map(async (apt) => {
           // Sempre buscar dados atualizados do cliente e funcionário
+          // Só fazer a query se o ID existir (evitar query com id=eq.null)
           const [clientData, professionalData] = await Promise.all([
-            supabase.from('users').select('nome, telefone').eq('id', apt.cliente_id).single(),
-            supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
+            apt.cliente_id 
+              ? supabase.from('users').select('nome, telefone').eq('id', apt.cliente_id).single()
+              : Promise.resolve({ data: null, error: null }),
+            apt.funcionario_id
+              ? supabase.from('employees').select('nome').eq('id', apt.funcionario_id).single()
+              : Promise.resolve({ data: null, error: null })
           ]);
           
           return { 
             ...apt, 
-            cliente_nome: clientData.data?.nome, 
-            cliente_telefone: clientData.data?.telefone || undefined, 
-            funcionario_nome: professionalData.data?.nome, 
+            cliente_nome: clientData.data?.nome || apt.cliente_nome, 
+            cliente_telefone: clientData.data?.telefone || apt.cliente_telefone || undefined, 
+            funcionario_nome: professionalData.data?.nome || apt.funcionario_nome, 
             servico_nome: apt.servico?.nome, 
             servico_duracao: apt.servico?.duracao_minutos, 
             servico_preco: apt.servico?.preco 

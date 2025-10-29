@@ -234,6 +234,56 @@ DELETE /api/evolution/salon/{salonId}/booking/{appointmentId}
 - Sempre verifique `success: true` na resposta
 - Se `success: false`, use `error` para informar o cliente
 
+## 📚 Documentação Detalhada
+
+Para informações completas sobre cancelamento de agendamentos, consulte:
+- [API de Cancelamento](./API-CANCELAMENTO.md) - Guia completo com exemplos e casos de uso
+
+### **5. Cancelar Agendamento**
+
+```json
+{
+  "url": "https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/alvexapi/salon/SEU_SALON_ID/booking/APPOINTMENT_ID",
+  "method": "DELETE",
+  "headers": {
+    "Authorization": "Bearer eyJhbGc...",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "reason": "Cliente solicitou cancelamento"
+  }
+}
+```
+
+**Resposta de Sucesso:**
+```json
+{
+  "success": true,
+  "message": "Agendamento cancelado com sucesso",
+  "data": {
+    "appointmentId": "uuid-do-agendamento",
+    "cancelReason": "Cliente solicitou cancelamento",
+    "cancelledAt": "2024-01-15T14:30:00.000Z"
+  }
+}
+```
+
+**Resposta de Erro (já cancelado):**
+```json
+{
+  "success": false,
+  "error": "Agendamento já está cancelado"
+}
+```
+
+**Resposta de Erro (concluído):**
+```json
+{
+  "success": false,
+  "error": "Não é possível cancelar um agendamento já concluído"
+}
+```
+
 ## 🔍 Testando a API
 
 ### **Teste Manual (Postman/Insomnia):**
@@ -246,12 +296,22 @@ GET https://seu-alvex-instance.com/api/evolution/salon/SEU_SALON_ID/availability
 
 # 3. Testar agendamento
 POST https://seu-alvex-instance.com/api/evolution/salon/SEU_SALON_ID/booking
+Content-Type: application/json
+
 {
   "serviceId": "xxx",
   "professionalId": "xxx", 
   "dateTime": "2024-01-15T14:00:00Z",
   "clientPhone": "11999999999",
   "clientName": "João Silva"
+}
+
+# 4. Testar cancelamento
+DELETE https://seu-alvex-instance.com/api/evolution/salon/SEU_SALON_ID/booking/APPOINTMENT_ID
+Content-Type: application/json
+
+{
+  "reason": "Motivo do cancelamento"
 }
 ```
 

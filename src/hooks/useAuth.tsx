@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data: profile, error } = await supabase
         .from('users')
-        .select('*, employees(ativo, cargo, percentual_comissao)')
+        .select('*, employees(id, ativo, cargo, percentual_comissao)')
         .eq('id', session.user.id)
         .single();
       
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const { data: profile, error } = await supabase
                 .from('users')
-                .select('*, employees(ativo, cargo, percentual_comissao)')
+                .select('*, employees(id, ativo, cargo, percentual_comissao)')
                 .eq('id', session.user.id)
                 .single();
               

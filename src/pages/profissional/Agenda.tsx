@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ const formatPhoneNumber = (phone: string) => {
 
 
 const ProfissionalAgenda = () => {
-  const { salonInfo } = useSalonInfo();
+  const { salonInfo, loading: salonInfoLoading } = useSalonInfo();
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
   const { profile } = useAuth();
 
@@ -80,6 +80,7 @@ const ProfissionalAgenda = () => {
     profId: string;
     startX: number;
     startY: number;
+    startColumnY: number; // Posição Y inicial relativa ao topo da coluna (independe do scroll)
   } | null>(null);
   const pendingClickAptRef = useRef<any | null>(null);
   const [currentDragColumn, setCurrentDragColumn] = useState<string | null>(null);
@@ -108,6 +109,7 @@ const ProfissionalAgenda = () => {
   // Refs para drag and drop
   const gridRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const agendaContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Estados para modal de novo cliente
   const [clientModalOpen, setClientModalOpen] = useState(false);
@@ -136,12 +138,23 @@ const ProfissionalAgenda = () => {
 
   // Estados para bloqueio de horários
   const [lockedSlots, setLockedSlots] = useState<Set<string>>(new Set());
+  const lastOptimisticUpdateRef = useRef<number>(0);
+
+  // ID correto do funcionário (employees.id). Fallback para users.id se não houver relação carregada
+  const employeeId = useMemo(() => {
+    // Alguns perfis carregam a relação employees como array
+    const rel = (profile as any)?.employees;
+    if (Array.isArray(rel) && rel.length > 0 && rel[0]?.id) {
+      return rel[0].id as string;
+    }
+    return profile?.id as string;
+  }, [profile]);
 
   // Filtrar agendamentos apenas do profissional logado
   const filteredAppointments = useMemo(() => {
     if (!Array.isArray(appointments) || !profile?.id) return [];
     
-    let filtered = appointments.filter(apt => apt.funcionario_id === profile.id);
+    let filtered = appointments.filter(apt => apt.funcionario_id === employeeId);
     
     if (selectedStatusFilter !== 'all') {
       filtered = filtered.filter(apt => apt.status === selectedStatusFilter);
@@ -164,22 +177,55 @@ const ProfissionalAgenda = () => {
   // Função para carregar horários bloqueados do banco
   const loadBlockedSlots = async (date: Date) => {
     try {
-      const { data, error } = await supabase
+      if (!salonInfo?.id) {
+        console.warn('⚠️ loadBlockedSlots: salonInfo?.id não disponível');
+        return;
+      }
+
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      // Buscar com filtro de data E funcionario_id (profissional logado)
+      let query = supabase
         .from('blocked_slots')
         .select('funcionario_id, hora_inicio')
-        .eq('salao_id', salonInfo?.id)
-        .eq('data', format(date, 'yyyy-MM-dd'));
+        .eq('salao_id', salonInfo.id)
+        .eq('data', dateStr)
+      
+      // Considerar registros antigos que podem ter sido salvos com users.id
+      const candidateIds = [employeeId, profile?.id].filter(Boolean) as string[]
+      if (candidateIds.length > 0) {
+        query = query.in('funcionario_id', candidateIds)
+      }
+      
+      const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [PROF] Erro ao buscar blocked_slots:', error);
+        throw error;
+      }
 
+      // Converter para o formato do estado local
       const blockedSet = new Set<string>();
       data?.forEach(slot => {
-        blockedSet.add(`${slot.funcionario_id}-${slot.hora_inicio}`);
+        // Normalizar hora para HH:mm (banco retorna HH:mm:ss)
+        const hora = String(slot.hora_inicio).slice(0, 5);
+        // Normalizar a chave sempre para employeeId
+        const slotKey = `${employeeId}-${hora}`;
+        blockedSet.add(slotKey);
       });
 
+      console.log('✅ [PROF] Slots bloqueados carregados:', blockedSet.size);
+      
+      // Não sobrescrever se acabamos de fazer uma atualização otimista recentemente
+      const timeSinceLastUpdate = Date.now() - lastOptimisticUpdateRef.current;
+      if (timeSinceLastUpdate < 3000) {
+        console.log('⏸️ [PROF] Ignorando recarregamento - atualização otimista recente');
+        return;
+      }
+      
       setLockedSlots(blockedSet);
-    } catch (error) {
-      console.error('Erro ao carregar horários bloqueados:', error);
+    } catch (error: any) {
+      // Se a tabela não existir ou houver erro de RLS, continuar sem bloqueios
       setLockedSlots(new Set());
     }
   };
@@ -275,6 +321,9 @@ const ProfissionalAgenda = () => {
     setHasDragged(false);
     hasDraggedRef.current = false;
     pendingClickAptRef.current = apt;
+    
+    // Salvar posição inicial do mouse (clientY) para calcular delta simples
+    
     setDragging({ 
       id: apt.id, 
       initialTop: top, 
@@ -283,7 +332,8 @@ const ProfissionalAgenda = () => {
       height: (Math.max(30, (apt.servico_duracao || 60)) / SLOT_MINUTES) * SLOT_HEIGHT, 
       profId: prof.id,
       startX: e.clientX,
-      startY: e.clientY
+      startY: e.clientY,
+      startColumnY: 0 // Não usado mais, mantido para compatibilidade
     });
   };
 
@@ -294,10 +344,14 @@ const ProfissionalAgenda = () => {
     setHasDragged(false);
     hasDraggedRef.current = false;
     pendingClickAptRef.current = apt;
+    
+    // Salvar posição inicial do touch (clientY) para calcular delta simples
+    
     setDragging({ 
       id: apt.id, 
       startX: touch.clientX,
-      startY: touch.clientY, 
+      startY: touch.clientY,
+      startColumnY: 0, // Não usado mais, mantido para compatibilidade 
       initialTop: top, 
       currentTop: top,
       currentX: 0,
@@ -309,8 +363,13 @@ const ProfissionalAgenda = () => {
   const handleMouseMove = (e: MouseEvent) => {
     if (!dragging) return;
     
+    // Calcular movimento Y (vertical) baseado na diferença do mouse
+    // Usar diferença simples do clientY para movimento fluido
     const deltaY = e.clientY - dragging.startY;
-    const newTop = Math.max(0, dragging.initialTop + deltaY);
+    
+    // Limitar newTop aos limites do grid (não pode sair do grid)
+    const maxTop = (allHours.length * SLOT_HEIGHT) - dragging.height;
+    const newTop = Math.max(0, Math.min(maxTop, dragging.initialTop + deltaY));
     
     setDragging(prev => ({
       ...prev,
@@ -327,8 +386,14 @@ const ProfissionalAgenda = () => {
     if (!dragging) return;
     
     const touch = e.touches[0];
+    
+    // Calcular movimento Y (vertical) baseado na diferença do touch
+    // Usar diferença simples do clientY para movimento fluido
     const deltaY = touch.clientY - dragging.startY;
-    const newTop = Math.max(0, dragging.initialTop + deltaY);
+    
+    // Limitar newTop aos limites do grid (não pode sair do grid)
+    const maxTop = (allHours.length * SLOT_HEIGHT) - dragging.height;
+    const newTop = Math.max(0, Math.min(maxTop, dragging.initialTop + deltaY));
     
     setDragging(prev => ({
       ...prev,
@@ -338,6 +403,52 @@ const ProfissionalAgenda = () => {
     if (Math.abs(deltaY) > 10) {
       setHasDragged(true);
       hasDraggedRef.current = true;
+    }
+  };
+
+  const handleMoveAppointment = async (apt: any, direction: 'up' | 'down') => {
+    try {
+      console.log('handleMoveAppointment chamado:', { aptId: apt.id, direction, data_hora: apt.data_hora });
+      
+      const start = fixTimezone(apt.data_hora);
+      console.log('Horário inicial fixado:', start);
+      
+      const newStart = direction === 'up' ? addMinutes(start, -60) : addMinutes(start, 60);
+      console.log('Novo horário calculado:', newStart);
+      
+      const dateStr = format(newStart, 'yyyy-MM-dd');
+      const hh = format(newStart, 'HH');
+      const mm = format(newStart, 'mm');
+      
+      // Construir ISO manualmente para evitar conversão de timezone
+      // Salvar o horário exatamente como calculado (sem converter para UTC)
+      const year = newStart.getFullYear();
+      const month = String(newStart.getMonth() + 1).padStart(2, '0');
+      const day = String(newStart.getDate()).padStart(2, '0');
+      const hour = String(newStart.getHours()).padStart(2, '0');
+      const minute = String(newStart.getMinutes()).padStart(2, '0');
+      const second = String(newStart.getSeconds()).padStart(2, '0');
+      
+      // Formato: "YYYY-MM-DDTHH:mm:ss.000Z" mas com o horário local (sem conversão)
+      const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+      
+      console.log('Atualizando agendamento:', { id: apt.id, iso, horario_display: `${hh}:${mm}` });
+
+      await updateAppointment(apt.id, { data_hora: iso } as any);
+      
+      toast({
+        title: 'Horário atualizado!',
+        description: `Novo horário: ${hh}:${mm}`,
+      });
+      
+      refetchAppointments();
+    } catch (error: any) {
+      console.error('Erro ao mover agendamento:', error);
+      toast({
+        title: 'Erro ao mover agendamento',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -353,16 +464,20 @@ const ProfissionalAgenda = () => {
       
       // Validar se o horário é válido
       if (totalMinutes >= 0 && totalMinutes < 24 * 60) {
-        const hh = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-        const mm = (totalMinutes % 60).toString().padStart(2, '0');
+        const newHour = Math.floor(totalMinutes / 60);
+        const newMinute = totalMinutes % 60;
+        
+        const selectedDay = selectedDate || new Date();
+        const year = selectedDay.getFullYear();
+        const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDay.getDate()).padStart(2, '0');
+        const hour = String(newHour).padStart(2, '0');
+        const minute = String(newMinute).padStart(2, '0');
+        
+        // Construir ISO manualmente (mesma lógica das setas e admin)
+        const iso = `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
 
-        const dateStr = format(selectedDate || new Date(), 'yyyy-MM-dd');
-        const iso = new Date(`${dateStr}T${hh}:${mm}:00`).toISOString();
-
-        // Validar se a data é válida
-        if (!isNaN(new Date(iso).getTime())) {
-          updateAppointment(dragging.id, { data_hora: iso } as any);
-        }
+        updateAppointment(dragging.id, { data_hora: iso } as any);
       }
     } else {
       const timeSinceStart = Date.now() - dragStartTime;
@@ -398,16 +513,20 @@ const ProfissionalAgenda = () => {
       
       // Validar se o horário é válido
       if (totalMinutes >= 0 && totalMinutes < 24 * 60) {
-        const hh = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-        const mm = (totalMinutes % 60).toString().padStart(2, '0');
+        const newHour = Math.floor(totalMinutes / 60);
+        const newMinute = totalMinutes % 60;
+        
+        const selectedDay = selectedDate || new Date();
+        const year = selectedDay.getFullYear();
+        const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDay.getDate()).padStart(2, '0');
+        const hour = String(newHour).padStart(2, '0');
+        const minute = String(newMinute).padStart(2, '0');
+        
+        // Construir ISO manualmente (mesma lógica das setas e admin)
+        const iso = `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
 
-        const dateStr = format(selectedDate || new Date(), 'yyyy-MM-dd');
-        const iso = new Date(`${dateStr}T${hh}:${mm}:00`).toISOString();
-
-        // Validar se a data é válida
-        if (!isNaN(new Date(iso).getTime())) {
-          updateAppointment(dragging.id, { data_hora: iso } as any);
-        }
+        updateAppointment(dragging.id, { data_hora: iso } as any);
       }
     } else {
       const timeSinceStart = Date.now() - dragStartTime;
@@ -445,27 +564,54 @@ const ProfissionalAgenda = () => {
     }
   };
 
+  // useEffect para event listeners de drag
+  useEffect(() => {
+    if (dragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [dragging, hasDragged]);
+
   // Funções de bloqueio de horários
   const handleSlotLock = async (profId: string, hour: string) => {
     const slotKey = `${profId}-${hour}`;
+    const isCurrentlyLocked = lockedSlots.has(slotKey);
     
     try {
-      if (lockedSlots.has(slotKey)) {
+      if (isCurrentlyLocked) {
         // Desbloquear horário - remover do banco
-        const { error } = await supabase
-          .from('blocked_slots')
-          .delete()
-          .eq('funcionario_id', profId)
-          .eq('data', format(selectedDate || new Date(), 'yyyy-MM-dd'))
-          .eq('hora_inicio', hour);
-
-        if (error) throw error;
-
+        // Atualizar estado imediatamente (otimista)
+        lastOptimisticUpdateRef.current = Date.now();
         setLockedSlots(prev => {
           const newSet = new Set(prev);
           newSet.delete(slotKey);
           return newSet;
         });
+        
+        const { error } = await supabase
+          .from('blocked_slots')
+          .delete()
+          .eq('data', format(selectedDate || new Date(), 'yyyy-MM-dd'))
+          .eq('hora_inicio', hour)
+          .in('funcionario_id', [profId, profile?.id].filter(Boolean) as string[]);
+
+        if (error) {
+          // Se der erro, reverter o estado
+          setLockedSlots(prev => {
+            const newSet = new Set(prev);
+            newSet.add(slotKey);
+            return newSet;
+          });
+          throw error;
+        }
 
         toast({
           title: "Horário desbloqueado",
@@ -474,6 +620,14 @@ const ProfissionalAgenda = () => {
       } else {
         // Bloquear horário - inserir no banco
         const endHour = addMinutes(new Date(`2000-01-01T${hour}:00`), SLOT_MINUTES).toTimeString().slice(0, 5);
+        
+        // Atualizar estado imediatamente (otimista)
+        lastOptimisticUpdateRef.current = Date.now();
+        setLockedSlots(prev => {
+          const newSet = new Set(prev);
+          newSet.add(slotKey);
+          return newSet;
+        });
         
         const { error } = await supabase
           .from('blocked_slots')
@@ -486,13 +640,15 @@ const ProfissionalAgenda = () => {
             criado_por: profile?.id
           }]);
 
-        if (error) throw error;
-
-        setLockedSlots(prev => {
-          const newSet = new Set(prev);
-          newSet.add(slotKey);
-          return newSet;
-        });
+        if (error) {
+          // Se der erro, reverter o estado
+          setLockedSlots(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(slotKey);
+            return newSet;
+          });
+          throw error;
+        }
 
         toast({
           title: "Horário bloqueado",
@@ -500,7 +656,7 @@ const ProfissionalAgenda = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao gerenciar bloqueio:', error);
+      console.error('❌ [PROF] Erro ao gerenciar bloqueio:', error);
       toast({
         title: "Erro",
         description: "Erro ao gerenciar bloqueio do horário",
@@ -510,12 +666,19 @@ const ProfissionalAgenda = () => {
   };
 
   const isSlotLocked = (profId: string, hour: string) => {
-    return lockedSlots.has(`${profId}-${hour}`);
+    const slotKey = `${profId}-${hour}`;
+    return lockedSlots.has(slotKey);
   };
 
   const handleEmptySlotClick = (profId: string, hour: string) => {
-    const dateStr = format(selectedDate || new Date(), 'yyyy-MM-dd');
-    const iso = new Date(`${dateStr}T${hour}:00`).toISOString();
+    const selectedDay = selectedDate || new Date();
+    const year = selectedDay.getFullYear();
+    const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDay.getDate()).padStart(2, '0');
+    
+    // Construir ISO manualmente (mesma lógica das setas e drag)
+    const iso = `${year}-${month}-${day}T${hour}:00.000Z`;
+    const dateStr = `${year}-${month}-${day}`;
     
     setForm(prev => ({
       ...prev,
@@ -526,22 +689,6 @@ const ProfissionalAgenda = () => {
     setOpen(true);
   };
 
-  // Event listeners para drag and drop
-  useEffect(() => {
-    if (dragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-      };
-    }
-  }, [dragging]);
 
   const getAppointmentsForTime = (profId: string, time: string) => {
     if (!selectedDate) return [];
@@ -751,17 +898,18 @@ const ProfissionalAgenda = () => {
 
   // Carregar slots bloqueados quando a data muda
   useEffect(() => {
-    if (selectedDate && salonInfo?.id) {
+    // Aguardar o salonInfo terminar de carregar antes de tentar carregar os slots bloqueados
+    if (!salonInfoLoading && selectedDate && salonInfo?.id) {
       loadBlockedSlots(selectedDate);
     }
-  }, [selectedDate, salonInfo?.id]);
+  }, [selectedDate, salonInfo?.id, salonInfoLoading]);
 
   // Definir o funcionário_id como o profissional logado
   useEffect(() => {
-    if (profile?.id) {
-      setForm(prev => ({ ...prev, funcionario_id: profile.id }));
+    if (employeeId) {
+      setForm(prev => ({ ...prev, funcionario_id: employeeId }));
     }
-  }, [profile?.id]);
+  }, [employeeId]);
 
 
   if (loading) {
@@ -966,7 +1114,7 @@ const ProfissionalAgenda = () => {
                         <SelectValue placeholder="Selecione o horário" />
                       </SelectTrigger>
                       <SelectContent>
-                        {getAvailableHours(profile.id).map((hour) => (
+                        {getAvailableHours(employeeId).map((hour) => (
                           <SelectItem key={hour} value={hour}>
                             {hour}
                           </SelectItem>
@@ -1081,7 +1229,10 @@ const ProfissionalAgenda = () => {
       )}
 
       {/* Grade da agenda */}
-      <div className="bg-card rounded-lg shadow-elegant border border-border overflow-hidden max-h-[600px] w-full max-w-none">
+      <div 
+        ref={agendaContainerRef}
+        className="bg-card rounded-lg shadow-elegant border border-border overflow-y-auto max-h-[600px] w-full max-w-none agenda-scrollbar"
+      >
         {/* Cabeçalho sticky do profissional */}
         <div className="sticky top-0 z-10 grid bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 w-full" style={{ gridTemplateColumns: `160px 1fr` }}>
           {/* Célula da data */}
@@ -1148,7 +1299,7 @@ const ProfissionalAgenda = () => {
 
               {/* Coluna do profissional */}
               <div 
-                ref={(el) => (columnRefs.current[profile.id] = el)} 
+                ref={(el) => (columnRefs.current[employeeId] = el)} 
                 className="relative border-l border-border" 
                 style={{ height: allHours.length * SLOT_HEIGHT }}
               >
@@ -1160,13 +1311,13 @@ const ProfissionalAgenda = () => {
                 {/* Slots vazios clicáveis */}
                 {allHours.map((h, i) => {
                   const topPos = i * SLOT_HEIGHT;
-                  const slotKey = `${profile.id}-${h}`;
-                  const isLocked = isSlotLocked(profile.id, h);
+                  const slotKey = `${employeeId}-${h}`;
+                  const isLocked = isSlotLocked(employeeId, h);
                   const isHovered = hoveredSlot === slotKey;
                   
                   return (
                     <div
-                      key={`slot-${profile.id}-${h}`}
+                      key={`slot-${employeeId}-${h}`}
                       className={`group absolute left-1 right-1 rounded-md border border-transparent transition-colors ${
                         isLocked 
                           ? 'bg-muted/50 border-muted-foreground/30' 
@@ -1189,7 +1340,7 @@ const ProfissionalAgenda = () => {
                                 className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm ${
                                   dragging ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
                                 }`}
-                                onClick={() => handleEmptySlotClick(profile.id, h)}
+                                onClick={() => handleEmptySlotClick(employeeId, h)}
                                 aria-label={`Adicionar agendamento às ${h}`}
                               >
                                 +
@@ -1208,7 +1359,7 @@ const ProfissionalAgenda = () => {
                                 className={`transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground shadow-sm hover:scale-110 transition-all duration-200 ${
                                   isHovered ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                                 }`}
-                                onClick={() => handleSlotLock(profile.id, h)}
+                                onClick={() => handleSlotLock(employeeId, h)}
                                 aria-label={`Bloquear horário ${h}`}
                               >
                                 <Unlock className="h-3 w-3 group-hover:animate-[wiggle_0.3s_ease-in-out]" />
@@ -1228,7 +1379,7 @@ const ProfissionalAgenda = () => {
                             <button
                               type="button"
                               className="absolute top-2 right-2 transition-opacity duration-150 inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-amber-foreground shadow-sm hover:scale-110 transition-all duration-200 opacity-100"
-                              onClick={() => handleSlotLock(profile.id, h)}
+                              onClick={() => handleSlotLock(employeeId, h)}
                               aria-label={`Desbloquear horário ${h}`}
                             >
                               <Lock className="h-3 w-3 hover:animate-[wiggle_0.3s_ease-in-out]" />
@@ -1253,7 +1404,7 @@ const ProfissionalAgenda = () => {
                 })}
 
                 {/* Agendamentos posicionados por horário e duração */}
-                {appointmentsOfDay.filter(a => a.funcionario_id === profile.id).map(apt => {
+                {appointmentsOfDay.filter(a => a.funcionario_id === employeeId).map(apt => {
                   const start = fixTimezone(apt.data_hora);
                   const startMinutes = start.getHours() * 60 + start.getMinutes();
                   const minutesFromOpen = Math.max(0, startMinutes - openMinutes);
@@ -1280,8 +1431,8 @@ const ProfissionalAgenda = () => {
                         transition: isDragging ? 'none' : 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
                         pointerEvents: isDragging ? 'none' : 'auto'
                       }}
-                      onMouseDown={(e) => handleCardMouseDown(e, apt, profile, top)}
-                      onTouchStart={(e) => handleCardTouchStart(e, apt, profile, top)}
+                      onMouseDown={(e) => handleCardMouseDown(e, apt, { id: profile.id }, top)}
+                      onTouchStart={(e) => handleCardTouchStart(e, apt, { id: profile.id }, top)}
                       onClick={() => handleCardClick(apt)}
                       title={`${apt.cliente_nome || 'Cliente'} • ${apt.servico_nome || ''}`}
                     >
@@ -1293,39 +1444,70 @@ const ProfissionalAgenda = () => {
                       >
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
                         
-                        {/* Botão de detalhes - aparece no hover */}
-                        <button
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Botão clicado, abrindo modal para:', apt.cliente_nome);
-                            console.log('Estado detailOpen antes:', detailOpen);
-                            setSelectedApt(apt);
-                            setEditForm({
-                              servico_id: apt.servico_id,
-                              status: apt.status,
-                              observacoes: apt.observacoes || ''
-                            });
-                            setDetailOpen(true);
-                            console.log('setDetailOpen(true) chamado');
-                          }}
-                          onTouchStart={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Botão tocado, abrindo modal para:', apt.cliente_nome);
-                            setSelectedApt(apt);
-                            setEditForm({
-                              servico_id: apt.servico_id,
-                              status: apt.status,
-                              observacoes: apt.observacoes || ''
-                            });
-                            setDetailOpen(true);
-                          }}
-                          className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-primary/10 hover:bg-primary/20 rounded-full p-1.5 z-50 cursor-pointer"
-                          title="Ver detalhes"
+                        {/* Botões de seta - pequenos e sutis no centro */}
+                        <div 
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-row gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Eye className="h-3 w-3 text-primary" />
-                        </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Movendo para cima:', apt.cliente_nome);
+                              handleMoveAppointment(apt, 'up');
+                            }}
+                            className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
+                            title="Mover para cima (1 hora)"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5 text-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Movendo para baixo:', apt.cliente_nome);
+                              handleMoveAppointment(apt, 'down');
+                            }}
+                            className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
+                            title="Mover para baixo (1 hora)"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedApt(apt);
+                              setEditForm({
+                                servico_id: apt.servico_id,
+                                status: apt.status,
+                                observacoes: apt.observacoes || ''
+                              });
+                              setDetailOpen(true);
+                            }}
+                            className="bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-full p-1.5 cursor-pointer transition-colors"
+                            title="Ver detalhes"
+                          >
+                            <Eye className="h-3 w-3 text-primary" />
+                          </button>
+                        </div>
                         
                         <div className="flex items-center justify-between pr-1">
                           <div className="flex items-center gap-2 min-w-0">

@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Plus, Filter, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Scissors, CheckCircle, MessageSquare, Trash2, Save, X, Phone, User, UserPlus, Mail, Camera, Image, Eye, Upload, Lock, Unlock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { AgendaSkeleton } from '@/components/AgendaSkeleton';
 import { NoProfessionalsMessage } from '@/components/NoProfessionalsMessage';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { fixTimezone } from '@/utils/dateUtils';
 
 const SLOT_MINUTES = 60; // tamanho do slot (60 = 1h)
 const SLOT_HEIGHT = 72;  // altura visual de cada slot
@@ -62,7 +63,7 @@ const formatPhoneNumber = (phone: string) => {
 
 
 const Agenda = () => {
-  const { salonInfo } = useSalonInfo();
+  const { salonInfo, loading: salonInfoLoading } = useSalonInfo();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { appointments, loading, createAppointment, updateAppointment, deleteAppointment, refetch: refetchAppointments, isCreating, isUpdating, isDeleting } = useAppointments();
   const { profile } = useAuth();
@@ -79,9 +80,7 @@ const Agenda = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedApt, setSelectedApt] = useState<any>(null);
   const [editForm, setEditForm] = useState<{ servico_id?: string; status?: string; observacoes?: string }>({});
-  const [dragStartTime, setDragStartTime] = useState<number>(0);
-  const [hasDragged, setHasDragged] = useState(false);
-  const hasDraggedRef = useRef(false);
+  // Estados de drag removidos
 
   // Estados para fotos do processo
   const [photosModalOpen, setPhotosModalOpen] = useState(false);
@@ -171,21 +170,25 @@ const Agenda = () => {
   // refs das colunas para detectar drop
   const columnRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const agendaContainerRef = useRef<HTMLDivElement | null>(null);
 
   // estado de drag
   const [dragging, setDragging] = useState<{
     id: string;
     startX: number;
     startY: number;
+    startColumnId: string;
+    startColumnY: number;
     initialTop: number;
     currentTop: number;
     currentX: number;
     height: number;
     profId: string;
   } | null>(null);
+  const [dragStartTime, setDragStartTime] = useState<number>(0);
+  const [hasDragged, setHasDragged] = useState(false);
+  const hasDraggedRef = useRef(false);
   const pendingClickAptRef = useRef<any | null>(null);
-  
-  // estado para detectar coluna atual durante drag
   const [currentDragColumn, setCurrentDragColumn] = useState<string | null>(null);
   
   // Estados para bloqueio de horários
@@ -195,25 +198,36 @@ const Agenda = () => {
   // Função para carregar horários bloqueados do banco
   const loadBlockedSlots = async (date: Date) => {
     try {
+      if (!salonInfo?.id) {
+        console.warn('⚠️ loadBlockedSlots: salonInfo?.id não disponível');
+        return;
+      }
+
+      const dateStr = format(date, 'yyyy-MM-dd');
       
+      // Buscar com filtro de data
       const { data, error } = await supabase
         .from('blocked_slots')
         .select('funcionario_id, hora_inicio')
-        .eq('salao_id', salonInfo?.id)
-        .eq('data', format(date, 'yyyy-MM-dd'));
+        .eq('salao_id', salonInfo.id)
+        .eq('data', dateStr);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar blocked_slots:', error);
+        throw error;
+      }
 
       // Converter para o formato do estado local
       const blockedSet = new Set<string>();
       data?.forEach(slot => {
-        blockedSet.add(`${slot.funcionario_id}-${slot.hora_inicio}`);
+        // Normalizar hora para HH:mm (banco retorna HH:mm:ss)
+        const hora = String(slot.hora_inicio).slice(0, 5);
+        const slotKey = `${slot.funcionario_id}-${hora}`;
+        blockedSet.add(slotKey);
       });
-
       setLockedSlots(blockedSet);
-    } catch (error) {
-      console.error('Erro ao carregar horários bloqueados:', error);
-      // Se a tabela não existir, continuar sem bloqueios
+    } catch (error: any) {
+      // Se a tabela não existir ou houver erro de RLS, continuar sem bloqueios
       setLockedSlots(new Set());
     }
   };
@@ -463,7 +477,7 @@ const Agenda = () => {
 
   const selectedDay = selectedDate || new Date();
   const appointmentsOfDay = Array.isArray(filteredAppointments) ? filteredAppointments.filter(a => {
-    const aptDate = new Date(a.data_hora);
+    const aptDate = fixTimezone(a.data_hora);
     return (
       aptDate.getFullYear() === selectedDay.getFullYear() &&
       aptDate.getMonth() === selectedDay.getMonth() &&
@@ -494,15 +508,15 @@ const Agenda = () => {
   const onMouseMove = (e: MouseEvent) => {
     if (!dragging) return;
     
-    // Marcar que houve movimento (drag)
     if (!hasDragged) {
       setHasDragged(true);
       hasDraggedRef.current = true;
     }
     
-    // Usar requestAnimationFrame para suavizar a animação
     requestAnimationFrame(() => {
-      // Detectar coluna atual durante o drag - usar posição atual do mouse
+      const agendaContainer = agendaContainerRef.current;
+      if (!agendaContainer) return;
+
       let currentColumn = dragging.profId;
       for (const prof of professionals) {
         const el = columnRefs.current[prof.id];
@@ -515,38 +529,37 @@ const Agenda = () => {
       }
       setCurrentDragColumn(currentColumn);
       
-      // Calcular movimento Y (vertical)
-      const deltaY = e.clientY - dragging.startY;
-      const nextTop = Math.max(0, dragging.initialTop + deltaY);
+      const containerRect = agendaContainer.getBoundingClientRect();
+      const mouseYInContainer = e.clientY - containerRect.top + agendaContainer.scrollTop;
+      const deltaY = mouseYInContainer - dragging.startColumnY;
       
-      // Calcular movimento X (horizontal) - permitir movimento livre
+      const maxTop = (allHours.length * SLOT_HEIGHT) - dragging.height;
+      const nextTop = Math.max(0, Math.min(maxTop, dragging.initialTop + deltaY));
+      
       const deltaX = e.clientX - dragging.startX;
-      const nextX = deltaX;
       
       setDragging({ 
         ...dragging, 
         currentTop: nextTop,
-        currentX: nextX
+        currentX: deltaX
       });
     });
   };
 
   const onTouchMove = (e: TouchEvent) => {
     if (!dragging || !e.touches[0]) return;
+    e.preventDefault();
     
-    e.preventDefault(); // Prevenir scroll durante drag
-    
-    // Marcar que houve movimento (drag)
     if (!hasDragged) {
       setHasDragged(true);
       hasDraggedRef.current = true;
     }
     
     const touch = e.touches[0];
-    
-    // Usar requestAnimationFrame para suavizar a animação
     requestAnimationFrame(() => {
-      // Detectar coluna atual durante o drag
+      const agendaContainer = agendaContainerRef.current;
+      if (!agendaContainer) return;
+
       let currentColumn = dragging.profId;
       for (const prof of professionals) {
         const el = columnRefs.current[prof.id];
@@ -559,18 +572,19 @@ const Agenda = () => {
       }
       setCurrentDragColumn(currentColumn);
       
-      // Calcular movimento Y (vertical)
-      const deltaY = touch.clientY - dragging.startY;
-      const nextTop = Math.max(0, dragging.initialTop + deltaY);
+      const containerRect = agendaContainer.getBoundingClientRect();
+      const touchYInContainer = touch.clientY - containerRect.top + agendaContainer.scrollTop;
+      const deltaY = touchYInContainer - dragging.startColumnY;
       
-      // Calcular movimento X (horizontal) - permitir movimento livre
+      const maxTop = (allHours.length * SLOT_HEIGHT) - dragging.height;
+      const nextTop = Math.max(0, Math.min(maxTop, dragging.initialTop + deltaY));
+      
       const deltaX = touch.clientX - dragging.startX;
-      const nextX = deltaX;
       
       setDragging({ 
         ...dragging, 
         currentTop: nextTop,
-        currentX: nextX
+        currentX: deltaX
       });
     });
   };
@@ -578,9 +592,7 @@ const Agenda = () => {
   const onMouseUp = async (e: MouseEvent) => {
     if (!dragging) return;
 
-    // Se houve drag, não abrir modal
     if (hasDraggedRef.current) {
-      // descobrir coluna alvo pelo X
       let targetProfId = dragging.profId;
       let targetProfName = '';
       
@@ -610,7 +622,6 @@ const Agenda = () => {
       }
     }
 
-    // Reset drag state
     setDragging(null);
     setHasDragged(false);
     setDragStartTime(0);
@@ -622,9 +633,7 @@ const Agenda = () => {
   const onTouchEnd = async (e: TouchEvent) => {
     if (!dragging) return;
 
-    // Se houve drag, não abrir modal
     if (hasDragged) {
-      // descobrir coluna alvo pelo X
       let targetProfId = dragging.profId;
       let targetProfName = '';
       
@@ -645,53 +654,104 @@ const Agenda = () => {
       await handleDragEnd(targetProfId, targetProfName);
     }
 
-    // Reset drag state
     setDragging(null);
     setHasDragged(false);
     setDragStartTime(0);
     setCurrentDragColumn(null);
   };
 
+  const handleMoveAppointment = async (apt: any, direction: 'up' | 'down') => {
+    try {
+      console.log('handleMoveAppointment chamado:', { aptId: apt.id, direction, data_hora: apt.data_hora });
+      
+      const start = fixTimezone(apt.data_hora);
+      console.log('Horário inicial fixado:', start);
+      
+      const newStart = direction === 'up' ? addMinutes(start, -60) : addMinutes(start, 60);
+      console.log('Novo horário calculado:', newStart);
+      
+      const dateStr = format(newStart, 'yyyy-MM-dd');
+      const hh = format(newStart, 'HH');
+      const mm = format(newStart, 'mm');
+      
+      // Construir ISO manualmente para evitar conversão de timezone
+      // Salvar o horário exatamente como calculado (sem converter para UTC)
+      const year = newStart.getFullYear();
+      const month = String(newStart.getMonth() + 1).padStart(2, '0');
+      const day = String(newStart.getDate()).padStart(2, '0');
+      const hour = String(newStart.getHours()).padStart(2, '0');
+      const minute = String(newStart.getMinutes()).padStart(2, '0');
+      const second = String(newStart.getSeconds()).padStart(2, '0');
+      
+      // Formato: "YYYY-MM-DDTHH:mm:ss.000Z" mas com o horário local (sem conversão)
+      const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+      
+      console.log('Atualizando agendamento:', { id: apt.id, iso, horario_display: `${hh}:${mm}` });
+
+      await updateAppointment(apt.id, { data_hora: iso } as any);
+      
+      toast({
+        title: 'Horário atualizado!',
+        description: `Novo horário: ${hh}:${mm}`,
+      });
+      
+      refetchAppointments();
+    } catch (error: any) {
+      console.error('Erro ao mover agendamento:', error);
+      toast({
+        title: 'Erro ao mover agendamento',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDragEnd = async (targetProfId: string, targetProfName: string) => {
     if (!dragging) return;
 
-      // snap to grid
-      const snappedRows = Math.round(dragging.currentTop / SLOT_HEIGHT);
-      const minutesFromOpen = snappedRows * SLOT_MINUTES;
-      const totalMinutes = openMinutes + minutesFromOpen;
-      const hh = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-      const mm = (totalMinutes % 60).toString().padStart(2, '0');
+    const snappedRows = Math.round(dragging.currentTop / SLOT_HEIGHT);
+    const minutesFromOpen = snappedRows * SLOT_MINUTES;
+    const totalMinutes = openMinutes + minutesFromOpen;
+    
+    const newHour = Math.floor(totalMinutes / 60);
+    const newMinute = totalMinutes % 60;
+    
+    const selectedDay = selectedDate || new Date();
+    const year = selectedDay.getFullYear();
+    const month = String(selectedDay.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDay.getDate()).padStart(2, '0');
+    const hour = String(newHour).padStart(2, '0');
+    const minute = String(newMinute).padStart(2, '0');
+    
+    // Construir ISO manualmente (mesma lógica das setas)
+    const iso = `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
 
-      const dateStr = format(selectedDay, 'yyyy-MM-dd');
-      const iso = new Date(`${dateStr}T${hh}:${mm}:00`).toISOString();
-
-      try {
-        await updateAppointment(dragging.id, { funcionario_id: targetProfId, data_hora: iso } as any);
-        
-        // Mostrar toast de sucesso com informações da mudança
-        const originalProf = professionals.find(p => p.id === dragging.profId);
-        const newTime = `${hh}:${mm}`;
-        
-        if (targetProfId !== dragging.profId) {
-          toast({
-            title: 'Agendamento movido com sucesso!',
-            description: `Movido para ${targetProfName} às ${newTime}`,
-          });
-        } else {
-          toast({
-            title: 'Horário atualizado!',
-            description: `Novo horário: ${newTime}`,
-          });
-        }
-        
-        refetchAppointments();
-      } catch (error: any) {
+    try {
+      await updateAppointment(dragging.id, { funcionario_id: targetProfId, data_hora: iso } as any);
+      
+      const originalProf = professionals.find(p => p.id === dragging.profId);
+      const newTime = `${hour}:${minute}`;
+      
+      if (targetProfId !== dragging.profId) {
         toast({
-          title: 'Erro ao mover agendamento',
-          description: error.message || 'Tente novamente.',
-          variant: 'destructive',
+          title: 'Agendamento movido com sucesso!',
+          description: `Movido para ${targetProfName} às ${newTime}`,
+        });
+      } else {
+        toast({
+          title: 'Horário atualizado!',
+          description: `Novo horário: ${newTime}`,
         });
       }
+      
+      refetchAppointments();
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao mover agendamento',
+        description: error.message || 'Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCardMouseDown = (e: React.MouseEvent, apt: any, prof: any, top: number) => {
@@ -700,14 +760,21 @@ const Agenda = () => {
     setHasDragged(false);
     hasDraggedRef.current = false;
     pendingClickAptRef.current = apt;
+    
+    const container = agendaContainerRef.current;
+    const containerRect = container?.getBoundingClientRect();
+    const startColumnY = containerRect ? (e.clientY - containerRect.top + container.scrollTop) : e.clientY;
+    
     setDragging({ 
       id: apt.id, 
       startX: e.clientX,
-      startY: e.clientY, 
+      startY: e.clientY,
+      startColumnId: prof.id,
+      startColumnY,
       initialTop: top, 
       currentTop: top,
       currentX: 0,
-      height: (Math.max(30, (apt.servico_duracao || 60)) / SLOT_MINUTES) * SLOT_HEIGHT, 
+      height: SLOT_HEIGHT,
       profId: prof.id 
     });
   };
@@ -721,25 +788,30 @@ const Agenda = () => {
     setHasDragged(false);
     hasDraggedRef.current = false;
     pendingClickAptRef.current = apt;
+    
+    const container = agendaContainerRef.current;
+    const containerRect = container?.getBoundingClientRect();
+    const startColumnY = containerRect ? (touch.clientY - containerRect.top + container.scrollTop) : touch.clientY;
+    
     setDragging({ 
       id: apt.id, 
       startX: touch.clientX,
-      startY: touch.clientY, 
+      startY: touch.clientY,
+      startColumnId: prof.id,
+      startColumnY,
       initialTop: top, 
       currentTop: top,
       currentX: 0,
-      height: (Math.max(30, (apt.servico_duracao || 60)) / SLOT_MINUTES) * SLOT_HEIGHT, 
+      height: SLOT_HEIGHT,
       profId: prof.id 
     });
     
-    // Adicionar feedback tátil se disponível
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
   };
 
   const handleCardClick = (apt: any) => {
-    // Só abrir modal se não houve drag e passou tempo suficiente desde o início do toque
     const timeSinceStart = Date.now() - dragStartTime;
     if (!hasDraggedRef.current && timeSinceStart > 100) {
       setSelectedApt(apt); 
@@ -813,12 +885,16 @@ const Agenda = () => {
     const slotKey = `${profId}-${hour}`;
     const isCurrentlyLocked = lockedSlots.has(slotKey);
     
-    console.log('handleSlotLock chamado:', { profId, hour, slotKey, isCurrentlyLocked, salonInfoId: salonInfo?.id, profileId: profile?.id });
     
     try {
       if (isCurrentlyLocked) {
         // Desbloquear horário - remover do banco
-        console.log('Desbloqueando horário:', { profId, hour, data: format(selectedDate || new Date(), 'yyyy-MM-dd') });
+        // Atualizar estado imediatamente (otimista)
+        setLockedSlots(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(slotKey);
+          return newSet;
+        });
         
         const { error } = await supabase
           .from('blocked_slots')
@@ -827,16 +903,15 @@ const Agenda = () => {
           .eq('data', format(selectedDate || new Date(), 'yyyy-MM-dd'))
           .eq('hora_inicio', hour);
 
-        if (error) throw error;
-
-        console.log('Horário desbloqueado no banco com sucesso');
-
-        // Remover do estado local
-    setLockedSlots(prev => {
-      const newSet = new Set(prev);
-        newSet.delete(slotKey);
-          return newSet;
-        });
+        if (error) {
+          // Se der erro, reverter o estado
+          setLockedSlots(prev => {
+            const newSet = new Set(prev);
+            newSet.add(slotKey);
+            return newSet;
+          });
+          throw error;
+        }
 
         toast({
           title: "Horário desbloqueado",
@@ -846,13 +921,11 @@ const Agenda = () => {
         // Bloquear horário - inserir no banco
         const endHour = addMinutes(new Date(`2000-01-01T${hour}:00`), SLOT_MINUTES).toTimeString().slice(0, 5);
         
-        console.log('Bloqueando horário:', { 
-          salao_id: salonInfo?.id, 
-          funcionario_id: profId, 
-          data: format(selectedDate || new Date(), 'yyyy-MM-dd'),
-          hora_inicio: hour,
-          hora_fim: endHour,
-          criado_por: profile?.id
+        // Atualizar estado imediatamente (otimista)
+        setLockedSlots(prev => {
+          const newSet = new Set(prev);
+          newSet.add(slotKey);
+          return newSet;
         });
         
         const { error } = await supabase
@@ -866,16 +939,15 @@ const Agenda = () => {
             criado_por: profile?.id
           }]);
 
-        if (error) throw error;
-
-        console.log('Horário bloqueado no banco com sucesso');
-
-        // Adicionar ao estado local
-        setLockedSlots(prev => {
-          const newSet = new Set(prev);
-        newSet.add(slotKey);
-          return newSet;
-        });
+        if (error) {
+          // Se der erro, reverter o estado
+          setLockedSlots(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(slotKey);
+            return newSet;
+          });
+          throw error;
+        }
 
         toast({
           title: "Horário bloqueado",
@@ -914,7 +986,7 @@ const Agenda = () => {
       const appointment = (appointments as any[]).find((apt: any) => apt.id === appointmentId);
       if (appointment) {
         // Definir a data do agendamento
-        setSelectedDate(new Date(appointment.data_hora));
+        setSelectedDate(fixTimezone(appointment.data_hora));
         // Inicializar o formulário de edição com os dados do agendamento
         setEditForm({ 
           servico_id: appointment.servico_id, 
@@ -937,10 +1009,27 @@ const Agenda = () => {
 
   // Carregar horários bloqueados quando mudar de data
   useEffect(() => {
-    if (selectedDate && salonInfo?.id) {
+    console.log('🔄 useEffect loadBlockedSlots executado:', { 
+      selectedDate, 
+      salonInfoId: salonInfo?.id,
+      salonInfoLoading,
+      hasSelectedDate: !!selectedDate,
+      hasSalonInfo: !!salonInfo?.id,
+      isReady: !salonInfoLoading && !!selectedDate && !!salonInfo?.id
+    });
+    
+    // Aguardar o salonInfo terminar de carregar antes de tentar carregar os slots bloqueados
+    if (!salonInfoLoading && selectedDate && salonInfo?.id) {
+      console.log('✅ Chamando loadBlockedSlots...');
       loadBlockedSlots(selectedDate);
+    } else {
+      console.warn('⚠️ loadBlockedSlots não chamado:', {
+        salonInfoLoading,
+        missingSelectedDate: !selectedDate,
+        missingSalonInfo: !salonInfo?.id
+      });
     }
-  }, [selectedDate, salonInfo?.id]);
+  }, [selectedDate, salonInfo?.id, salonInfoLoading]);
 
   // Resetar índice de profissionais quando o filtro de profissional mudar
   useEffect(() => {
@@ -1583,7 +1672,10 @@ const Agenda = () => {
         )}
 
         {/* Grade da agenda */}
-        <div className="bg-card rounded-lg shadow-elegant overflow-auto border border-border">
+        <div 
+          ref={agendaContainerRef}
+          className="bg-card rounded-lg shadow-elegant overflow-y-auto max-h-[600px] border border-border agenda-scrollbar"
+        >
           {/* Cabeçalho sticky dos profissionais */}
           <div className="sticky top-0 z-10 grid bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75" style={{ gridTemplateColumns: `160px repeat(${visibleProfessionals.length}, minmax(200px,1fr))` }}>
             {/* Célula da data */}
@@ -1790,7 +1882,8 @@ const Agenda = () => {
 
                   {/* Agendamentos posicionados por horário e duração */}
                   {profAppointments.map(apt => {
-                    const start = new Date(apt.data_hora);
+                    // Usar fixTimezone para garantir que o horário seja lido corretamente (especialmente para agendamentos da API)
+                    const start = fixTimezone(apt.data_hora);
                     const startMinutes = start.getHours() * 60 + start.getMinutes();
                     const minutesFromOpen = Math.max(0, startMinutes - openMinutes);
                     const top = (minutesFromOpen / SLOT_MINUTES) * SLOT_HEIGHT;
@@ -1829,39 +1922,70 @@ const Agenda = () => {
                       >
                         <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStripColorByStatus(apt.status)}`} />
                         
-                        {/* Botão de detalhes - aparece no hover */}
-                        <button
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Botão clicado, abrindo modal para:', apt.cliente_nome);
-                            console.log('Estado detailOpen antes:', detailOpen);
-                            setSelectedApt(apt);
-                            setEditForm({
-                              servico_id: apt.servico_id,
-                              status: apt.status,
-                              observacoes: apt.observacoes || ''
-                            });
-                            setDetailOpen(true);
-                            console.log('setDetailOpen(true) chamado');
-                          }}
-                          onTouchStart={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Botão tocado, abrindo modal para:', apt.cliente_nome);
-                            setSelectedApt(apt);
-                            setEditForm({
-                              servico_id: apt.servico_id,
-                              status: apt.status,
-                              observacoes: apt.observacoes || ''
-                            });
-                            setDetailOpen(true);
-                          }}
-                          className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-primary/10 hover:bg-primary/20 rounded-full p-1.5 z-50 cursor-pointer"
-                          title="Ver detalhes"
+                        {/* Botões de seta - pequenos e sutis no centro */}
+                        <div 
+                          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-row gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Eye className="h-3 w-3 text-primary" />
-                        </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Movendo para cima:', apt.cliente_nome);
+                              handleMoveAppointment(apt, 'up');
+                            }}
+                            className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
+                            title="Mover para cima (1 hora)"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5 text-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('Movendo para baixo:', apt.cliente_nome);
+                              handleMoveAppointment(apt, 'down');
+                            }}
+                            className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
+                            title="Mover para baixo (1 hora)"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+                          </button>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelectedApt(apt);
+                              setEditForm({
+                                servico_id: apt.servico_id,
+                                status: apt.status,
+                                observacoes: apt.observacoes || ''
+                              });
+                              setDetailOpen(true);
+                            }}
+                            className="bg-primary/10 hover:bg-primary/20 active:bg-primary/30 rounded-full p-1.5 cursor-pointer transition-colors"
+                            title="Ver detalhes"
+                          >
+                            <Eye className="h-3 w-3 text-primary" />
+                          </button>
+                        </div>
                         
                         <div className="flex items-center justify-between pr-1">
                           <div className="flex items-center gap-2 min-w-0">
@@ -1924,7 +2048,7 @@ const Agenda = () => {
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-lg font-semibold">Detalhes do Agendamento</DialogTitle>
                     <p className="text-xs text-muted-foreground">
-                      {selectedApt && capitalizeFirstLetter(format(new Date(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }))}
+                      {selectedApt && capitalizeFirstLetter(format(fixTimezone(selectedApt.data_hora), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR }))}
                     </p>
                   </div>
                 </div>

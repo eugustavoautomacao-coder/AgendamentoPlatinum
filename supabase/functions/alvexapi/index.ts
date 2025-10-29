@@ -333,7 +333,7 @@ async function handleGetAvailability(supabaseClient, salonId, searchParams) {
       })
     }
 
-    // Buscar agendamentos existentes (bloqueiam: confirmado e pendente)
+    // Buscar agendamentos existentes (confirmados e pendentes devem bloquear o horário)
     const { data: appointments, error: appointmentsError } = await supabaseClient
       .from('appointments')
       .select(`
@@ -356,13 +356,24 @@ async function handleGetAvailability(supabaseClient, salonId, searchParams) {
       })
     }
 
-    console.log(`🔍 Consultando disponibilidade para ${date}`)
-    console.log(`📅 Agendamentos encontrados:`, appointments?.length || 0)
-    console.log(`🧩 Duração do serviço selecionado: ${service.duracao_minutos}min`)
-    if (appointments?.length > 0) {
-      appointments.forEach(apt => {
-        console.log(`  - ${apt.data_hora} (duração: ${apt.services.duracao_minutos}min)`)
-      })
+    // Buscar horários bloqueados do funcionário para este dia (igual ao frontend)
+    let blockedSlots: any[] = []
+    try {
+      const { data: blockedData, error: blockedError } = await supabaseClient
+        .from('blocked_slots')
+        .select('hora_inicio, hora_fim')
+        .eq('funcionario_id', professionalId)
+        .eq('salao_id', salonId)
+        .eq('data', date)
+
+      if (!blockedError && blockedData && blockedData.length > 0) {
+        blockedSlots = blockedData.map(blocked => ({
+          hora_inicio: blocked.hora_inicio,
+          hora_fim: blocked.hora_fim
+        }))
+      }
+    } catch (error) {
+      // Tabela pode não existir, continuar sem horários bloqueados
     }
 
     // Gerar slots disponíveis (horário padrão 8h às 18h)
@@ -374,41 +385,64 @@ async function handleGetAvailability(supabaseClient, salonId, searchParams) {
     }> = []
     const serviceDuration = service.duracao_minutos
 
-    // Horário padrão (Brasil): 8h às 18h - interpretar como horário local (UTC-3) e converter para UTC
-    const TZ_OFFSET = '-03:00'
-    const startTime = new Date(`${date}T08:00:00${TZ_OFFSET}`)
-    const endTime = new Date(`${date}T18:00:00${TZ_OFFSET}`)
-
-    // Gerar slots de 1 em 1 hora (para corresponder à agenda do sistema)
-    for (let hour = 8; hour < 18; hour++) {
+    // Gerar slots de 1 em 1 hora (8h às 18h) - EXATAMENTE como o frontend faz
+    const startHour = 8
+    const endHour = 18
+    
+    for (let hour = startHour; hour < endHour; hour++) {
+      // Gerar apenas horários cheios (sem minutos fracionados) - igual ao frontend
       const timeString = `${hour.toString().padStart(2, '0')}:00`
-      // Interpretar o horário informado como local Brasil (UTC-3) e converter para UTC
-      const slotDateTime = new Date(`${date}T${timeString}:00${TZ_OFFSET}`)
-      const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000)
-
-      // Respeitar horário de funcionamento: serviço precisa terminar até o fim do expediente
-      const fitsBusinessHours = slotEndTime <= endTime
-
-      // Verificar se o slot não conflita com agendamentos existentes
-      const hasAppointmentConflict = appointments?.some(apt => {
-        const aptTime = new Date(apt.data_hora)
-        const aptEndTime = new Date(aptTime.getTime() + apt.services.duracao_minutos * 60000)
+      const slotDateTime = new Date(`${date}T${timeString}:00`)
+      
+      // Extrair hora do slot (ex: "08:00" -> 8) - usado em múltiplos lugares
+      const slotHour = parseInt(timeString.split(':')[0])
+      
+      // Verificar se o slot está disponível (bloquear apenas a hora de início do agendamento)
+      // Se um agendamento está marcado para 08:00, apenas 08:00 deve ser bloqueado
+      // Ignorar completamente a duração do serviço
+      const isAvailableByAppointments = !appointments?.some(apt => {
         
-        // Logs de debug para entender conflitos
-        const hasConflict = (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
-                           (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
-                           (slotDateTime <= aptTime && slotEndTime >= aptEndTime)
+        // Extrair hora do agendamento
+        // O agendamento está vindo como "2025-10-29T08:00:00+00:00" (08:00 UTC)
+        // Mas o frontend mostra como 08:00 na agenda, então vamos tratar UTC como hora local
+        // (o sistema parece estar salvando sem conversão de timezone)
         
-        if (hasConflict) {
-          console.log(`⚠️ Conflito detectado para ${timeString}:`)
-          console.log(`  Slot: ${slotDateTime.toISOString()} - ${slotEndTime.toISOString()} (${serviceDuration}min)`)
-          console.log(`  Agendamento: ${aptTime.toISOString()} - ${aptEndTime.toISOString()} (${apt.services.duracao_minutos}min)`)
-        }
+        const aptDate = new Date(apt.data_hora)
+        const aptHourUTC = aptDate.getUTCHours()
         
-        return hasConflict
-      }) || false
+        // EXTRAIR HORA DIRETAMENTE DA STRING (ignorar timezone)
+        // Se está como "2025-10-29T08:00:00+00:00", pegar o "08"
+        const timeMatch = apt.data_hora.match(/T(\d{2}):/)
+        const aptHourFromString = timeMatch ? parseInt(timeMatch[1]) : aptHourUTC
+        
+        // Usar a hora extraída da string diretamente (como o frontend faz)
+        // O frontend mostra 08:00 quando está salvo como 08:00 UTC, então vamos fazer o mesmo
+        const aptHour = aptHourFromString
+        
+        // Se as horas são iguais, o slot está ocupado
+        return slotHour === aptHour
+      })
 
-      const isAvailable = fitsBusinessHours && !hasAppointmentConflict
+      // Verificar se o slot não está bloqueado pelo funcionário (igual ao frontend)
+      const isAvailableByBlockedSlots = !blockedSlots?.some(blocked => {
+        // Normalizar hora_inicio e hora_fim de "HH:MM:SS" para "HH:MM"
+        const horaInicio = String(blocked.hora_inicio).slice(0, 5)
+        const horaFim = String(blocked.hora_fim).slice(0, 5)
+        
+        // Extrair hora de início e fim do bloqueio
+        const blockedStartHour = parseInt(horaInicio.split(':')[0])
+        const blockedEndHour = parseInt(horaFim.split(':')[0])
+        
+        // Verificar se o slot está dentro do intervalo bloqueado
+        // Se o bloqueio vai de 10:00 até 11:00, então 10:00 está bloqueado
+        // Se o bloqueio vai de 10:00 até 12:00, então 10:00 e 11:00 estão bloqueados
+        const isBlocked = slotHour >= blockedStartHour && slotHour < blockedEndHour
+        
+        return isBlocked
+      })
+
+      // Slot está disponível se não conflita com agendamentos E não está bloqueado
+      const isAvailable = isAvailableByAppointments && isAvailableByBlockedSlots
 
       slots.push({
         time: timeString,
@@ -416,8 +450,6 @@ async function handleGetAvailability(supabaseClient, salonId, searchParams) {
         professionalId,
         professionalName: professional.nome || 'Profissional'
       })
-      
-      console.log(`✅ Slot ${timeString}: ${isAvailable ? 'DISPONÍVEL' : 'OCUPADO'}${!fitsBusinessHours ? ' (fora do expediente)' : ''}`)
     }
 
     return new Response(JSON.stringify({
@@ -547,19 +579,56 @@ async function handleCreateBooking(supabaseClient, salonId, bookingData) {
       })
     }
 
-    // CORREÇÃO: Tratar data como horário local (Brasil UTC-3)
-    // Se a data não tem timezone, assumir que é horário local do Brasil
-    let appointmentDateTime
+    // Tratar data recebida - compatibilidade com ambas agendas
+    // Agenda Admin: usa new Date(data_hora).getHours() que converte UTC para local
+    // Agenda Profissional: usa fixTimezone(data_hora).getHours() que remove Z e trata como local
+    // Para funcionar em ambas: salvar com horário local na string UTC
+    // Ex: "11:00:00" -> salvar "2025-10-29T11:00:00.000Z" (11:00 UTC)
+    // Admin lê: new Date("...Z").getHours() = 8 (11-3) ❌ ou 11 (se tratar como local) ✅
+    // Prof lê: fixTimezone remove Z, new Date("...").getHours() = 11 ✅
+    // MAS: Admin precisa de 14:00 UTC para mostrar 11:00 local
+    // SOLUÇÃO: Salvar como 14:00 UTC para Admin, e ajustar fixTimezone para tratar corretamente
+    // OU: Salvar como string sem timezone "2025-10-29T11:00:00" direto
+    // Vou tentar a abordagem de salvar com o horário exato (sem conversão) e marcar como UTC
+    let appointmentDateTime: Date
     if (dateTime.includes('T') && !dateTime.includes('Z') && !dateTime.includes('+')) {
-      // Data sem timezone - assumir que é horário local do Brasil (UTC-3)
-      // Converter para UTC subtraindo 3 horas
-      const localDate = new Date(dateTime)
-      appointmentDateTime = new Date(localDate.getTime() + (3 * 60 * 60 * 1000)) // +3 horas para UTC
+      // Recebemos "2025-10-29T11:00:00" - queremos que apareça 11:00 em ambas agendas
+      // Agenda Admin usa getHours() que converte UTC para local: precisa de 14:00 UTC
+      // Agenda Profissional usa fixTimezone que remove Z: precisa que depois de remover Z apareça 11:00
+      // Como fixTimezone remove Z e trata como local, se salvarmos "14:00.000Z", ele remove Z e vira "14:00" local = 14:00 ❌
+      // Precisamos salvar "11:00.000Z" para que fixTimezone remova Z e vire "11:00" local = 11:00 ✅
+      // MAS Admin precisa de 14:00 UTC para mostrar 11:00 local
+      // CONFLITO! Precisamos de uma solução diferente
+      
+      // SOLUÇÃO: Salvar sem o Z, apenas como string "2025-10-29T11:00:00"
+      // Mas o banco espera timestamp with time zone, então precisamos converter
+      // Vou salvar como 11:00 UTC (sem adicionar 3h) e ajustar fixTimezone para lidar melhor
+      const [datePart, timePart] = dateTime.split('T')
+      const [hours, minutes = '00', seconds = '00'] = timePart.split(':')
+      const localHours = parseInt(hours)
+      const localMinutes = parseInt(minutes)
+      const localSeconds = parseInt(seconds.split('.')[0])
+      
+      // NOVA ABORDAGEM: Salvar o horário exatamente como enviado (sem converter)
+      // Isso funciona porque o fixTimezone remove o Z e trata como horário local
+      // Ex: "2025-10-29T09:00:00" -> salvar "2025-10-29T09:00:00.000Z"
+      // fixTimezone remove Z -> "2025-10-29T09:00:00" -> getHours() = 09 ✅
+      // Mesmo comportamento da agenda profissional que salva string simples
+      
+      // Salvar como UTC mas com o mesmo horário numérico
+      appointmentDateTime = new Date(Date.UTC(
+        parseInt(datePart.split('-')[0]),
+        parseInt(datePart.split('-')[1]) - 1,
+        parseInt(datePart.split('-')[2]),
+        localHours, // Mesmo horário, sem adicionar 3h
+        localMinutes,
+        localSeconds
+      ))
     } else {
       appointmentDateTime = new Date(dateTime)
     }
     
-    console.log(`🕐 Processando data do agendamento`)
+    console.log(`🕐 Processando data: ${dateTime} -> salvo como ${appointmentDateTime.toISOString()}`)
 
     // VALIDAÇÃO: Verificar se já existe agendamento no mesmo horário
     console.log(`🔍 Verificando conflitos de horário...`)
@@ -719,7 +788,9 @@ async function handleCreateBooking(supabaseClient, salonId, bookingData) {
 // 6. DELETE /salon/{salonId}/booking/{appointmentId}
 async function handleCancelBooking(supabaseClient, salonId, appointmentId, cancelData) {
   try {
-    const { reason } = cancelData
+    const { reason } = cancelData || {}
+
+    console.log(`🚫 Cancelando agendamento ${appointmentId} do salão ${salonId}`)
 
     // Buscar agendamento
     const { data: appointment, error: fetchError } = await supabaseClient
@@ -730,6 +801,7 @@ async function handleCancelBooking(supabaseClient, salonId, appointmentId, cance
       .single()
 
     if (fetchError || !appointment) {
+      console.error('❌ Agendamento não encontrado:', fetchError)
       return new Response(JSON.stringify({
         success: false,
         error: 'Agendamento não encontrado'
@@ -739,28 +811,61 @@ async function handleCancelBooking(supabaseClient, salonId, appointmentId, cance
       })
     }
 
-    // Cancelar agendamento
+    // Validar se o agendamento pode ser cancelado
+    if (appointment.status === 'cancelado') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Agendamento já está cancelado'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (appointment.status === 'concluido') {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Não é possível cancelar um agendamento já concluído'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Cancelar agendamento usando o campo específico motivo_cancelamento
+    const motivoCancelamento = reason || 'Cancelado via WhatsApp (Evolution API)'
+    
     const { error: cancelError } = await supabaseClient
       .from('appointments')
       .update({
         status: 'cancelado',
-        observacoes: `${appointment.observacoes || ''}\nCancelado via Evolution API WhatsApp. Motivo: ${reason || 'Não informado'}`
+        motivo_cancelamento: motivoCancelamento
       })
       .eq('id', appointmentId)
+      .eq('salao_id', salonId)
 
     if (cancelError) {
+      console.error('❌ Erro ao cancelar agendamento:', cancelError)
       return new Response(JSON.stringify({
         success: false,
-        error: 'Erro ao cancelar agendamento'
+        error: 'Erro ao cancelar agendamento',
+        debug: cancelError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
+    console.log(`✅ Agendamento ${appointmentId} cancelado com sucesso`)
+
     return new Response(JSON.stringify({
       success: true,
-      message: 'Agendamento cancelado com sucesso'
+      message: 'Agendamento cancelado com sucesso',
+      data: {
+        appointmentId,
+        cancelReason: motivoCancelamento,
+        cancelledAt: new Date().toISOString()
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
@@ -768,7 +873,8 @@ async function handleCancelBooking(supabaseClient, salonId, appointmentId, cance
     console.error('❌ Erro ao cancelar agendamento:', error)
     return new Response(JSON.stringify({
       success: false,
-      error: 'Erro interno do servidor'
+      error: 'Erro interno do servidor',
+      debug: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
