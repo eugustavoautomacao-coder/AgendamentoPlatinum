@@ -13,16 +13,27 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
+    // Usar Service Role para criar o primeiro superadmin sem autenticação
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Criar cliente com Service Role (bypass RLS)
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    )
+    })
 
     // Get request body
     const { email, password, name } = await req.json()
@@ -37,8 +48,66 @@ serve(async (req) => {
       )
     }
 
+    // Verificar se já existe um superadmin
+    const { data: existingAdmins, error: checkError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('tipo', 'system_admin')
+      .limit(1)
+
+    // Se já existe superadmin, requer autenticação
+    if (existingAdmins && existingAdmins.length > 0) {
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Já existe um superadmin. Autenticação necessária.' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      const supabaseClient = createClient(
+        supabaseUrl,
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: authHeader },
+          },
+        }
+      )
+
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      if (!user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      const { data: profile } = await supabaseClient
+        .from('users')
+        .select('tipo')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || profile.tipo !== 'system_admin') {
+        return new Response(
+          JSON.stringify({ error: 'Insufficient permissions' }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+    }
+
     // Create user with Supabase Auth
-    const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
@@ -66,23 +135,25 @@ serve(async (req) => {
       )
     }
 
-    // Create profile with superadmin role
-    const { data: profileData, error: profileError } = await supabaseClient
-      .from('profiles')
+    // Create user record in users table with system_admin type
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
       .insert({
         id: authData.user.id,
-        name: name,
         email: email,
-        role: 'superadmin',
-        salon_id: null
+        nome: name,
+        tipo: 'system_admin',
+        criado_em: new Date().toISOString()
       })
       .select()
       .single()
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError)
+    if (userError) {
+      console.error('User creation error:', userError)
+      // Rollback: delete auth user if user table insert fails
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       return new Response(
-        JSON.stringify({ error: profileError.message }),
+        JSON.stringify({ error: userError.message }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -93,8 +164,13 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        user: authData.user,
-        profile: profileData 
+        message: 'Superadmin criado com sucesso',
+        user: {
+          id: authData.user.id,
+          email: authData.user.email,
+          name: name,
+          tipo: 'system_admin'
+        }
       }),
       { 
         status: 200, 

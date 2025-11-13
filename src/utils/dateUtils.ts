@@ -1,0 +1,82 @@
+/**
+ * Função utilitária para corrigir fuso horário UTC
+ * Remove o offset UTC (+00:00) das strings de data e trata como horário local
+ * 
+ * @param dateStr - String da data no formato ISO com ou sem offset UTC
+ * @returns Date object tratado como horário local
+ */
+export const fixTimezone = (dateStr: string): Date => {
+  if (!dateStr) {
+    return new Date();
+  }
+  
+  // Se a string tem offset UTC (+00:00), remover e tratar como local
+  let localDateStr = dateStr;
+  if (dateStr.includes('+00:00')) {
+    localDateStr = dateStr.replace('+00:00', '');
+  } else if (dateStr.endsWith('Z')) {
+    // Se termina com Z - simplesmente remover o Z e tratar como horário local
+    // Ex: "2025-10-29T09:00:00.000Z" -> "2025-10-29T09:00:00" -> getHours() = 09 ✅
+    // Isso funciona porque a API agora salva o horário exatamente como enviado
+    localDateStr = dateStr.slice(0, -1);
+  }
+  
+  // Criar data sem conversão de fuso horário
+  const date = new Date(localDateStr);
+  
+  // Verificar se a data é válida
+  if (isNaN(date.getTime())) {
+    return new Date();
+  }
+  
+  return date;
+};
+
+/**
+ * Formata uma data corrigindo o fuso horário UTC
+ * 
+ * @param dateStr - String da data no formato ISO
+ * @param formatStr - String de formatação do date-fns
+ * @param locale - Locale do date-fns (padrão: ptBR)
+ * @returns String formatada da data
+ */
+export const formatFixedDate = (
+  dateStr: string, 
+  formatStr: string, 
+  locale: any = null
+): string => {
+  const { format } = require('date-fns');
+  const { ptBR } = require('date-fns/locale');
+  
+  const fixedDate = fixTimezone(dateStr);
+  return format(fixedDate, formatStr, { locale: locale || ptBR });
+};
+
+/**
+ * Converte hora local do Brasil (UTC-3) para UTC no formato ISO
+ * Usado ao salvar agendamentos no banco de dados
+ * 
+ * @param dateStr - String da data no formato 'YYYY-MM-DDTHH:mm:ss' ou 'YYYY-MM-DDTHH:mm'
+ * @returns String ISO em UTC para salvar no banco
+ */
+export const convertBrazilTimeToUTC = (dateStr: string): string => {
+  if (!dateStr) return new Date().toISOString();
+  
+  // Se já tem timezone, usar como está
+  if (dateStr.includes('+') || dateStr.includes('Z')) {
+    return new Date(dateStr).toISOString();
+  }
+  
+  // Adicionar timezone do Brasil (UTC-3)
+  const brazilTimeStr = `${dateStr}-03:00`;
+  const date = new Date(brazilTimeStr);
+  
+  // Retornar em UTC
+  return date.toISOString();
+};
+
+
+
+
+
+

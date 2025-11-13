@@ -2,6 +2,7 @@ import { User, Plus, Phone, Mail, Users, UserPlus, Edit, Trash2, Save, X, Search
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputPhone } from "@/components/ui/input-phone";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useClients } from '@/hooks/useClients';
@@ -118,7 +119,7 @@ const Clientes = () => {
     try {
       if (editId) {
         await updateClient(editId, form);
-      } else {
+    } else {
         await createClient(form);
       }
       setModalOpen(false);
@@ -139,7 +140,7 @@ const Clientes = () => {
         .select(`
           *,
           servico:servico_id(nome, preco),
-          funcionario:funcionario_id(nome)
+          funcionario:employees!appointments_funcionario_id_fkey(nome)
         `)
         .eq('cliente_id', clientId)
         .order('data_hora', { ascending: false });
@@ -228,21 +229,25 @@ const Clientes = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
-            <p className="text-muted-foreground">
-              Gerencie a base de clientes do salão
-            </p>
+          <div className="flex items-center gap-3">
+            <Users className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Clientes</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Gerencie todos os clientes do seu salão
+              </p>
+            </div>
           </div>
-          <Button onClick={openNew}>
+          <Button onClick={openNew} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Novo Cliente
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -255,7 +260,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" />
@@ -268,7 +273,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -284,13 +289,13 @@ const Clientes = () => {
 
         <Card className="shadow-elegant">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
               Base de Clientes
-            </CardTitle>
-            <CardDescription>
+                </CardTitle>
+                <CardDescription>
               Todos os clientes cadastrados no sistema
-            </CardDescription>
+                </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 mb-4">
@@ -299,51 +304,57 @@ const Clientes = () => {
                 placeholder="Buscar por nome, email ou telefone..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="max-w-sm"
+                className="w-full sm:max-w-sm"
               />
             </div>
             <div className="space-y-4">
               {filteredClients.map((client) => (
                 <div
                   key={client.id}
-                  className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
+                  className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
                 >
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-primary-soft text-primary">
-                      {client.nome?.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-foreground">
-                        {client.nome}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {client.email}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <Avatar className="h-12 w-12 flex-shrink-0">
+                      <AvatarFallback className="bg-primary-soft text-primary">
+                        {client.nome?.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-foreground truncate">
+                          {client.nome}
+                        </h3>
                       </div>
-                      {client.telefone && (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {formatPhoneNumber(client.telefone)}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{client.email}</span>
+                        </div>
+                        {client.telefone && (
+                          <div className="flex items-center gap-1 min-w-0">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{formatPhoneNumber(client.telefone)}</span>
+                          </div>
+                        )}
+                      </div>
+                      {client.observacoes && (
+                        <div className="text-sm text-muted-foreground mt-2">
+                          <span className="font-semibold">Obs:</span> {client.observacoes}
                         </div>
                       )}
                     </div>
-                    {client.observacoes && (
-                      <div className="text-sm text-muted-foreground mt-2">
-                        <span className="font-semibold">Obs:</span> {client.observacoes}
-                      </div>
-                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openHistory(client)}>
+                  <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                    <Button size="sm" variant="outline" onClick={() => openHistory(client)} className="flex-1 sm:flex-none">
                       <History className="h-4 w-4 mr-1" />
-                      Histórico
+                      <span className="hidden sm:inline">Histórico</span>
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => openEdit(client)}>Editar</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(client.id)}>Excluir</Button>
+                    <Button size="sm" variant="outline" onClick={() => openEdit(client)} className="flex-1 sm:flex-none">
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(client.id)} className="flex-1 sm:flex-none">
+                      Excluir
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -353,10 +364,10 @@ const Clientes = () => {
 
         {/* Modal de cadastro/edição */}
         {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md relative">
-              <button className="absolute top-2 right-2 text-muted-foreground" onClick={() => setModalOpen(false)}>&times;</button>
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-background rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+              <button className="absolute top-2 right-2 text-muted-foreground hover:text-foreground" onClick={() => setModalOpen(false)}>&times;</button>
+              <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
                 {editId ? (
                   <>
                     <Edit className="h-5 w-5 text-primary" />
@@ -389,7 +400,13 @@ const Clientes = () => {
                     <Phone className="h-4 w-4 text-primary" />
                     Telefone
                   </label>
-                  <Input id="telefone" name="telefone" value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })} disabled={submitting} />
+                  <InputPhone 
+                    id="telefone" 
+                    name="telefone" 
+                    value={form.telefone} 
+                    onChange={(formattedValue, rawValue) => setForm({ ...form, telefone: rawValue })} 
+                    disabled={submitting} 
+                  />
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="observacoes" className="text-sm flex items-center gap-2">
@@ -398,12 +415,12 @@ const Clientes = () => {
                   </label>
                   <textarea id="observacoes" name="observacoes" value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} className="w-full rounded border border-border bg-background px-3 py-2 text-sm" rows={2} disabled={submitting} />
                 </div>
-                <div className="flex gap-2 justify-end pt-2">
-                  <Button type="submit" disabled={submitting}>
+                <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2">
+                  <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
                     <Save className="h-4 w-4 mr-2" />
                     {submitting ? 'Salvando...' : 'Salvar'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={submitting}>
+                  <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={submitting} className="w-full sm:w-auto">
                     <X className="h-4 w-4 mr-2" />
                     Cancelar
                   </Button>
@@ -415,14 +432,14 @@ const Clientes = () => {
 
         {/* Modal de confirmação de exclusão */}
         {deletingId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-sm relative">
-              <button className="absolute top-2 right-2 text-muted-foreground" onClick={() => setDeletingId(null)}>&times;</button>
-              <h2 className="text-xl font-bold mb-4">Confirmar Exclusão</h2>
-              <p className="mb-6">Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.</p>
-              <div className="flex gap-2 justify-end">
-                <Button variant="destructive" onClick={async () => { await handleDelete(deletingId); setDeletingId(null); }}>Confirmar</Button>
-                <Button variant="outline" onClick={() => setDeletingId(null)}>Cancelar</Button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-background rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-sm relative">
+              <button className="absolute top-2 right-2 text-muted-foreground hover:text-foreground" onClick={() => setDeletingId(null)}>&times;</button>
+              <h2 className="text-lg sm:text-xl font-bold mb-4">Confirmar Exclusão</h2>
+              <p className="mb-6 text-sm sm:text-base">Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.</p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                <Button variant="destructive" onClick={async () => { await handleDelete(deletingId); setDeletingId(null); }} className="w-full sm:w-auto">Confirmar</Button>
+                <Button variant="outline" onClick={() => setDeletingId(null)} className="w-full sm:w-auto">Cancelar</Button>
               </div>
             </div>
           </div>
@@ -524,12 +541,12 @@ const Clientes = () => {
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                           <div className="flex items-center gap-1 sm:gap-2">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                             <span className="text-muted-foreground">Data:</span>
                             <span className="truncate">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                             <span className="text-muted-foreground">Horário:</span>
                             <span className="truncate">{new Date(item.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>

@@ -1,15 +1,21 @@
-import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus } from "lucide-react";
+import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon, UserIcon, Phone } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useServices } from "@/hooks/useServices";
-import { format, isToday, isTomorrow } from "date-fns";
+import { format, isToday, isTomorrow, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { fixTimezone } from "@/utils/dateUtils";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -17,22 +23,42 @@ const AdminDashboard = () => {
   const { clients, loading: clientsLoading } = useClients();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { services, loading: servicesLoading } = useServices();
+  
+  // Estado para data selecionada
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  // Verificar se a data selecionada é hoje (ou se não há data selecionada, considera hoje)
+  const isSelectedDateToday = !selectedDate || (selectedDate && isToday(selectedDate));
 
   // Calculate stats from real data
-  const todayAppointments = appointments.filter(apt => 
-    isToday(new Date(apt.data_hora))
+  const appointmentsArray = Array.isArray(appointments) ? appointments : [];
+  
+  // Filtrar agendamentos pela data selecionada (se não há data, usa hoje)
+  const selectedDateAppointments = selectedDate 
+    ? appointmentsArray.filter(apt => 
+        isSameDay(fixTimezone(apt.data_hora), selectedDate)
+      )
+    : appointmentsArray.filter(apt => 
+        isToday(fixTimezone(apt.data_hora))
+      );
+  
+  const todayAppointments = appointmentsArray.filter(apt => 
+    isToday(fixTimezone(apt.data_hora))
   );
   
-  const thisMonthRevenue = appointments
+  const thisMonthRevenue = appointmentsArray
     .filter(apt => apt.status === 'concluido' && apt.servico_preco)
     .reduce((sum, apt) => sum + (apt.servico_preco || 0), 0);
 
   const stats = [
     {
-      title: "Agendamentos Hoje",
-      value: todayAppointments.length.toString(),
+      title: selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : "Agendamentos Hoje",
+      value: selectedDateAppointments.length.toString(),
       icon: Calendar,
-      description: `${todayAppointments.filter(apt => apt.status === 'confirmado').length} confirmados`,
+      description: isSelectedDateToday 
+        ? "Hoje" 
+        : `${selectedDateAppointments.filter(apt => apt.status === 'confirmado').length} confirmados`,
       trend: "up"
     },
     {
@@ -58,16 +84,13 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Get next appointments (today and tomorrow)
-  const nextAppointments = appointments
-    .filter(apt => 
-      (isToday(new Date(apt.data_hora)) || isTomorrow(new Date(apt.data_hora))) &&
-      apt.status !== 'cancelado'
-    )
+  // Get appointments for selected date
+  const nextAppointments = selectedDateAppointments
+    .filter(apt => apt.status !== 'cancelado')
     .slice(0, 5)
     .map(apt => ({
       id: apt.id,
-      time: format(new Date(apt.data_hora), 'HH:mm', { locale: ptBR }),
+      time: format(fixTimezone(apt.data_hora), 'HH:mm', { locale: ptBR }),
       client: apt.cliente_nome || 'Cliente',
       service: apt.servico_nome || 'Serviço',
       professional: apt.funcionario_nome || 'Profissional',
@@ -78,14 +101,22 @@ const AdminDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmado':
-        return 'bg-success text-success-foreground';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'pendente':
-        return 'bg-warning text-warning-foreground';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
+      case 'concluido':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+      case 'cancelado':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
       case 'reagendamento':
-        return 'bg-secondary-accent text-secondary-foreground';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800';
       default:
-        return 'bg-muted text-muted-foreground';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800';
     }
+  };
+
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
   const loading = appointmentsLoading || clientsLoading || professionalsLoading || servicesLoading;
@@ -108,18 +139,36 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Visão geral do seu salão de beleza
-            </p>
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Visão geral do seu salão de beleza
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Hoje
-            </Button>
-            <Button onClick={() => navigate('/admin/agenda?modal=new')}>
+          <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  {isSelectedDateToday ? 'Hoje' : (selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Hoje')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    setSelectedDate(date);
+                    setIsCalendarOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button onClick={() => navigate('/admin/agenda?modal=new')} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
             </Button>
@@ -127,14 +176,14 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-elegant transition-all duration-200">
+            <Card key={index} className="border-l-4 border-l-primary shadow-soft hover:shadow-elegant transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                <stat.icon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -155,7 +204,7 @@ const AdminDashboard = () => {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-primary" />
-                      Agendamentos de Hoje
+                      {selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : 'Agendamentos de Hoje'}
                     </CardTitle>
                     <CardDescription>
                       {nextAppointments.length} agendamentos programados
@@ -175,28 +224,33 @@ const AdminDashboard = () => {
                   {nextAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
-                      className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft transition-all duration-200"
+                      className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                      onClick={() => navigate(`/admin/agenda?appointment=${appointment.id}`)}
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="text-center">
-                          <div className="text-sm font-medium text-foreground">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="text-center flex-shrink-0">
+                          <div className="flex items-center gap-1 text-sm font-medium text-foreground">
+                            <Clock className="h-4 w-4 text-primary" />
                             {appointment.time}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
                             {appointment.duration}
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-foreground">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 font-medium text-foreground truncate">
+                            <UserIcon className="h-4 w-4 text-primary flex-shrink-0" />
                             {appointment.client}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                            <Scissors className="h-3 w-3 flex-shrink-0" />
                             {appointment.service} • {appointment.professional}
                           </div>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
+                      <Badge className={getStatusColor(appointment.status) + ' flex-shrink-0'}>
+                        {capitalizeFirstLetter(appointment.status)}
                       </Badge>
                     </div>
                   ))}
@@ -217,27 +271,27 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/agenda?modal=new')}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2 text-primary" />
                   Novo Agendamento
                 </Button>
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/clientes?modal=new')}
                 >
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="h-4 w-4 mr-2 text-primary" />
                   Cadastrar Cliente
                 </Button>
                 <Button 
-                  className="w-full justify-start" 
+                  className="w-full justify-start hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200" 
                   variant="outline"
                   onClick={() => navigate('/admin/servicos')}
                 >
-                  <Scissors className="h-4 w-4 mr-2" />
+                  <Scissors className="h-4 w-4 mr-2 text-primary" />
                   Gerenciar Serviços
                 </Button>
               </CardContent>
@@ -247,14 +301,14 @@ const AdminDashboard = () => {
             <Card className="shadow-elegant">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-warning" />
+                  <AlertCircle className="h-5 w-5 text-primary" />
                   Alertas
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-warning" />
+                    <Clock className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-warning-foreground">
                       2 confirmações pendentes
                     </span>

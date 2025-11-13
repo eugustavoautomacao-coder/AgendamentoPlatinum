@@ -1,4 +1,4 @@
-## Lovable Instruction Block – MVP Sistema de Agendamento e Gestão para Salão de Beleza (Multitenant com Criação Centralizada)
+– MVP Sistema de Agendamento e Gestão para Salão de Beleza (Multitenant com Criação Centralizada)
 
 **Objetivo:**  
 Construir um MVP multitenant compartilhado para agendamento, gestão de serviços e relatórios operacionais de salões de beleza. Cada salão (tenant) é criado manualmente pelo dono da plataforma, que provisiona um usuário Administrador com login e senha.

@@ -5,10 +5,9 @@ import {
   CreditCard, 
   BarChart3, 
   Settings,
-  Crown,
-  LogOut
+  Crown
 } from "lucide-react";
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -20,10 +19,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const menuItems = [
   {
@@ -61,55 +56,60 @@ const menuItems = [
 
 export function SuperAdminSidebar() {
   const { state } = useSidebar();
-  const location = useLocation();
-  const { profile, signOut } = useAuth();
   const collapsed = state === "collapsed";
+  const location = useLocation();
 
-  const isActive = (path: string, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
+  // Função para verificar se a rota está ativa
+  const isActive = (href: string) => {
+    if (href === '/superadmin') {
+      return location.pathname === href;
     }
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(href);
   };
 
-  const getNavClass = (path: string, exact = false) => {
-    return isActive(path, exact) 
-      ? "bg-primary text-primary-foreground font-medium" 
-      : "hover:bg-accent hover:text-accent-foreground";
-  };
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
         {/* Header */}
-        {!collapsed && (
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-primary rounded-lg shadow-soft">
-                <Crown className="h-5 w-5 text-primary-foreground" />
-              </div>
+        <div className="p-4 border-b">
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+            <div className="p-2 bg-gradient-primary rounded-lg shadow-soft">
+              <Crown className="h-5 w-5 text-primary-foreground" />
+            </div>
+            {!collapsed && (
               <div>
                 <h2 className="font-bold text-lg text-foreground">SuperAdmin</h2>
                 <p className="text-sm text-muted-foreground">Painel de Controle</p>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel>Navegação Principal</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title} className={`${collapsed ? 'px-3 py-3 justify-center gap-0' : 'px-3 py-2 gap-1'} ${
+                    isActive(item.url)
+                      ? 'bg-primary/10 text-primary border border-primary/20 shadow-soft'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}>
                     <NavLink 
                       to={item.url} 
-                      className={getNavClass(item.url, item.exact)}
+                      end={item.exact}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {collapsed ? (
+                        <item.icon className="h-5 w-5 flex-shrink-0 text-primary" />
+                      ) : (
+                        <>
+                          <item.icon className="h-5 w-5 flex-shrink-0 text-primary" />
+                          <span className="font-medium">{item.title}</span>
+                        </>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,53 +118,15 @@ export function SuperAdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* User Profile */}
-        <div className="mt-auto p-4 border-t">
-          <div className="flex items-center gap-3 mb-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={profile?.avatar_url} />
-                  <AvatarFallback className="bg-primary-soft text-primary text-xs">
-                    {profile?.nome?.charAt(0) || 'SA'}
-                  </AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/perfil">Meu Perfil</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate text-sm">
-                  {profile?.nome || 'SuperAdmin'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {profile?.role || 'superadmin'}
-                </p>
-              </div>
-            )}
+        {/* Footer Section */}
+        {!collapsed && (
+          <div className="mt-auto p-4 border-t">
+            <div className="text-xs text-muted-foreground text-center">
+              <p>Platinum v1.0.0</p>
+              <p className="text-[10px] opacity-70">Super Admin</p>
+            </div>
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full justify-start text-muted-foreground hover:text-destructive"
-            onClick={signOut}
-          >
-            {!collapsed && (
-              <>
-                <LogOut className="h-4 w-4 mr-2" />
-                <span className="text-xs">Sair</span>
-              </>
-            )}
-          </Button>
-        </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );

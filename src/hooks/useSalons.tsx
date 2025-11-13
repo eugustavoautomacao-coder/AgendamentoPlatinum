@@ -272,86 +272,52 @@ export function useSalons() {
     phone?: string;
   }) => {
     try {
-      // Criar usuário no Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-        email: adminData.email,
-        password: adminData.password,
-        user_metadata: {
-          name: adminData.name,
-          phone: adminData.phone
+      // Obter token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Chamar Edge Function para criar admin do salão
+      const functionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-salon-admin`;
+      
+      const response = await fetch(functionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
-        email_confirm: true
+        body: JSON.stringify({
+          salonId: salonId,
+          adminData: {
+            name: adminData.name,
+            email: adminData.email,
+            password: adminData.password,
+            phone: adminData.phone
+          }
+        })
       });
 
-      if (signUpError) throw signUpError;
-
-      if (!signUpData.user) {
-        throw new Error('User creation failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
-      // Verificar se o usuário foi criado na tabela users pelo trigger
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', signUpData.user.id)
-        .single();
-
-      if (!existingUser) {
-        console.log('User not created by trigger, creating manually');
-        const { error: createUserError } = await supabase
-          .from('users')
-          .insert({
-            id: signUpData.user.id,
-            nome: adminData.name,
-            tipo: 'admin',
-            salao_id: salonId,
-            telefone: adminData.phone || null,
-            email: adminData.email
-          });
-
-        if (createUserError) {
-          console.error('Create user error:', createUserError);
-          toast({
-            variant: "destructive",
-            title: "Erro",
-            description: `Erro ao criar usuário: ${createUserError.message}`
-          });
-          return { data: null, error: createUserError };
-        }
-      } else {
-        // Atualizar o usuário existente para ser admin do salão
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({
-            salao_id: salonId,
-            tipo: 'admin',
-            telefone: adminData.phone || null
-          })
-          .eq('id', signUpData.user.id);
-
-        if (updateError) {
-          console.error('Update error:', updateError);
-          toast({
-            variant: "destructive",
-            title: "Erro", 
-            description: `Erro ao atualizar usuário: ${updateError.message}`
-          });
-          return { data: null, error: updateError };
-        }
-      }
+      const result = await response.json();
 
       toast({
         title: "Sucesso",
         description: `Administrador criado com sucesso! Email: ${adminData.email}`
       });
       
-      return { data: signUpData.user, error: null };
-    } catch (error) {
+      return { data: result.user, error: null };
+    } catch (error: any) {
       console.error('Error creating salon admin:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro inesperado ao criar administrador"
+        description: error.message || "Erro inesperado ao criar administrador"
       });
       return { data: null, error };
     }

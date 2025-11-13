@@ -1,4 +1,4 @@
-project_id = "lbpqmdcmoybuuthzezmj"
+project_id = "buiqjpncuddpoamdcoco"
 
 [api]
 enabled = true
@@ -29,8 +29,8 @@ image_transformation = { enabled = true }
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://3ed5dbec-9bf1-4738-8f83-3a0d98bcde4b.lovableproject.com"]
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["https://3ed5dbec-9bf1-4738-8f83-3a0d98bcde4b.lovableproject.com", "http://127.0.0.1:8080"]
 jwt_expiry = 3600
 
 [edge_runtime]

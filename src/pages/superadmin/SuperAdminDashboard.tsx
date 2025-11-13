@@ -1,4 +1,4 @@
-import { Building2, Users, CreditCard, TrendingUp, Plus, Eye } from "lucide-react";
+import { Building2, Users, CreditCard, TrendingUp, Plus, Eye, LayoutDashboard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,15 +90,18 @@ const SuperAdminDashboard = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard SuperAdmin</h1>
-            <p className="text-muted-foreground">
-              Visão geral da plataforma
-            </p>
+          <div className="flex items-center gap-3">
+            <LayoutDashboard className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard SuperAdmin</h1>
+              <p className="text-muted-foreground">
+                Visão geral da plataforma
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button asChild>
-              <Link to="/superadmin/saloes">
+              <Link to="/superadmin/saloes?create=true">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Salão
               </Link>
@@ -107,17 +110,17 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 w-full">
           {stats.map((stat, index) => (
             <Card key={index} className="shadow-soft hover:shadow-elegant transition-all duration-200">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
+                <stat.icon className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+              <CardContent className="pt-1">
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">{stat.value}</div>
                 <p className="text-xs text-muted-foreground">
                   {stat.description}
                 </p>

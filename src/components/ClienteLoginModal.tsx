@@ -1,0 +1,185 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Eye, EyeOff, LogIn, User, Lock } from 'lucide-react';
+
+interface ClienteLoginModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  salaoId: string;
+  clienteEmail?: string;
+  senhaTemporaria?: string;
+}
+
+export const ClienteLoginModal: React.FC<ClienteLoginModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  salaoId,
+  clienteEmail = '',
+  senhaTemporaria = ''
+}) => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(clienteEmail);
+  const [senha, setSenha] = useState(senhaTemporaria);
+  const [showSenha, setShowSenha] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !senha) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Buscar cliente no banco
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .eq('salao_id', salaoId)
+        .eq('email', email)
+        .eq('ativo', true)
+        .single();
+
+      if (error) {
+        toast.error('Cliente não encontrado ou conta inativa');
+        return;
+      }
+
+      // Verificar senha (simplificado - em produção usar bcrypt)
+      if (data.senha_hash !== senha) {
+        toast.error('Senha incorreta');
+        return;
+      }
+
+      // Atualizar último login
+      await supabase
+        .from('clientes')
+        .update({ ultimo_login: new Date().toISOString() })
+        .eq('id', data.id);
+
+      // Armazenar no localStorage
+      localStorage.setItem('cliente_auth', JSON.stringify(data));
+      
+      toast.success('Login realizado com sucesso!');
+      
+      // Redirecionar para o dashboard de agendamentos
+      navigate(`/cliente/${salaoId}/agendamentos`);
+      
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erro no login:', error);
+      toast.error('Erro ao fazer login. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LogIn className="h-5 w-5 text-primary" />
+            Login do Cliente
+          </DialogTitle>
+          <DialogDescription>
+            Digite seu telefone e senha para acessar sua conta.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Card className="border-primary/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg text-center">Acesse sua conta</CardTitle>
+            <CardDescription className="text-center">
+              Faça login para acompanhar seus agendamentos
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="input-focus"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="senha" className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Senha
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="senha"
+                    type={showSenha ? "text" : "password"}
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    placeholder="Sua senha"
+                    className="input-focus pr-10"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowSenha(!showSenha)}
+                  >
+                    {showSenha ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={loading}
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                    Entrando...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Entrar
+                  </div>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+
+

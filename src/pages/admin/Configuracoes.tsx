@@ -2,6 +2,7 @@ import { Settings, Save, Building, Clock, DollarSign, Mail, Phone, MapPin, Users
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputPhone } from "@/components/ui/input-phone";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -164,16 +165,21 @@ const Configuracoes = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
-            <p className="text-muted-foreground">
-              Gerencie as configurações do seu salão
-            </p>
+          <div className="flex items-center gap-3">
+            <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Configurações</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Configure as preferências do seu salão
+              </p>
+            </div>
           </div>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
+            <span className="hidden sm:inline">{saving ? 'Salvando...' : 'Salvar Alterações'}</span>
+            <span className="sm:hidden">{saving ? 'Salvando...' : 'Salvar'}</span>
           </Button>
         </div>
 
@@ -237,11 +243,11 @@ const Configuracoes = () => {
                     <Phone className="h-4 w-4 text-primary" />
                     Telefone
                   </Label>
-                  <Input
+                  <InputPhone
                     id="salon-phone"
                     placeholder="(11) 99999-9999"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={(formattedValue, rawValue) => setPhone(rawValue)}
                   />
                 </div>
 
@@ -275,27 +281,28 @@ const Configuracoes = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {schedule.map((schedule, idx) => (
-                <div key={schedule.day} className="flex items-center gap-4">
-                                <div className="flex items-center space-x-2">
-                <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
-                <Label htmlFor={schedule.day} className="min-w-[100px] text-sm flex items-center gap-2">
-                  <Clock className="h-3 w-3 text-primary" />
-                  {schedule.day}
-                </Label>
-              </div>
+                <div key={schedule.day} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
+                    <Label htmlFor={schedule.day} className="min-w-[100px] text-sm flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-primary" />
+                      <span className="hidden sm:inline">{schedule.day}</span>
+                      <span className="sm:hidden">{schedule.day.split('-')[0]}</span>
+                    </Label>
+                  </div>
                   <div className="flex items-center gap-2 flex-1">
                     <Input
                       type="time"
                       value={schedule.open}
-                      className="w-24"
+                      className="w-20 sm:w-24"
                       disabled={!schedule.active}
                       onChange={e => handleScheduleChange(idx, 'open', e.target.value)}
                     />
-                    <span className="text-muted-foreground">às</span>
+                    <span className="text-muted-foreground text-sm">às</span>
                     <Input
                       type="time"
                       value={schedule.close}
-                      className="w-24"
+                      className="w-20 sm:w-24"
                       disabled={!schedule.active}
                       onChange={e => handleScheduleChange(idx, 'close', e.target.value)}
                     />
@@ -318,7 +325,7 @@ const Configuracoes = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="tax-machine">Taxa de Máquina (%)</Label>
                 <Input
@@ -351,7 +358,7 @@ const Configuracoes = () => {
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                 <Label htmlFor="tax-taxes">Taxa de Impostos (%)</Label>
                 <Input
                   id="tax-taxes"
@@ -383,14 +390,14 @@ const Configuracoes = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
-                    Confirmação de Agendamentos
+                    Confirmação da Solicitação
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Enviar confirmação automática por e-mail
+                    Enviar confirmação automática por e-mail quando cliente cria solicitação
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -398,7 +405,7 @@ const Configuracoes = () => {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
@@ -413,7 +420,7 @@ const Configuracoes = () => {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-primary" />
@@ -428,7 +435,7 @@ const Configuracoes = () => {
 
               <Separator />
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label className="flex items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />

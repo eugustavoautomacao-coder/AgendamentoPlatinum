@@ -1,0 +1,15 @@
+{
+  "password_reset": {
+    "subject": "Redefinir Senha - AlveX",
+    "template_path": "password-reset.html",
+    "variables": {
+      "email": "{{.Email}}",
+      "confirmation_url": "{{.ConfirmationURL}}",
+      "token": "{{.Token}}",
+      "token_hash": "{{.TokenHash}}",
+      "site_url": "{{.SiteURL}}",
+      "redirect_to": "{{.RedirectTo}}",
+      "data": "{{.Data}}"
+    }
+  }
+}
