@@ -146,15 +146,15 @@ export const emailTemplates = {
     <body>
       <div class="container">
         <div class="header">
-        <img src="https://alvex-sistema.vercel.app/logo-alvex.svg" alt="AlveX Logo" class="logo-img">
-          <div class="logo">AlveX</div>
+        <img src="https://alvex-sistema.vercel.app/logo-alvex.svg" alt="Platinum Logo" class="logo-img">
+          <div class="logo">Platinum</div>
           <div class="subtitle">Sistema de Agendamentos</div>
         </div>
         <div class="content">
           ${content}
         </div>
         <div class="footer">
-          <p>Este é um email automático do sistema AlveX</p>
+          <p>Este é um email automático do sistema Platinum</p>
           <p>Para dúvidas, entre em contato com o estabelecimento</p>
         </div>
       </div>
@@ -527,7 +527,7 @@ export const emailTemplates = {
     <div class="title">Redefinir Senha</div>
     
     <p>Olá <strong>${data.email}</strong>,</p>
-    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema AlveX.</p>
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema Platinum.</p>
     
     <div class="info-grid">
       <div class="info-item">
@@ -603,7 +603,7 @@ export const emailTemplates = {
     <div class="title">Redefinir Senha</div>
     
     <p>Olá <strong>{{.Email}}</strong>,</p>
-    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema AlveX.</p>
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta no sistema Platinum.</p>
     
     <div class="info-grid">
       <div class="info-item">

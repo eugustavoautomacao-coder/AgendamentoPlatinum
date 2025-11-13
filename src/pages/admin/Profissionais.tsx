@@ -89,6 +89,17 @@ const Profissionais = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar senha mínima de 6 caracteres
+    if (form.senha.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Senha inválida",
+        description: "A senha deve ter no mínimo 6 caracteres"
+      });
+      return;
+    }
+    
     setSubmitting(true);
     
     const result = await createProfessional({
@@ -264,7 +275,7 @@ const Profissionais = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <User className="h-8 w-8 text-pink-500" />
+            <User className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Profissionais</h1>
               <p className="text-muted-foreground">
@@ -279,7 +290,7 @@ const Profissionais = () => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total de Profissionais
@@ -291,7 +302,7 @@ const Profissionais = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Avaliação Média
@@ -303,7 +314,7 @@ const Profissionais = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Serviços Realizados
@@ -470,9 +481,19 @@ const Profissionais = () => {
                   <Lock className="h-4 w-4 text-primary" />
                   Senha
                 </Label>
-                <Input id="senha" name="senha" type="password" value={form.senha} onChange={handleChange} required disabled={submitting} placeholder="Senha para login do profissional" />
+                <Input 
+                  id="senha" 
+                  name="senha" 
+                  type="password" 
+                  value={form.senha} 
+                  onChange={handleChange} 
+                  required 
+                  minLength={6}
+                  disabled={submitting} 
+                  placeholder="Senha para login do profissional" 
+                />
                 <span className="text-xs text-muted-foreground">
-                  O profissional usará esta senha para fazer login no sistema
+                  O profissional usará esta senha para fazer login no sistema (mínimo 6 caracteres)
                 </span>
               </div>
               <div className="space-y-2">

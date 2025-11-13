@@ -20,7 +20,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
             <div className="flex items-center min-w-0 flex-1">
               <SidebarTrigger className="ml-4 flex-shrink-0" />
               <div className="flex-1 px-4 min-w-0">
-                <h1 className="text-lg font-semibold text-foreground truncate">Sistema AlveX</h1>
+                <h1 className="text-lg font-semibold text-foreground truncate">Sistema Platinum</h1>
               </div>
             </div>
             <div className="flex items-center gap-2 pr-4 flex-shrink-0">

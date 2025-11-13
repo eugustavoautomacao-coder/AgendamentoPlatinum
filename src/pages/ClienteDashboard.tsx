@@ -16,7 +16,7 @@ export default function ClienteDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/10 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -125,7 +125,7 @@ export default function ClienteDashboard() {
           <CardContent className="p-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Bem-vindo ao Sistema AlveX!
+                Bem-vindo ao Sistema Platinum!
               </h2>
               <p className="text-gray-600 mb-4">
                 Aqui você pode gerenciar seus agendamentos e informações pessoais.

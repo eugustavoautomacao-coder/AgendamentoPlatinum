@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Verificar localStorage primeiro
-    const savedTheme = localStorage.getItem('alvex-theme') as Theme;
+    const savedTheme = localStorage.getItem('platinum-theme') as Theme;
     if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
       return savedTheme;
     }
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('alvex-theme', newTheme);
+    localStorage.setItem('platinum-theme', newTheme);
     
     // Aplicar tema ao documento
     if (newTheme === 'dark') {
@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Sincronizar entre abas
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'alvex-theme' && e.newValue) {
+      if (e.key === 'platinum-theme' && e.newValue) {
         const newTheme = e.newValue as Theme;
         if (newTheme !== theme) {
           setThemeState(newTheme);
@@ -73,7 +73,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     const handleChange = (e: MediaQueryListEvent) => {
       // Só aplicar se não houver tema salvo no localStorage
-      if (!localStorage.getItem('alvex-theme')) {
+      if (!localStorage.getItem('platinum-theme')) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };

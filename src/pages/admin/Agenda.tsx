@@ -324,7 +324,20 @@ const Agenda = () => {
   const handleCreate = async () => {
     if (!form.funcionario_id || !form.cliente_id || !form.servico_id || !form.date || !form.time) return;
     setSaving(true);
-    const data_hora = new Date(`${form.date}T${form.time}:00`).toISOString();
+    
+    // Criar data como UTC sem conversão de timezone
+    // Se o usuário escolhe 08:00, salvar como 08:00 UTC (não 11:00 UTC)
+    const dateTimeStr = `${form.date}T${form.time}:00`;
+    const [datePart, timePart] = dateTimeStr.split('T');
+    const [hours, minutes, seconds = '00'] = timePart.split(':');
+    const data_hora = new Date(Date.UTC(
+      parseInt(datePart.split('-')[0]),
+      parseInt(datePart.split('-')[1]) - 1,
+      parseInt(datePart.split('-')[2]),
+      parseInt(hours),
+      parseInt(minutes),
+      parseInt(seconds)
+    )).toISOString();
     
     // Buscar informações do cliente para incluir no agendamento
     const cliente = clients.find(c => c.id === form.cliente_id);
@@ -1041,17 +1054,20 @@ const Agenda = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${appointmentId}-${phase}-${Date.now()}.${fileExt}`;
-      const filePath = `process-photos/${fileName}`;
+      const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('process-photos')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('process-photos')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       return publicUrl;
     } catch (error) {
@@ -1179,7 +1195,7 @@ const Agenda = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <CalendarIcon className="h-8 w-8 text-pink-500" />
+            <CalendarIcon className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Agenda</h1>
               <p className="text-muted-foreground">Gerencie todos os agendamentos do salão</p>
@@ -2025,7 +2041,7 @@ const Agenda = () => {
             <span>Confirmado</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-block w-3 h-3 rounded-full bg-rose-500"></span>
+            <span className="inline-block w-3 h-3 rounded-full bg-primary"></span>
             <span>Cancelado</span>
           </div>
           <div className="flex items-center gap-2">

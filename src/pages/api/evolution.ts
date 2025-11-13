@@ -227,7 +227,7 @@ async function handleAppointmentStatusChange(salonId: string, data: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-AlveX-Source': 'alvex-system'
+          'X-Platinum-Source': 'platinum-system'
         },
         body: JSON.stringify({
           event: 'appointment.status.changed',
@@ -257,7 +257,7 @@ async function handleAppointmentReminder(salonId: string, data: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-AlveX-Source': 'alvex-system'
+          'X-Platinum-Source': 'platinum-system'
         },
         body: JSON.stringify({
           event: 'appointment.reminder',
@@ -289,7 +289,7 @@ async function handleClientCreated(salonId: string, data: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-AlveX-Source': 'alvex-system'
+          'X-Platinum-Source': 'platinum-system'
         },
         body: JSON.stringify({
           event: 'client.created',

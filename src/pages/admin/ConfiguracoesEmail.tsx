@@ -107,7 +107,7 @@ export const ConfiguracoesEmail: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
+            <Settings className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Configurações de Email</h1>
               <p className="text-sm sm:text-base text-muted-foreground">

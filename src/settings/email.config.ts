@@ -10,7 +10,7 @@ export const emailConfig = {
     }
   },
   from: {
-    name: process.env.BREVO_FROM_NAME || 'AlveX - Sistema de Agendamentos',
+    name: process.env.BREVO_FROM_NAME || 'Platinum - Sistema de Agendamentos',
     email: process.env.BREVO_FROM_EMAIL || '95bbc9001@smtp-brevo.com'
   },
   templates: {

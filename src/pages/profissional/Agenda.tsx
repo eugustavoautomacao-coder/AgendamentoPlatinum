@@ -742,12 +742,26 @@ const ProfissionalAgenda = () => {
       const cliente = clients.find(c => c.id === form.cliente_id);
       const servico = services.find(s => s.id === form.servico_id);
       
+      // Criar data como UTC sem conversão de timezone
+      // Se o usuário escolhe 08:00, salvar como 08:00 UTC (não 11:00 UTC)
+      const dateTimeStr = `${form.date}T${form.time}:00`;
+      const [datePart, timePart] = dateTimeStr.split('T');
+      const [hours, minutes, seconds = '00'] = timePart.split(':');
+      const data_hora = new Date(Date.UTC(
+        parseInt(datePart.split('-')[0]),
+        parseInt(datePart.split('-')[1]) - 1,
+        parseInt(datePart.split('-')[2]),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds)
+      )).toISOString();
+      
       await createAppointment({
         salao_id: salonInfo?.id,
         funcionario_id: form.funcionario_id,
         cliente_id: form.cliente_id,
         servico_id: form.servico_id,
-        data_hora: `${form.date}T${form.time}`,
+        data_hora,
         status: 'confirmado',
         // Dados diretos do cliente para compatibilidade
         cliente_nome: cliente?.nome || '',
@@ -929,7 +943,7 @@ const ProfissionalAgenda = () => {
         {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
         <div className="flex items-center gap-3">
-          <CalendarIcon className="h-8 w-8 text-pink-500" />
+          <CalendarIcon className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               Minha Agenda
@@ -1545,7 +1559,7 @@ const ProfissionalAgenda = () => {
           <span>Confirmado</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-block w-3 h-3 rounded-full bg-rose-500"></span>
+          <span className="inline-block w-3 h-3 rounded-full bg-primary"></span>
           <span>Cancelado</span>
         </div>
         <div className="flex items-center gap-2">

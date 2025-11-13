@@ -127,7 +127,7 @@ app.post('/api/email/send', async (req, res) => {
     // Configurar email
     const mailOptions = {
       from: {
-        name: process.env.BREVO_FROM_NAME || 'AlveX Sistema',
+        name: process.env.BREVO_FROM_NAME || 'Platinum Sistema',
         address: process.env.BREVO_FROM_EMAIL || '95bbc9001@smtp-brevo.com'
       },
       to,
@@ -188,7 +188,7 @@ app.post('/api/email/send', async (req, res) => {
 // Rota principal
 app.get('/api/email', (req, res) => {
   res.json({ 
-    message: 'API de Email - AlveX',
+    message: 'API de Email - Platinum',
     endpoints: {
       test: '/api/email/test',
       send: '/api/email/send'

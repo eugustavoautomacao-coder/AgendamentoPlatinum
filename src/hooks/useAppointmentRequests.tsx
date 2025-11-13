@@ -96,7 +96,7 @@ export const useAppointmentRequests = () => {
       
       let temporaryPassword: string | undefined;
       if (!clienteExists && data.cliente_email) {
-        const functionsUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-client';
+        const functionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-client`;
         // Criar cliente usando a Edge Function create-client
         try {
           const response = await fetch(functionsUrl, {

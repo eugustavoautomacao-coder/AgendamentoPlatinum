@@ -14,11 +14,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 340 8% 15%;
 
-    /* Primary Brand - Rosa elegante para beleza */
-    --primary: 330 45% 55%;
+    /* Primary Brand - Azul escuro universal */
+    --primary: 215 50% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 330 25% 85%;
-    --primary-glow: 330 55% 75%;
+    --primary-soft: 215 30% 85%;
+    --primary-glow: 215 55% 60%;
 
     /* Secondary - Roxo suave para sofisticação */
     --secondary: 270 35% 92%;
@@ -45,7 +45,7 @@
     /* UI Elements */
     --border: 340 15% 88%;
     --input: 340 15% 88%;
-    --ring: 330 45% 55%;
+    --ring: 215 50% 45%;
 
     /* Spacing & Borders */
     --radius: 0.75rem;
@@ -64,7 +64,7 @@
     --sidebar: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 330 45% 55%;
+    --sidebar-ring: 215 50% 45%;
   }
 
   .dark {
@@ -78,10 +78,10 @@
     --popover: 340 10% 12%;
     --popover-foreground: 340 15% 95%;
 
-    --primary: 330 55% 65%;
-    --primary-foreground: 340 12% 8%;
-    --primary-soft: 330 25% 25%;
-    --primary-glow: 330 45% 55%;
+    --primary: 215 55% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 215 30% 20%;
+    --primary-glow: 215 50% 45%;
 
     --secondary: 270 25% 18%;
     --secondary-foreground: 270 35% 85%;
@@ -104,7 +104,7 @@
 
     --border: 340 8% 20%;
     --input: 340 8% 20%;
-    --ring: 330 55% 65%;
+    --ring: 215 55% 55%;
 
     /* Dark mode gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
@@ -120,7 +120,7 @@
     --sidebar: 340 10% 10%;
     --sidebar-foreground: 340 15% 85%;
     --sidebar-border: 340 8% 20%;
-    --sidebar-ring: 330 55% 65%;
+    --sidebar-ring: 215 55% 55%;
   }
 }
 
@@ -241,7 +241,7 @@
   }
   
   .toast-primary-gradient {
-    @apply border-l-4 border-l-[#d63384] bg-gradient-to-r from-[#fdf2f8] to-green-50 text-[#d63384] dark:from-[#1a0b1a] dark:to-green-900/20 dark:text-green-100;
+    @apply border-l-4 border-l-primary bg-gradient-to-r from-primary/10 to-green-50 text-primary dark:from-[#1a0b1a] dark:to-green-900/20 dark:text-green-100;
   }
   
   .toast-orange-gradient {

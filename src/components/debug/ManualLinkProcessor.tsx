@@ -235,7 +235,7 @@ export default function ManualLinkProcessor({ onClose }: ManualLinkProcessorProp
             <strong>Exemplo de link válido:</strong>
             <br />
             <code className="text-xs bg-gray-100 p-1 rounded">
-              https://lbpqmdcmoybuuthzezmj.supabase.co/auth/v1/verify?token=abc123&type=recovery&redirect_to=http://localhost:8080/redefinir-senha
+              {import.meta.env.VITE_SUPABASE_URL || 'https://seu-projeto.supabase.co'}/auth/v1/verify?token=abc123&type=recovery&redirect_to=http://localhost:8080/redefinir-senha
             </code>
           </AlertDescription>
         </Alert>

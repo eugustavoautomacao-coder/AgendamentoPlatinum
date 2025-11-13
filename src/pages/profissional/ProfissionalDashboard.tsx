@@ -121,7 +121,7 @@ const ProfissionalDashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <LayoutDashboard className="h-8 w-8 text-pink-500" />
+            <LayoutDashboard className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground">

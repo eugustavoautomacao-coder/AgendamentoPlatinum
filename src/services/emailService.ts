@@ -6,7 +6,7 @@ export class EmailService {
   
   constructor() {
     // URL da Edge Function do Supabase
-    this.apiUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/send-email';
+    this.apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`;
   }
   
   // Testar conexão SMTP via API

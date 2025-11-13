@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -49,15 +50,15 @@ serve(async (req) => {
 
     // Verificar se é superadmin
     const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
+      .from('users')
+      .select('tipo')
       .eq('id', user.id)
       .single()
 
     console.log('Profile query result:', { profile, profileError })
 
-    if (profileError || !profile || profile.role !== 'superadmin') {
-      console.log('User is not superadmin')
+    if (profileError || !profile || profile.tipo !== 'system_admin') {
+      console.log('User is not system_admin')
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -137,29 +138,31 @@ serve(async (req) => {
       )
     }
 
-    console.log('Updating user profile')
+    console.log('Creating user record in users table')
 
-    // Atualizar perfil do usuário
-    const { error: profileError2 } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        salon_id: salonId,
-        role: 'admin',
-        phone: adminData.phone || null
+    // Criar registro na tabela users
+    const { error: userError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        id: authData.user.id,
+        email: adminData.email,
+        nome: adminData.name,
+        tipo: 'admin',
+        salao_id: salonId,
+        telefone: adminData.phone || null
       })
-      .eq('id', authData.user.id)
 
-    console.log('Profile update result:', { error: profileError2?.message })
+    console.log('User insert result:', { error: userError?.message })
 
-    if (profileError2) {
-      console.error('Profile error:', profileError2)
+    if (userError) {
+      console.error('User insert error:', userError)
       
-      // Se falhar ao atualizar perfil, remover o usuário criado
+      // Se falhar ao inserir usuário, remover o usuário criado no Auth
       console.log('Rolling back user creation')
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
       
       return new Response(
-        JSON.stringify({ error: `Failed to update profile: ${profileError2.message}` }),
+        JSON.stringify({ error: `Failed to create user record: ${userError.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

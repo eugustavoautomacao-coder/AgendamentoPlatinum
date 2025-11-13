@@ -325,7 +325,7 @@ const ProfissionalDashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <LayoutDashboard className="h-8 w-8 text-pink-500" />
+          <LayoutDashboard className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               Olá, {getFirstName(profile?.nome || "Profissional")}!
@@ -339,50 +339,50 @@ const ProfissionalDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-l-4 border-l-pink-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agendamentos Hoje</CardTitle>
-            <Calendar className="h-4 w-4 text-pink-500" />
+            <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600">{stats.agendamentosHoje}</div>
+            <div className="text-2xl font-bold text-primary">{stats.agendamentosHoje}</div>
             <p className="text-xs text-muted-foreground">
               {todayAppointmentsFiltered.length > 0 ? `${todayAppointmentsFiltered.length} confirmados` : "Nenhum agendamento"}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-pink-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agendamentos Amanhã</CardTitle>
-            <Clock className="h-4 w-4 text-pink-500" />
+            <Clock className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600">{stats.agendamentosAmanha}</div>
+            <div className="text-2xl font-bold text-primary">{stats.agendamentosAmanha}</div>
             <p className="text-xs text-muted-foreground">
               {tomorrowAppointmentsFiltered.length > 0 ? `${tomorrowAppointmentsFiltered.length} programados` : "Nenhum agendamento"}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-pink-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Clientes Atendidos</CardTitle>
-            <Users className="h-4 w-4 text-pink-500" />
+            <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600">{stats.clientesAtendidos}</div>
+            <div className="text-2xl font-bold text-primary">{stats.clientesAtendidos}</div>
             <p className="text-xs text-muted-foreground">Este mês</p>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-pink-500">
+        <Card className="border-l-4 border-l-primary">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Comissão do Mês</CardTitle>
-            <DollarSign className="h-4 w-4 text-pink-500" />
+            <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-pink-600">
+            <div className="text-2xl font-bold text-primary">
               R$ {stats.comissaoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground">Valor a receber</p>

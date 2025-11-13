@@ -101,7 +101,7 @@ const ProfissionalSidebar = () => {
             {!collapsed && (
               <div className="transition-colors duration-200">
                 <h2 className="font-bold text-lg text-foreground transition-colors duration-200">
-                  {salonName || "AlveX"}
+                  {salonName || "Platinum"}
                 </h2>
                 <p className="text-sm text-muted-foreground transition-colors duration-200">Profissional</p>
               </div>
@@ -136,7 +136,7 @@ const ProfissionalSidebar = () => {
         {!collapsed && (
           <div className="mt-auto p-4 border-t transition-colors duration-200">
             <div className="text-xs text-muted-foreground text-center transition-colors duration-200">
-              <p className="transition-colors duration-200">AlveX v1.0.0</p>
+              <p className="transition-colors duration-200">Platinum v1.0.0</p>
               <p className="text-[10px] opacity-70 transition-colors duration-200">Sistema de Gestão</p>
             </div>
           </div>

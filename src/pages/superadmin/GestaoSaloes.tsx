@@ -221,7 +221,7 @@ const GestaoSaloes = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500 flex-shrink-0" />
+            <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Gestão de Salões</h1>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">

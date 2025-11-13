@@ -123,7 +123,7 @@ export const exportToPDF = (data: any[][], filename: string, title: string = 'Re
       doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(0, 0, 0);
-      doc.text('Sistema AlveX - Gestão de Salão de Beleza', margin, pageHeight - 10);
+      doc.text('Sistema Platinum - Gestão de Salão de Beleza', margin, pageHeight - 10);
       doc.text(`Página ${i} de ${pageCount}`, pageWidth - 30, pageHeight - 10);
     }
     

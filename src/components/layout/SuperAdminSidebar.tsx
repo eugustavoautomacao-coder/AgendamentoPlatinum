@@ -122,7 +122,7 @@ export function SuperAdminSidebar() {
         {!collapsed && (
           <div className="mt-auto p-4 border-t">
             <div className="text-xs text-muted-foreground text-center">
-              <p>AlveX v1.0.0</p>
+              <p>Platinum v1.0.0</p>
               <p className="text-[10px] opacity-70">Super Admin</p>
             </div>
           </div>

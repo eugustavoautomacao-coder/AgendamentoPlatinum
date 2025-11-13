@@ -85,7 +85,7 @@ export function useProfessionals() {
       }
 
       // Chamar Edge Function para criar profissional com autenticação
-      const functionsUrl = 'https://lbpqmdcmoybuuthzezmj.supabase.co/functions/v1/create-professional';
+      const functionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-professional`;
       
       const response = await fetch(functionsUrl, {
         method: 'POST',
@@ -168,13 +168,29 @@ export function useProfessionals() {
 
   const deleteProfessional = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('employees')
-        .delete()
-        .eq('id', id);
+      // Obter token de autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Usuário não autenticado');
+      }
 
-      if (error) throw error;
+      // Chamar Edge Function para deletar profissional (incluindo do Auth)
+      const functionsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-professional/${id}`;
       
+      const response = await fetch(functionsUrl, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
+      }
+
       await fetchProfessionals();
       toast({
         title: "Sucesso",
@@ -182,12 +198,12 @@ export function useProfessionals() {
       });
       
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting professional:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao remover profissional"
+        description: error.message || "Erro ao remover profissional"
       });
       return { error };
     }

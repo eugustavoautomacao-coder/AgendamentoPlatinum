@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Configurar email
     const mailOptions = {
       from: {
-        name: process.env.BREVO_FROM_NAME || 'AlveX Sistema',
+        name: process.env.BREVO_FROM_NAME || 'Platinum Sistema',
         address: process.env.BREVO_FROM_EMAIL || '95bbc9001@smtp-brevo.com'
       },
       to,

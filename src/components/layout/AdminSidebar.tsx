@@ -234,6 +234,7 @@ const AdminSidebar = () => {
                           submenuAsDropdown ? (
                             <div
                               className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-elegant z-[99999] py-2 min-w-max"
+                              style={{ zIndex: 99999 }}
                               onMouseEnter={() => {
                                 if (hoverTimeout) {
                                   clearTimeout(hoverTimeout);
@@ -265,7 +266,8 @@ const AdminSidebar = () => {
                             </div>
                           ) : (
                             <div 
-                              className="fixed inset-0 z-[9998] pointer-events-none"
+                              className="fixed inset-0 pointer-events-none"
+                              style={{ zIndex: 99998 }}
                               onMouseLeave={() => {
                                 const timeout = setTimeout(() => {
                                   setHoveredItem(null);
@@ -274,10 +276,11 @@ const AdminSidebar = () => {
                               }}
                             >
                               <div 
-                                className={`fixed ${collapsed ? 'left-14' : 'left-64'} w-48 bg-card border border-border rounded-lg shadow-elegant z-[99999] py-2 min-w-max ml-2 pointer-events-auto`}
+                                className={`fixed ${collapsed ? 'left-14' : 'left-64'} w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max ml-2 pointer-events-auto`}
                                 style={{
                                   top: submenuTop !== null ? `${submenuTop}px` : '50%',
-                                  transform: submenuTop !== null ? 'translateY(-50%)' : 'translateY(-50%)'
+                                  transform: submenuTop !== null ? 'translateY(-50%)' : 'translateY(-50%)',
+                                  zIndex: 99999
                                 }}
                                 onMouseEnter={() => {
                                   // Limpar timeout quando mouse entra no flyout
@@ -343,7 +346,7 @@ const AdminSidebar = () => {
         {!collapsed && (
           <div className="mt-auto p-4 border-t">
             <div className="text-xs text-muted-foreground text-center">
-              <p>AlveX v1.0.0</p>
+              <p>Platinum v1.0.0</p>
               <p className="text-[10px] opacity-70">Sistema de Gestão</p>
             </div>
           </div>

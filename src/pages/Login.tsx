@@ -16,15 +16,25 @@ const Login = () => {
     setLoading(true);
     
     try {
-      // Primeiro, verificar se é um cliente
-      const { data: clienteData, error: clienteError } = await supabase
-        .from('clientes')
-        .select('salao_id, nome')
-        .eq('email', email)
-        .eq('ativo', true)
-        .single();
+      // Primeiro, verificar se é um cliente (com tratamento de erro)
+      let clienteData = null;
+      try {
+        const { data, error } = await supabase
+          .from('clientes')
+          .select('salao_id, nome')
+          .eq('email', email)
+          .eq('ativo', true)
+          .single();
+        
+        if (!error && data) {
+          clienteData = data;
+        }
+      } catch (error) {
+        // Se a tabela clientes não existir ou der erro, continuar com login normal
+        console.log('Tabela clientes não disponível ou erro ao buscar:', error);
+      }
       
-      if (clienteData && !clienteError) {
+      if (clienteData) {
         // É um cliente, fazer login diretamente
         
         // Verificar senha do cliente

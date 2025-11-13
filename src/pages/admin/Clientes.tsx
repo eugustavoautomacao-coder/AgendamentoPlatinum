@@ -232,7 +232,7 @@ const Clientes = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-pink-500" />
+            <Users className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Clientes</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
@@ -247,7 +247,7 @@ const Clientes = () => {
         </div>
 
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -260,7 +260,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-primary" />
@@ -273,7 +273,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />

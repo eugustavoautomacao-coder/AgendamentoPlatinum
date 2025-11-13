@@ -140,7 +140,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <LayoutDashboard className="h-8 w-8 text-pink-500" />
+            <LayoutDashboard className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground">
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
-            <Card key={index} className="border-l-4 border-l-pink-500 shadow-soft hover:shadow-elegant transition-all duration-200">
+            <Card key={index} className="border-l-4 border-l-primary shadow-soft hover:shadow-elegant transition-all duration-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}

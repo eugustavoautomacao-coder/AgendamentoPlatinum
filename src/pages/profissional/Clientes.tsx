@@ -131,7 +131,7 @@ const ProfissionalClientes = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <User className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
+            <User className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Lista de Clientes</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
@@ -159,7 +159,7 @@ const ProfissionalClientes = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Users className="h-6 w-6 sm:h-8 sm:w-8 text-pink-500" />
+          <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Lista de Clientes</h1>
             <p className="text-sm sm:text-base text-muted-foreground">
@@ -177,7 +177,7 @@ const ProfissionalClientes = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-blue-100 rounded-lg">
@@ -191,7 +191,7 @@ const ProfissionalClientes = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-green-100 rounded-lg">
@@ -207,7 +207,7 @@ const ProfissionalClientes = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-pink-500">
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">

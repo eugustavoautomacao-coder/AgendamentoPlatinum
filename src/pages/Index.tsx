@@ -162,7 +162,7 @@ const Index = () => {
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
             <p className="text-background/80">
-              © 2025 AlveX Salon Manager. Sistema seguro e confiável.
+              © 2025 Platinum Salon Manager. Sistema seguro e confiável.
             </p>
           </div>
         </div>
