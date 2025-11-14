@@ -39,6 +39,8 @@ const Profissionais = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState<string | null>(null);
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,25 +66,81 @@ const Profissionais = () => {
 
   const uploadImage = async (file: File, professionalId: string): Promise<string | null> => {
     try {
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Apenas arquivos de imagem são permitidos"
+        });
+        return null;
+      }
+
+      // Validar tamanho (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "O arquivo deve ter no máximo 5MB"
+        });
+        return null;
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${professionalId}-${Date.now()}.${fileExt}`;
       const filePath = `professionals/${fileName}`;
 
+      // Fazer upload para o Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        throw uploadError;
+        // Se o arquivo já existe, tentar fazer upsert
+        if (uploadError.message.includes('already exists') || uploadError.message.includes('duplicate')) {
+          const { error: upsertError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
+          
+          if (upsertError) {
+            console.error('Error uploading image (upsert):', upsertError);
+            toast({
+              variant: "destructive",
+              title: "Erro ao fazer upload",
+              description: upsertError.message || "Erro ao fazer upload da imagem"
+            });
+            return null;
+          }
+        } else {
+          console.error('Error uploading image:', uploadError);
+          toast({
+            variant: "destructive",
+            title: "Erro ao fazer upload",
+            description: uploadError.message || "Erro ao fazer upload da imagem"
+          });
+          return null;
+        }
       }
 
+      // Obter URL pública
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
       
       return publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao fazer upload",
+        description: error?.message || "Erro ao fazer upload da imagem"
+      });
       return null;
     }
   };
@@ -178,49 +236,94 @@ const Profissionais = () => {
 
   const handleQuickAvatarChange = async (professional: any, file: File) => {
     try {
+      setUploadingAvatar(professional.id);
       const avatarUrl = await uploadImage(file, professional.id);
       
       if (avatarUrl) {
-        await updateProfessional(professional.id, { avatar_url: avatarUrl });
-        toast({
-          title: "Sucesso",
-          description: "Foto atualizada com sucesso"
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Erro ao fazer upload da imagem"
-        });
+        const result = await updateProfessional(professional.id, { avatar_url: avatarUrl });
+        if (!result.error) {
+          toast({
+            title: "Sucesso",
+            description: "Foto atualizada com sucesso"
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: result.error || "Erro ao atualizar foto no banco de dados"
+          });
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating avatar:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao atualizar foto"
+        description: error?.message || "Erro ao atualizar foto"
       });
+    } finally {
+      setUploadingAvatar(null);
+      // Limpar o input para permitir upload do mesmo arquivo novamente
+      const input = fileInputRefs.current[professional.id];
+      if (input) {
+        input.value = '';
+      }
     }
   };
 
   const handleRemoveAvatarById = async (id: string, currentAvatarUrl: string) => {
     try {
-      // Extract file path from URL
-      const urlParts = currentAvatarUrl.split('/');
-      const filePath = urlParts.slice(-2).join('/'); // Get last two parts: folder/filename
+      setUploadingAvatar(id);
       
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('avatars')
-        .remove([filePath]);
-      
-      if (storageError) {
-        console.error('Error removing from storage:', storageError);
-      } else {
-        console.log('Arquivo removido do storage com sucesso');
+      // Buscar o profissional para obter o user_id
+      const professional = professionals.find(p => p.id === id);
+      if (!professional) {
+        throw new Error('Profissional não encontrado');
+      }
+
+      // Buscar o user_id do employee
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+
+      if (employeeError) throw employeeError;
+      if (!employee?.user_id) throw new Error('User ID não encontrado para este profissional');
+
+      // Extrair file path da URL
+      try {
+        const url = new URL(currentAvatarUrl);
+        const pathParts = url.pathname.split('/');
+        // Procurar pelo índice do bucket 'avatars' e pegar o que vem depois
+        const avatarsIndex = pathParts.findIndex(part => part === 'avatars');
+        if (avatarsIndex !== -1 && avatarsIndex + 1 < pathParts.length) {
+          const filePath = pathParts.slice(avatarsIndex + 1).join('/');
+          
+          // Deletar do storage
+          const { error: storageError } = await supabase.storage
+            .from('avatars')
+            .remove([filePath]);
+          
+          if (storageError) {
+            console.error('Error removing from storage:', storageError);
+            // Continuar mesmo se houver erro no storage
+          }
+        }
+      } catch (urlError) {
+        console.warn('Erro ao processar URL do avatar:', urlError);
+        // Continuar mesmo se houver erro ao processar URL
       }
       
-      // Update database
+      // Atualizar no banco de dados (users table)
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: null })
+        .eq('id', employee.user_id);
+
+      if (updateError) throw updateError;
+      
+      // Atualizar lista de profissionais
       await updateProfessional(id, { avatar_url: null });
       
       setEditImagePreview(null);
@@ -229,13 +332,15 @@ const Profissionais = () => {
         title: "Sucesso",
         description: "Foto removida com sucesso"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing avatar:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao remover foto"
+        description: error?.message || "Erro ao remover foto"
       });
+    } finally {
+      setUploadingAvatar(null);
     }
   };
 
@@ -373,25 +478,43 @@ const Profissionais = () => {
                               {professional.nome?.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            ref={el => (window[`fileInput_${professional.id}`] = el)}
-                            onChange={e => {
-                              const file = e.target.files?.[0];
-                              if (file) handleQuickAvatarChange(professional, file);
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-10"
-                            style={{ pointerEvents: 'auto' }}
-                            onClick={() => window[`fileInput_${professional.id}`]?.click()}
-                            title="Alterar foto"
-                          >
-                            <Camera className="h-6 w-6 text-white drop-shadow" />
-                          </button>
+                          {uploadingAvatar === professional.id ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full z-10">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            </div>
+                          ) : (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={el => fileInputRefs.current[professional.id] = el}
+                                onChange={e => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleQuickAvatarChange(professional, file);
+                                  }
+                                }}
+                                disabled={uploadingAvatar !== null}
+                              />
+                              <button
+                                type="button"
+                                className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-full z-10 cursor-pointer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const input = fileInputRefs.current[professional.id];
+                                  if (input) {
+                                    input.click();
+                                  }
+                                }}
+                                title="Alterar foto"
+                                disabled={uploadingAvatar !== null}
+                              >
+                                <Camera className="h-6 w-6 text-white drop-shadow" />
+                              </button>
+                            </>
+                          )}
                         </div>
                         <div>
                           <h3 className="font-semibold text-foreground text-lg">
@@ -404,16 +527,29 @@ const Profissionais = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="space-y-2 w-full">
-                          <div className="flex flex-wrap gap-1 justify-center">
-                            <span className="text-xs text-muted-foreground">{professional.cargo || 'Sem cargo definido'}</span>
+                        <div className="space-y-2.5 w-full">
+                          {/* Cargo */}
+                          <div className="flex items-center justify-center gap-2">
+                            <Briefcase className="h-4 w-4 text-primary/70 flex-shrink-0" />
+                            <span className="text-sm text-muted-foreground font-medium">
+                              {professional.cargo || 'Sem cargo definido'}
+                            </span>
                           </div>
-                          <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {professional.telefone || 'Telefone não informado'}
+                          
+                          {/* Telefone */}
+                          <div className="flex items-center justify-center gap-2">
+                            <Phone className="h-4 w-4 text-primary/70 flex-shrink-0" />
+                            <span className="text-sm text-muted-foreground truncate max-w-full">
+                              {professional.telefone || 'Telefone não informado'}
+                            </span>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {professional.email}
+                          
+                          {/* Email */}
+                          <div className="flex items-center justify-center gap-2">
+                            <Mail className="h-4 w-4 text-primary/70 flex-shrink-0" />
+                            <span className="text-sm text-muted-foreground truncate max-w-full">
+                              {professional.email || 'Email não informado'}
+                            </span>
                           </div>
                         </div>
                         <div className="flex flex-col md:flex-row gap-2 w-full">

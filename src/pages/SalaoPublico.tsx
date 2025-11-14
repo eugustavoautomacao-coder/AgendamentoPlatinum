@@ -822,22 +822,23 @@ export default function SalaoPublico() {
                   </CardHeader>
                   <CardContent className="pt-0">
                     {loadingSlots ? (
-                      <div className="text-center py-6 sm:py-8">
-                        <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto mb-3"></div>
-                        <p className="text-sm text-muted-foreground">Carregando horários disponíveis...</p>
+                      <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 px-4">
+                        <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-primary mb-4"></div>
+                        <p className="text-sm sm:text-base text-muted-foreground">Carregando horários disponíveis...</p>
                       </div>
                     ) : availableSlots.length === 0 ? (
-                      <div className="text-center py-6 sm:py-8">
-                        <Clock className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3" />
-                        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Nenhum horário disponível</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                          Não há horários disponíveis para esta data. 
-                          Tente selecionar outra data ou entre em contato com o salão.
+                      <div className="flex flex-col items-center justify-center text-center py-8 sm:py-12 px-4">
+                        <div className="p-3 sm:p-4 bg-muted/30 rounded-full mb-4">
+                          <Clock className="h-10 w-10 sm:h-14 sm:w-14 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-2">Nenhum horário disponível</h3>
+                        <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-md">
+                          O salão não está funcionando neste dia ou os horários não foram configurados.
                         </p>
                         <Button 
                           variant="outline" 
                           onClick={() => setStep('professional')}
-                          className="text-xs sm:text-sm"
+                          className="text-sm sm:text-base"
                         >
                           Escolher Outro Profissional
                         </Button>

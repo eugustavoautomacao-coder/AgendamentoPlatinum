@@ -130,23 +130,60 @@ export function useProfessionals() {
 
   const updateProfessional = async (id: string, data: Partial<Professional>) => {
     try {
-      // Criar objeto de atualização apenas com campos fornecidos
-      const updateData: any = {};
-      
-      if (data.nome !== undefined) updateData.nome = data.nome;
-      if (data.telefone !== undefined) updateData.telefone = data.telefone;
-      if (data.email !== undefined) updateData.email = data.email;
-      if (data.cargo !== undefined) updateData.cargo = data.cargo;
-      if (data.percentual_comissao !== undefined) updateData.percentual_comissao = data.percentual_comissao;
-      if (data.ativo !== undefined) updateData.ativo = data.ativo;
-      if (data.avatar_url !== undefined) updateData.avatar_url = data.avatar_url;
-
-      const { error } = await supabase
+      // Buscar o employee para obter o user_id
+      const { data: employee, error: employeeError } = await supabase
         .from('employees')
-        .update(updateData)
-        .eq('id', id);
+        .select('user_id')
+        .eq('id', id)
+        .single();
 
-      if (error) throw error;
+      if (employeeError) throw employeeError;
+      if (!employee?.user_id) throw new Error('User ID não encontrado para este profissional');
+
+      // Criar objetos de atualização para employees e users
+      const employeeUpdateData: any = {};
+      const userUpdateData: any = {};
+      
+      if (data.nome !== undefined) {
+        employeeUpdateData.nome = data.nome;
+        userUpdateData.nome = data.nome;
+      }
+      if (data.telefone !== undefined) {
+        employeeUpdateData.telefone = data.telefone;
+        userUpdateData.telefone = data.telefone;
+      }
+      if (data.email !== undefined) {
+        employeeUpdateData.email = data.email;
+        userUpdateData.email = data.email;
+      }
+      if (data.cargo !== undefined) employeeUpdateData.cargo = data.cargo;
+      if (data.percentual_comissao !== undefined) employeeUpdateData.percentual_comissao = data.percentual_comissao;
+      if (data.ativo !== undefined) employeeUpdateData.ativo = data.ativo;
+      
+      // Avatar URL deve ser atualizado na tabela users
+      if (data.avatar_url !== undefined) {
+        userUpdateData.avatar_url = data.avatar_url;
+      }
+
+      // Atualizar employees
+      if (Object.keys(employeeUpdateData).length > 0) {
+        const { error: employeeUpdateError } = await supabase
+          .from('employees')
+          .update(employeeUpdateData)
+          .eq('id', id);
+
+        if (employeeUpdateError) throw employeeUpdateError;
+      }
+
+      // Atualizar users (especialmente avatar_url)
+      if (Object.keys(userUpdateData).length > 0) {
+        const { error: userUpdateError } = await supabase
+          .from('users')
+          .update(userUpdateData)
+          .eq('id', employee.user_id);
+
+        if (userUpdateError) throw userUpdateError;
+      }
       
       await fetchProfessionals();
       toast({
@@ -155,12 +192,12 @@ export function useProfessionals() {
       });
       
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating professional:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao atualizar profissional"
+        description: error?.message || "Erro ao atualizar profissional"
       });
       return { error };
     }

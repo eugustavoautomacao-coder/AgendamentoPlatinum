@@ -847,27 +847,55 @@ export default function ComissoesMensais() {
               
               <div className="max-h-96 overflow-y-auto">
                 <div className="space-y-2">
-                  {detalhesAgendamentos.map((detalhe) => (
-                    <div key={detalhe.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Scissors className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                  {detalhesAgendamentos.map((detalhe) => {
+                    const appointment = detalhe.appointments;
+                    const service = appointment?.services;
+                    const appointmentDate = appointment?.data_hora ? new Date(appointment.data_hora) : null;
+                    const formattedDateTime = appointmentDate 
+                      ? `${appointmentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} às ${appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                      : formatDate(detalhe.criado_em);
+                    
+                    return (
+                      <div key={detalhe.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start sm:items-center gap-3 flex-1">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
+                            <Scissors className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs sm:text-sm text-foreground truncate">
+                              {service?.nome || 'Serviço não informado'}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              {appointment?.cliente_nome && (
+                                <div className="flex items-center gap-1.5">
+                                  <User className="h-3 w-3 text-primary/70 flex-shrink-0" />
+                                  <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                    {appointment.cliente_nome}
+                                  </span>
+                                </div>
+                              )}
+                              {appointmentDate && (
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="h-3 w-3 text-primary/70 flex-shrink-0" />
+                                  <span className="text-xs text-muted-foreground">
+                                    {formattedDateTime}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-xs sm:text-sm">Agendamento #{detalhe.appointment_id.slice(0, 8)}</p>
+                        <div className="text-left sm:text-right flex-shrink-0 sm:ml-4">
+                          <p className="font-medium text-xs sm:text-sm text-foreground">
+                            {formatCurrency(detalhe.valor_comissao)}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDate(detalhe.criado_em)}
+                            Base: {formatCurrency(detalhe.base_calculo)}
                           </p>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right">
-                        <p className="font-medium text-xs sm:text-sm">{formatCurrency(detalhe.valor_comissao)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Base: {formatCurrency(detalhe.base_calculo)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
