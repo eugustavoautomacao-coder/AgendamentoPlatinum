@@ -457,4 +457,17 @@
     width: 1.25rem !important; /* h-5 = 20px */
     height: 1.25rem !important; /* w-5 = 20px */
   }
+
+  /* Forçar formato 24 horas (HH:mm) para inputs de tempo - padrão brasileiro */
+  /* O input type="time" do HTML5 sempre usa formato 24 horas internamente */
+  /* Com lang="pt-BR" no HTML, o navegador deve exibir no formato brasileiro */
+  input[type="time"] {
+    direction: ltr;
+    text-align: center;
+  }
+  
+  /* Garantir formato 24 horas no HTML com lang pt-BR */
+  html[lang="pt-BR"] input[type="time"] {
+    direction: ltr;
+  }
 }

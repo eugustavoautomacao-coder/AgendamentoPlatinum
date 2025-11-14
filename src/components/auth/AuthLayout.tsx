@@ -89,8 +89,8 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                   <span className="text-sm font-medium text-foreground">Agendamentos</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-accent" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-primary" />
                   </div>
                   <span className="text-sm font-medium text-foreground">Relatórios</span>
                 </div>
@@ -101,8 +101,8 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                   <span className="text-sm font-medium text-foreground">Equipe</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Shield className="h-5 w-5 text-accent" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Shield className="h-5 w-5 text-primary" />
                   </div>
                   <span className="text-sm font-medium text-foreground">Segurança</span>
                 </div>

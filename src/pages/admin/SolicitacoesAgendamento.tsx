@@ -333,18 +333,23 @@ export default function SolicitacoesAgendamento() {
                 ] as const).map(({ key, label, icon: Icon }) => {
                   const counts = getStatusCounts();
                   const count = counts[key];
+                  const isSelected = filter === key;
                   
                   return (
                     <Button
                       key={key}
-                      variant={filter === key ? 'default' : 'outline'}
+                      variant={isSelected ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setFilter(key)}
                       className="flex items-center gap-2 flex-1 sm:flex-none"
                     >
                       <Icon className="h-3 w-3" />
                       <span>{label}</span>
-                      <span className="bg-primary/20 text-primary px-1.5 py-0.5 rounded-full text-xs font-medium">
+                      <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                        isSelected 
+                          ? 'bg-white/90 text-primary font-semibold shadow-sm' 
+                          : 'bg-primary/20 text-primary'
+                      }`}>
                         {count}
                       </span>
                     </Button>

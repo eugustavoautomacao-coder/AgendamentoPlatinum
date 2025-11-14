@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { useSalonInfo } from '@/hooks/useSalonInfo';
 import { useState, useEffect } from 'react';
@@ -22,6 +23,17 @@ const defaultSchedule = [
   { day: 'Sábado', key: 'saturday', open: '08:00', close: '17:00', active: true },
   { day: 'Domingo', key: 'sunday', open: '09:00', close: '15:00', active: false },
 ];
+
+// Função para normalizar horário para formato HH:mm (padrão brasileiro)
+const normalizeTime = (time: string): string => {
+  if (!time) return '08:00';
+  // Se já estiver no formato HH:mm, retornar
+  if (/^\d{2}:\d{2}$/.test(time)) return time;
+  // Se estiver no formato H:mm, adicionar zero à esquerda
+  if (/^\d{1}:\d{2}$/.test(time)) return `0${time}`;
+  // Se não tiver formato válido, retornar padrão
+  return '08:00';
+};
 
 const Configuracoes = () => {
   const { salonInfo, loading, refetchSalonInfo } = useSalonInfo();
@@ -47,18 +59,33 @@ const Configuracoes = () => {
     }
     if (salonInfo?.working_hours) {
       const wh = salonInfo.working_hours;
-      setSchedule(defaultSchedule.map((d) => ({
-        ...d,
-        ...wh[d.key],
-        open: wh[d.key]?.open || d.open,
-        close: wh[d.key]?.close || d.close,
-        active: wh[d.key]?.active ?? d.active
-      })));
+      setSchedule(defaultSchedule.map((d) => {
+        const dayHours = wh[d.key];
+        // Normalizar horários para garantir formato HH:mm (padrão brasileiro)
+        const openTime = normalizeTime(dayHours?.open || d.open);
+        const closeTime = normalizeTime(dayHours?.close || d.close);
+        
+        return {
+          ...d,
+          open: openTime,
+          close: closeTime,
+          active: dayHours?.active ?? d.active
+        };
+      }));
     }
   }, [salonInfo]);
 
   const handleScheduleChange = (idx, field, value) => {
-    setSchedule((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d));
+    setSchedule((prev) => prev.map((d, i) => {
+      if (i === idx) {
+        // Normalizar horário se for campo de tempo
+        if (field === 'open' || field === 'close') {
+          return { ...d, [field]: normalizeTime(value) };
+        }
+        return { ...d, [field]: value };
+      }
+      return d;
+    }));
   };
 
   // Função para formatar CNPJ
@@ -281,31 +308,66 @@ const Configuracoes = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {schedule.map((schedule, idx) => (
-                <div key={schedule.day} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch id={schedule.day} checked={schedule.active} onCheckedChange={v => handleScheduleChange(idx, 'active', v)} />
-                    <Label htmlFor={schedule.day} className="min-w-[100px] text-sm flex items-center gap-2">
-                      <Clock className="h-3 w-3 text-primary" />
+                <div key={schedule.day} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <Switch 
+                      id={schedule.day} 
+                      checked={schedule.active} 
+                      onCheckedChange={v => handleScheduleChange(idx, 'active', v)} 
+                    />
+                    <Label 
+                      htmlFor={schedule.day} 
+                      className="text-sm font-medium min-w-[120px] sm:min-w-[140px] flex items-center gap-2 cursor-pointer"
+                    >
+                      <Clock className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="hidden sm:inline">{schedule.day}</span>
                       <span className="sm:hidden">{schedule.day.split('-')[0]}</span>
                     </Label>
                   </div>
-                  <div className="flex items-center gap-2 flex-1">
-                    <Input
-                      type="time"
-                      value={schedule.open}
-                      className="w-20 sm:w-24"
-                      disabled={!schedule.active}
-                      onChange={e => handleScheduleChange(idx, 'open', e.target.value)}
-                    />
-                    <span className="text-muted-foreground text-sm">às</span>
-                    <Input
-                      type="time"
-                      value={schedule.close}
-                      className="w-20 sm:w-24"
-                      disabled={!schedule.active}
-                      onChange={e => handleScheduleChange(idx, 'close', e.target.value)}
-                    />
+                  <div className="flex items-center gap-3 flex-1 sm:justify-end">
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={schedule.open}
+                        onValueChange={value => handleScheduleChange(idx, 'open', value)}
+                        disabled={!schedule.active}
+                      >
+                        <SelectTrigger className="w-24 sm:w-28 text-center font-medium">
+                          <SelectValue>{schedule.open}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {Array.from({ length: 96 }, (_, i) => {
+                            const hours = Math.floor(i / 4);
+                            const minutes = (i % 4) * 15;
+                            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                          }).map(time => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-muted-foreground text-sm font-medium min-w-[20px] text-center">às</span>
+                      <Select
+                        value={schedule.close}
+                        onValueChange={value => handleScheduleChange(idx, 'close', value)}
+                        disabled={!schedule.active}
+                      >
+                        <SelectTrigger className="w-24 sm:w-28 text-center font-medium">
+                          <SelectValue>{schedule.close}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {Array.from({ length: 96 }, (_, i) => {
+                            const hours = Math.floor(i / 4);
+                            const minutes = (i % 4) * 15;
+                            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                          }).map(time => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               ))}

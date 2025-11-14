@@ -52,6 +52,8 @@ interface Comissao {
   servico_nome?: string;
   cliente_nome?: string;
   data_agendamento?: string;
+  // Referência para comissão mensal
+  comissao_mensal_id?: string;
 }
 
 export default function Comissoes() {
@@ -83,21 +85,228 @@ export default function Comissoes() {
     try {
       setLoading(true);
       
+      // Buscar comissões individuais através de comissoes_agendamentos_detalhes
+      // que contém os detalhes de cada agendamento com comissão
       let query = supabase
-        .from('vw_comissoes_funcionario')
-        .select('*')
-        .eq('salao_id', profile.salao_id);
+        .from('comissoes_agendamentos_detalhes')
+        .select(`
+          *,
+          comissoes_mensais(
+            id,
+            funcionario_id,
+            salao_id,
+            status,
+            percentual_comissao,
+            employees(
+              id,
+              nome,
+              salao_id
+            )
+          ),
+          appointments(
+            id,
+            cliente_nome,
+            data_hora,
+            status,
+            servico_id,
+            services(
+              id,
+              nome,
+              preco
+            )
+          )
+        `);
       
-      // Filtrar por profissional específico se especificado na URL
+      // Filtrar por salão através da comissão mensal
       if (funcionarioId) {
-        query = query.eq('funcionario_id', funcionarioId);
+        // Se há funcionário específico, buscar comissões mensais desse funcionário
+        const { data: comissoesMensais, error: cmError } = await supabase
+          .from('comissoes_mensais')
+          .select('id')
+          .eq('funcionario_id', funcionarioId)
+          .eq('salao_id', profile.salao_id);
+        
+        if (cmError) {
+          console.error('Erro ao buscar comissões mensais:', cmError);
+        }
+        
+        if (comissoesMensais && comissoesMensais.length > 0) {
+          const comissaoMensalIds = comissoesMensais.map(cm => cm.id);
+          query = query.in('comissao_mensal_id', comissaoMensalIds);
+        } else {
+          // Se não há comissões mensais, retornar array vazio
+          setComissoes([]);
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Buscar todas as comissões mensais do salão
+        const { data: comissoesMensais, error: cmError } = await supabase
+          .from('comissoes_mensais')
+          .select('id')
+          .eq('salao_id', profile.salao_id);
+        
+        if (cmError) {
+          console.error('Erro ao buscar comissões mensais:', cmError);
+        }
+        
+        if (comissoesMensais && comissoesMensais.length > 0) {
+          const comissaoMensalIds = comissoesMensais.map(cm => cm.id);
+          query = query.in('comissao_mensal_id', comissaoMensalIds);
+        } else {
+          // Se não há comissões mensais, retornar array vazio
+          setComissoes([]);
+          setLoading(false);
+          return;
+        }
       }
       
-      const { data, error } = await query.order('data_calculo', { ascending: false });
-
-      if (error) throw error;
+      // Filtrar por período baseado na data do agendamento
+      if (selectedPeriod !== 'all') {
+        const now = new Date();
+        let startDate: Date;
+        
+        switch (selectedPeriod) {
+          case 'month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'quarter':
+            const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+            startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
+            break;
+          case 'year':
+            startDate = new Date(now.getFullYear(), 0, 1);
+            break;
+          default:
+            startDate = new Date(0); // Todas as datas
+        }
+        
+        if (startDate) {
+          // Filtrar por data do agendamento através de uma subquery
+          // Primeiro buscar appointments no período
+          const { data: appointmentsNoPeriodo, error: aptError } = await supabase
+            .from('appointments')
+            .select('id')
+            .gte('data_hora', startDate.toISOString())
+            .eq('salao_id', profile.salao_id);
+          
+          if (aptError) {
+            console.error('Erro ao buscar appointments:', aptError);
+          }
+          
+          if (appointmentsNoPeriodo && appointmentsNoPeriodo.length > 0) {
+            const appointmentIds = appointmentsNoPeriodo.map(apt => apt.id);
+            query = query.in('appointment_id', appointmentIds);
+          } else {
+            // Se não há appointments no período, retornar array vazio
+            setComissoes([]);
+            setLoading(false);
+            return;
+          }
+        }
+      }
       
-      setComissoes(data || []);
+      const { data, error } = await query.order('criado_em', { ascending: false });
+
+      if (error) {
+        console.error('Erro na query de comissões:', error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        setComissoes([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Buscar pagamentos para determinar status das comissões
+      const comissaoMensalIds = (data || [])
+        .map((d: any) => d.comissoes_mensais?.id)
+        .filter(Boolean) as string[];
+      
+      let pagamentos: any[] = [];
+      if (comissaoMensalIds.length > 0) {
+        const { data: pagamentosData, error: pagamentosError } = await supabase
+          .from('pagamentos_comissoes')
+          .select('comissao_mensal_id, valor_pago, data_pagamento')
+          .in('comissao_mensal_id', comissaoMensalIds);
+        
+        if (pagamentosError) {
+          console.error('Erro ao buscar pagamentos:', pagamentosError);
+        }
+        pagamentos = pagamentosData || [];
+      }
+      
+      // Criar mapa de pagamentos por comissão mensal
+      const pagamentosPorComissao = new Map();
+      if (pagamentos.length > 0) {
+        pagamentos.forEach((pagamento: any) => {
+          if (!pagamentosPorComissao.has(pagamento.comissao_mensal_id)) {
+            pagamentosPorComissao.set(pagamento.comissao_mensal_id, {
+              total_pago: 0,
+              data_pagamento: null
+            });
+          }
+          const info = pagamentosPorComissao.get(pagamento.comissao_mensal_id);
+          info.total_pago += parseFloat(pagamento.valor_pago) || 0;
+          if (pagamento.data_pagamento && (!info.data_pagamento || pagamento.data_pagamento > info.data_pagamento)) {
+            info.data_pagamento = pagamento.data_pagamento;
+          }
+        });
+      }
+      
+      // Transformar os dados para o formato esperado da interface Comissao
+      const transformedData = (data || []).map((detalhe: any) => {
+        const comissaoMensal = detalhe.comissoes_mensais;
+        const appointment = detalhe.appointments;
+        const service = appointment?.services;
+        const employee = comissaoMensal?.employees;
+        
+        // Determinar status baseado na comissão mensal e pagamentos
+        let status: 'pendente' | 'paga' | 'cancelada' = 'pendente';
+        let data_pagamento: string | undefined = undefined;
+        
+        if (appointment?.status === 'cancelado') {
+          status = 'cancelada';
+        } else if (comissaoMensal?.status === 'pago') {
+          status = 'paga';
+          const pagamentoInfo = pagamentosPorComissao.get(comissaoMensal.id);
+          if (pagamentoInfo?.data_pagamento) {
+            data_pagamento = pagamentoInfo.data_pagamento;
+          }
+        } else if (comissaoMensal?.status === 'fechado' || comissaoMensal?.status === 'pago') {
+          status = 'paga';
+        }
+        
+        return {
+          id: detalhe.id,
+          salao_id: comissaoMensal?.salao_id || profile.salao_id,
+          appointment_id: detalhe.appointment_id,
+          funcionario_id: comissaoMensal?.funcionario_id || '',
+          servico_id: appointment?.servico_id || service?.id || '',
+          valor_servico: detalhe.valor_servico || 0,
+          taxa_custo_tipo: 'fixo', // Valor padrão, pode ser ajustado
+          taxa_custo_valor: detalhe.taxa_custo || 0,
+          valor_taxa_custo: detalhe.taxa_custo || 0,
+          base_calculo_comissao: detalhe.base_calculo || 0,
+          percentual_comissao: comissaoMensal?.percentual_comissao || 0,
+          valor_comissao: detalhe.valor_comissao || 0,
+          status: status,
+          data_calculo: detalhe.criado_em || new Date().toISOString(),
+          data_pagamento: data_pagamento,
+          observacoes: undefined,
+          criado_em: detalhe.criado_em || new Date().toISOString(),
+          // Campos relacionados
+          funcionario_nome: employee?.nome || 'Funcionário não encontrado',
+          servico_nome: service?.nome || 'Serviço não encontrado',
+          cliente_nome: appointment?.cliente_nome || 'Cliente não informado',
+          data_agendamento: appointment?.data_hora || null,
+          // Guardar referências para uso posterior
+          comissao_mensal_id: comissaoMensal?.id
+        };
+      });
+      
+      setComissoes(transformedData);
     } catch (error) {
       console.error('Erro ao buscar comissões:', error);
       toast.error('Erro ao carregar comissões');
@@ -107,12 +316,20 @@ export default function Comissoes() {
   };
 
   const marcarComissaoPaga = async () => {
-    if (!selectedComissao) return;
+    if (!selectedComissao || !selectedComissao.comissao_mensal_id) {
+      toast.error('Comissão mensal não encontrada');
+      return;
+    }
     
     try {
-      const { error } = await supabase.rpc('marcar_comissao_paga', {
-        p_comissao_id: selectedComissao.id,
-        p_observacoes: observacoes
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { error } = await supabase.rpc('registrar_pagamento_comissao', {
+        p_comissao_mensal_id: selectedComissao.comissao_mensal_id,
+        p_valor_pago: selectedComissao.valor_comissao,
+        p_forma_pagamento: 'Manual',
+        p_observacoes: observacoes || `Pagamento individual da comissão do agendamento ${selectedComissao.appointment_id}`,
+        p_usuario_id: session?.user?.id || null
       });
 
       if (error) throw error;
@@ -122,9 +339,9 @@ export default function Comissoes() {
       setSelectedComissao(null);
       setObservacoes('');
       fetchComissoes();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao marcar comissão como paga:', error);
-      toast.error('Erro ao marcar comissão como paga');
+      toast.error(error?.message || 'Erro ao marcar comissão como paga');
     }
   };
 

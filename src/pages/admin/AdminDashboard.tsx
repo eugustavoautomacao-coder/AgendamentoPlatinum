@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon, UserIcon, Phone } from "lucide-react";
+import { Calendar, Users, Scissors, DollarSign, TrendingUp, Clock, Star, AlertCircle, Plus, LayoutDashboard, CalendarIcon, UserIcon, Phone, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,22 +11,27 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useClients } from "@/hooks/useClients";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useServices } from "@/hooks/useServices";
-import { format, isToday, isTomorrow, isSameDay } from "date-fns";
+import { useAppointmentRequests } from "@/hooks/useAppointmentRequests";
+import { useAuth } from "@/hooks/useAuth";
+import { format, isToday, isTomorrow, isSameDay, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { fixTimezone } from "@/utils/dateUtils";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const { appointments, loading: appointmentsLoading } = useAppointments();
   const { clients, loading: clientsLoading } = useClients();
   const { professionals, loading: professionalsLoading } = useProfessionals();
   const { services, loading: servicesLoading } = useServices();
+  const { fetchAppointmentRequests } = useAppointmentRequests();
   
   // Estado para data selecionada
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState(0);
   
   // Verificar se a data selecionada é hoje (ou se não há data selecionada, considera hoje)
   const isSelectedDateToday = !selectedDate || (selectedDate && isToday(selectedDate));
@@ -47,9 +52,49 @@ const AdminDashboard = () => {
     isToday(fixTimezone(apt.data_hora))
   );
   
+  // Calcular receita do mês
+  const currentMonthStart = startOfMonth(new Date());
+  const currentMonthEnd = endOfMonth(new Date());
+  
   const thisMonthRevenue = appointmentsArray
-    .filter(apt => apt.status === 'concluido' && apt.servico_preco)
+    .filter(apt => {
+      const aptDate = fixTimezone(apt.data_hora);
+      return apt.status === 'concluido' && 
+             aptDate >= currentMonthStart && 
+             aptDate <= currentMonthEnd &&
+             apt.servico_preco;
+    })
     .reduce((sum, apt) => sum + (apt.servico_preco || 0), 0);
+  
+  // Buscar solicitações de agendamento pendentes
+  useEffect(() => {
+    const loadPendingRequests = async () => {
+      if (!profile?.salao_id) {
+        setPendingRequests(0);
+        return;
+      }
+      
+      try {
+        const requests = await fetchAppointmentRequests(profile.salao_id);
+        const pendingCount = requests.filter(r => r.status === 'pendente').length;
+        setPendingRequests(pendingCount);
+      } catch (error) {
+        console.error('Erro ao buscar solicitações pendentes:', error);
+        setPendingRequests(0);
+      }
+    };
+    
+    loadPendingRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.salao_id]);
+  
+  // Agendamentos pendentes de hoje (status 'pendente')
+  const todayPendingAppointments = todayAppointments.filter(apt => apt.status === 'pendente').length;
+  
+  // Agendamentos de amanhã
+  const tomorrowAppointments = appointmentsArray.filter(apt => 
+    isTomorrow(fixTimezone(apt.data_hora)) && apt.status !== 'cancelado'
+  );
 
   const stats = [
     {
@@ -200,20 +245,23 @@ const AdminDashboard = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-elegant">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
-                      {selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : 'Agendamentos de Hoje'}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span>
+                        {selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : 'Agendamentos de Hoje'}
+                      </span>
                     </CardTitle>
-                    <CardDescription>
-                      {nextAppointments.length} agendamentos programados
+                    <CardDescription className="mt-0.5">
+                      {nextAppointments.length} {nextAppointments.length === 1 ? 'agendamento programado' : 'agendamentos programados'}
                     </CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => navigate('/admin/agenda')}
+                    className="flex-shrink-0 self-start"
                   >
                     Ver Todos
                   </Button>
@@ -306,29 +354,70 @@ const AdminDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-warning-foreground">
-                      2 confirmações pendentes
-                    </span>
+                {pendingRequests > 0 && (
+                  <div 
+                    className="p-3 bg-warning/10 border border-warning/20 rounded-lg cursor-pointer hover:bg-warning/15 transition-colors"
+                    onClick={() => navigate('/admin/solicitacoes-agendamento?filter=pendente')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-warning-foreground" />
+                      <span className="text-sm font-medium text-warning-foreground">
+                        {pendingRequests} {pendingRequests === 1 ? 'confirmação pendente' : 'confirmações pendentes'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Solicitações de agendamento aguardando confirmação
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Agendamentos aguardando confirmação
-                  </p>
-                </div>
+                )}
                 
-                <div className="p-3 bg-primary-soft/20 border border-primary/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">
-                      Meta mensal: 85%
-                    </span>
+                {todayPendingAppointments > 0 && (
+                  <div 
+                    className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                    onClick={() => navigate('/admin/agenda?filter=pendente')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                        {todayPendingAppointments} {todayPendingAppointments === 1 ? 'agendamento pendente hoje' : 'agendamentos pendentes hoje'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Agendamentos de hoje aguardando confirmação
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Você está no caminho certo!
-                  </p>
-                </div>
+                )}
+                
+                {tomorrowAppointments.length > 0 && (
+                  <div 
+                    className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    onClick={() => navigate('/admin/agenda')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        {tomorrowAppointments.length} {tomorrowAppointments.length === 1 ? 'agendamento amanhã' : 'agendamentos amanhã'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Prepare-se para o próximo dia
+                    </p>
+                  </div>
+                )}
+                
+                {pendingRequests === 0 && todayPendingAppointments === 0 && tomorrowAppointments.length === 0 && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                        Tudo em dia!
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Nenhuma ação pendente no momento
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
