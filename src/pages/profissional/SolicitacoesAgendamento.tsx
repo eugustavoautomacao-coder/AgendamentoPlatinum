@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fixTimezone } from '@/utils/dateUtils';
 
 export default function SolicitacoesAgendamento() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const { 
     fetchAppointmentRequests, 
@@ -45,22 +45,22 @@ export default function SolicitacoesAgendamento() {
   };
 
   useEffect(() => {
-    if (user?.user_metadata?.salao_id) {
+    if (profile?.salao_id) {
       loadRequests();
     }
-  }, [user?.user_metadata?.salao_id]);
+  }, [profile?.salao_id]);
 
   const loadRequests = async () => {
-    if (!user?.user_metadata?.salao_id) return;
+    if (!profile?.salao_id) return;
     
-    const data = await fetchAppointmentRequests(user.user_metadata.salao_id);
+    const data = await fetchAppointmentRequests(profile.salao_id);
     // Filtrar apenas solicitações do profissional logado
-    const myRequests = data.filter(request => request.funcionario_id === user.id);
+    const myRequests = data.filter(request => request.funcionario_id === user?.id);
     setRequests(myRequests);
   };
 
   const copyPublicLink = async () => {
-    const salaoId = user?.user_metadata?.salao_id;
+    const salaoId = profile?.salao_id;
     
     if (!salaoId) {
       toast({
@@ -269,10 +269,17 @@ export default function SolicitacoesAgendamento() {
   };
 
   const formatDateTime = (dateTimeString: string) => {
-    const date = fixTimezone(dateTimeString);
+    const date = new Date(dateTimeString);
+    // Extrair data e hora diretamente em UTC sem conversão
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    
     return {
-      date: date.toLocaleDateString('pt-BR'),
-      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      date: `${day}/${month}/${year}`,
+      time: `${hours}:${minutes}`
     };
   };
 

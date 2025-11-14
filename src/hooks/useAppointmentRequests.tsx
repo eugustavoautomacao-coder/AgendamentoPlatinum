@@ -207,11 +207,19 @@ export const useAppointmentRequests = () => {
       if (fetchError) throw fetchError;
 
       // Normalizar horário para horário cheio (remover minutos fracionados)
+      // IMPORTANTE: Usar Date.UTC() para manter o mesmo horário sem conversão de timezone
       const normalizeTimeToFullHour = (dateTimeString: string): string => {
         const date = new Date(dateTimeString);
-        // Arredondar para a hora cheia mais próxima
-        const normalizedDate = new Date(date);
-        normalizedDate.setMinutes(0, 0, 0); // Zerar minutos, segundos e milissegundos
+        // Usar UTC para não alterar o timezone ao normalizar
+        const normalizedDate = new Date(Date.UTC(
+          date.getUTCFullYear(),
+          date.getUTCMonth(),
+          date.getUTCDate(),
+          date.getUTCHours(), // Manter a hora UTC original
+          0, // Zerar minutos
+          0, // Zerar segundos
+          0  // Zerar milissegundos
+        ));
         return normalizedDate.toISOString();
       };
 

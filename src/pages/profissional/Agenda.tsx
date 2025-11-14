@@ -166,12 +166,16 @@ const ProfissionalAgenda = () => {
   // Filtrar agendamentos do dia selecionado
   const selectedDay = selectedDate || new Date();
   const appointmentsOfDay = Array.isArray(filteredAppointments) ? filteredAppointments.filter(a => {
+    if (!a.data_hora) return false;
+    
+    // Usar fixTimezone para obter a data correta (remove Z e trata como local)
     const aptDate = fixTimezone(a.data_hora);
-    return (
-      aptDate.getDate() === selectedDay.getDate() &&
-      aptDate.getMonth() === selectedDay.getMonth() &&
-      aptDate.getFullYear() === selectedDay.getFullYear()
-    );
+    const aptDateStr = `${aptDate.getFullYear()}-${String(aptDate.getMonth() + 1).padStart(2, '0')}-${String(aptDate.getDate()).padStart(2, '0')}`;
+    
+    // Extrair data local do dia selecionado
+    const selectedDateStr = `${selectedDay.getFullYear()}-${String(selectedDay.getMonth() + 1).padStart(2, '0')}-${String(selectedDay.getDate()).padStart(2, '0')}`;
+    
+    return aptDateStr === selectedDateStr;
   }) : [];
 
   // Função para carregar horários bloqueados do banco

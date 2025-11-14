@@ -278,16 +278,49 @@ export default function SalaoPublico() {
     setLoadingSlots(true);
 
     try {
-      // Buscar agendamentos existentes para o dia (apenas confirmados)
-      const { data: appointments, error } = await supabase
+      // Buscar TODOS os agendamentos do funcionário e filtrar por data localmente
+      // Isso evita problemas com timezone na query do Supabase
+      const { data: allAppointments, error } = await supabase
         .from('appointments')
-        .select('data_hora, servico:services(duracao_minutos)')
+        .select('data_hora, servico:services(duracao_minutos), status')
         .eq('funcionario_id', selectedProfessional.id)
-        .eq('status', 'confirmado')
-        .gte('data_hora', `${date}T00:00:00`)
-        .lt('data_hora', `${date}T23:59:59`);
+        .in('status', ['confirmado', 'pendente', 'concluido']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar agendamentos:', error);
+        throw error;
+      }
+      
+      // Filtrar localmente por data (comparar apenas a data, ignorando hora e timezone)
+      const appointments = (allAppointments || []).filter(apt => {
+        const aptDate = new Date(apt.data_hora);
+        const selectedDateObj = new Date(`${date}T00:00:00`);
+        
+        // Comparar apenas ano, mês e dia
+        const aptDateOnly = `${aptDate.getFullYear()}-${String(aptDate.getMonth() + 1).padStart(2, '0')}-${String(aptDate.getDate()).padStart(2, '0')}`;
+        const selectedDateOnly = date; // já vem no formato YYYY-MM-DD
+        
+        return aptDateOnly === selectedDateOnly;
+      });
+      
+      console.log('🔍 Agendamentos encontrados para', date, ':', {
+        total: allAppointments?.length || 0,
+        doDia: appointments.length,
+        detalhes: appointments.map(apt => {
+          const aptDate = new Date(apt.data_hora);
+          return {
+            data_hora_original: apt.data_hora,
+            data_hora_objeto: aptDate.toString(),
+            hora_local: aptDate.getHours(),
+            minuto_local: aptDate.getMinutes(),
+            hora_utc: aptDate.getUTCHours(),
+            minuto_utc: aptDate.getUTCMinutes(),
+            duracao: (apt.servico as any)?.duracao_minutos || 60,
+            status: apt.status,
+            servico_objeto: apt.servico
+          };
+        })
+      });
 
       // Buscar horários bloqueados do funcionário para este dia
       let blockedSlots: any[] = [];
@@ -351,14 +384,53 @@ export default function SalaoPublico() {
         // Verificar se o slot está disponível (não conflita com agendamentos)
         const isAvailableByAppointments = !appointments?.some(apt => {
           const aptTime = new Date(apt.data_hora);
-          const aptServiceDuration = (apt.servico as any)?.duracao_minutos || 60;
-          const aptEndTime = new Date(aptTime.getTime() + aptServiceDuration * 60000);
-          const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
+          // Garantir que temos a duração do serviço
+          const aptServiceDuration = (apt.servico as any)?.duracao_minutos || 
+                                    (apt.servico as any)?.[0]?.duracao_minutos || 
+                                    60;
           
-          // Verificar sobreposição de horários
-          return (slotDateTime >= aptTime && slotDateTime < aptEndTime) ||
-                 (slotEndTime > aptTime && slotEndTime <= aptEndTime) ||
-                 (slotDateTime <= aptTime && slotEndTime >= aptEndTime);
+          // IMPORTANTE: Extrair hora e minuto em UTC para comparar corretamente
+          // O agendamento foi salvo em UTC, então precisamos comparar em UTC também
+          const aptHour = aptTime.getUTCHours();
+          const aptMinute = aptTime.getUTCMinutes();
+          const slotHour = hour; // já temos o hour diretamente do loop
+          const slotMinute = 0; // sempre começa no minuto 0
+          
+          // Calcular horário de término do agendamento existente em minutos do dia
+          const aptStartMinutes = aptHour * 60 + aptMinute;
+          const aptEndMinutes = aptStartMinutes + aptServiceDuration;
+          
+          // Calcular horário de término do slot que estamos verificando em minutos do dia
+          const slotStartMinutes = slotHour * 60 + slotMinute;
+          const slotEndMinutes = slotStartMinutes + serviceDuration;
+          
+          // Há sobreposição se os intervalos se cruzam
+          // Intervalos se cruzam se: slotStart < aptEnd AND slotEnd > aptStart
+          const hasOverlap = (slotStartMinutes < aptEndMinutes && slotEndMinutes > aptStartMinutes);
+          
+          // Debug detalhado para o primeiro slot e agendamento
+          if (slotHour === 8 && appointments && appointments.length > 0 && appointments.indexOf(apt) === 0) {
+            console.log(`🔍 Verificando slot ${slotHour}:${slotMinute.toString().padStart(2, '0')}:`, {
+              slotStart: `${slotHour}:${slotMinute.toString().padStart(2, '0')}`,
+              slotEnd: `${Math.floor(slotEndMinutes / 60)}:${(slotEndMinutes % 60).toString().padStart(2, '0')}`,
+              slotStartMinutes,
+              slotEndMinutes,
+              aptStart_UTC: `${aptHour}:${aptMinute.toString().padStart(2, '0')} UTC`,
+              aptStart_LOCAL: `${aptTime.getHours()}:${aptTime.getMinutes().toString().padStart(2, '0')} LOCAL`,
+              aptEnd: `${Math.floor(aptEndMinutes / 60)}:${(aptEndMinutes % 60).toString().padStart(2, '0')} UTC`,
+              aptStartMinutes,
+              aptEndMinutes,
+              aptServiceDuration,
+              hasOverlap,
+              servico_data: apt.servico
+            });
+          }
+          
+          if (hasOverlap) {
+            console.log(`🚫 CONFLITO DETECTADO! Slot ${slotHour}:${slotMinute.toString().padStart(2, '0')} (${slotStartMinutes}min - ${slotEndMinutes}min) conflita com agendamento ${aptHour}:${aptMinute.toString().padStart(2, '0')} UTC (${aptStartMinutes}min - ${aptEndMinutes}min) - Duração: ${aptServiceDuration}min`);
+          }
+          
+          return hasOverlap;
         });
 
         // Verificar se o slot não está bloqueado pelo funcionário
@@ -420,7 +492,19 @@ export default function SalaoPublico() {
     }
 
     try {
-      const dataHora = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+      // Criar data como UTC sem conversão de timezone
+      // Se o usuário escolhe 08:00, salvar como 08:00 UTC (não 11:00 UTC)
+      const dateTimeStr = `${selectedDate}T${selectedTime}:00`;
+      const [datePart, timePart] = dateTimeStr.split('T');
+      const [hours, minutes, seconds = '00'] = timePart.split(':');
+      const dataHora = new Date(Date.UTC(
+        parseInt(datePart.split('-')[0]),
+        parseInt(datePart.split('-')[1]) - 1,
+        parseInt(datePart.split('-')[2]),
+        parseInt(hours),
+        parseInt(minutes),
+        parseInt(seconds)
+      )).toISOString();
       
       const result = await createAppointmentRequest({
         salao_id: salaoId!,
@@ -545,7 +629,7 @@ export default function SalaoPublico() {
                 {index < 3 && (
                   <div className={`w-8 sm:w-16 h-0.5 ${
                     step === 'success' ? 'bg-green-500' : // Todas as linhas verdes na tela de sucesso
-                    ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500' : 'bg-muted'
+                    ['services', 'professional', 'schedule', 'form'].indexOf(step) > index ? 'bg-green-500' : 'bg-border dark:bg-muted'
                   }`} />
                 )}
               </div>

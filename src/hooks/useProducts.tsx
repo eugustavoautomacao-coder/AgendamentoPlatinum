@@ -131,13 +131,21 @@ export function useProducts() {
         }
       }
 
+      // Preparar dados removendo campos vazios que são UUID
+      const insertData: any = {
+        ...productData,
+        salao_id: userData.salao_id,
+        ativo: productData.ativo ?? true,
+      };
+
+      // Se categoria_id estiver vazio, remover do objeto para não enviar string vazia para campo UUID
+      if (!insertData.categoria_id || insertData.categoria_id === '') {
+        delete insertData.categoria_id;
+      }
+
       const { data, error } = await supabase
         .from('produtos')
-        .insert([{
-          ...productData,
-          salao_id: userData.salao_id,
-          ativo: productData.ativo ?? true,
-        }])
+        .insert([insertData])
         .select(`
           *,
           categoria:categorias(id, nome)
@@ -196,9 +204,17 @@ export function useProducts() {
         }
       }
 
+      // Preparar dados removendo campos vazios que são UUID
+      const cleanUpdateData: any = { ...updateData };
+      
+      // Se categoria_id estiver vazio, remover do objeto para não enviar string vazia para campo UUID
+      if (!cleanUpdateData.categoria_id || cleanUpdateData.categoria_id === '') {
+        delete cleanUpdateData.categoria_id;
+      }
+
       const { data, error } = await supabase
         .from('produtos')
-        .update(updateData)
+        .update(cleanUpdateData)
         .eq('id', id)
         .select(`
           *,

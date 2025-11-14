@@ -490,12 +490,16 @@ const Agenda = () => {
 
   const selectedDay = selectedDate || new Date();
   const appointmentsOfDay = Array.isArray(filteredAppointments) ? filteredAppointments.filter(a => {
+    if (!a.data_hora) return false;
+    
+    // Usar fixTimezone para obter a data correta (remove Z e trata como local)
     const aptDate = fixTimezone(a.data_hora);
-    return (
-      aptDate.getFullYear() === selectedDay.getFullYear() &&
-      aptDate.getMonth() === selectedDay.getMonth() &&
-      aptDate.getDate() === selectedDay.getDate()
-    );
+    const aptDateStr = `${aptDate.getFullYear()}-${String(aptDate.getMonth() + 1).padStart(2, '0')}-${String(aptDate.getDate()).padStart(2, '0')}`;
+    
+    // Extrair data local do dia selecionado
+    const selectedDateStr = `${selectedDay.getFullYear()}-${String(selectedDay.getMonth() + 1).padStart(2, '0')}-${String(selectedDay.getDate()).padStart(2, '0')}`;
+    
+    return aptDateStr === selectedDateStr;
   }) : [];
 
   const goPrevDay = () => setSelectedDate(d => addDays(d || new Date(), -1));

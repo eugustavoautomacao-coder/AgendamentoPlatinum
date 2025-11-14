@@ -60,7 +60,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </div>
           </header>
           
-          <div className="p-4 lg:p-6 xl:p-8 bg-background min-w-0 overflow-x-hidden">
+          <div className="p-4 lg:p-6 xl:p-8 bg-background min-w-0 overflow-x-hidden relative">
             {children}
           </div>
         </main>

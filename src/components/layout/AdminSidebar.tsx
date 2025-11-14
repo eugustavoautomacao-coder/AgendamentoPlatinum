@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -230,11 +231,11 @@ const AdminSidebar = () => {
                         )}
                         
                         {/* Flyout Menu */}
-                        {hoveredItem === item.title && (
+                        {hoveredItem === item.title && createPortal(
                           submenuAsDropdown ? (
                             <div
-                              className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-elegant z-[99999] py-2 min-w-max"
-                              style={{ zIndex: 99999 }}
+                              className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max"
+                              style={{ zIndex: 999999 }}
                               onMouseEnter={() => {
                                 if (hoverTimeout) {
                                   clearTimeout(hoverTimeout);
@@ -267,7 +268,7 @@ const AdminSidebar = () => {
                           ) : (
                             <div 
                               className="fixed inset-0 pointer-events-none"
-                              style={{ zIndex: 99998 }}
+                              style={{ zIndex: 999998 }}
                               onMouseLeave={() => {
                                 const timeout = setTimeout(() => {
                                   setHoveredItem(null);
@@ -280,7 +281,7 @@ const AdminSidebar = () => {
                                 style={{
                                   top: submenuTop !== null ? `${submenuTop}px` : '50%',
                                   transform: submenuTop !== null ? 'translateY(-50%)' : 'translateY(-50%)',
-                                  zIndex: 99999
+                                  zIndex: 999999
                                 }}
                                 onMouseEnter={() => {
                                   // Limpar timeout quando mouse entra no flyout
@@ -316,7 +317,8 @@ const AdminSidebar = () => {
                                 ))}
                               </div>
                             </div>
-                          )
+                          ),
+                          document.body
                         )}
                       </div>
                     </div>
