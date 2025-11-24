@@ -34,7 +34,14 @@ export function useClients() {
   } = useQuery({
     queryKey: ['clients', profile?.salao_id],
     queryFn: async (): Promise<Client[]> => {
-      if (!profile?.salao_id) return [];
+      // Se não houver profile ainda, aguardar
+      if (!profile) return [];
+      
+      // Se não houver salao_id, retornar array vazio (erro será tratado pela UI)
+      if (!profile.salao_id) {
+        console.warn('Profile sem salao_id - não é possível buscar clientes');
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('users')
@@ -55,7 +62,7 @@ export function useClients() {
         criado_em: client.criado_em
       })) || [];
     },
-    enabled: !!profile?.salao_id,
+    enabled: profile !== undefined && !!profile?.salao_id,
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 

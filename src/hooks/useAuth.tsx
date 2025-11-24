@@ -68,19 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(profileWithSalon);
     } catch (error) {
       console.error('Error refetching profile:', error);
-      // Em caso de erro, definir um perfil básico para evitar tela de erro
-      if (session?.user) {
-        setProfile({
-          id: session.user.id,
-          salao_id: null,
-          nome: session.user.user_metadata?.name || 'Usuário',
-          tipo: 'funcionario' as const,
-          email: session.user.email || '',
-          ativo: true,
-          cargo: '',
-          percentual_comissao: 0
-        });
-      }
+      // Em caso de erro, não criar profile fake - deixar null para o sistema tratar
+      setProfile(null);
     }
   };
 
@@ -134,30 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Se for erro PGRST116 (perfil não encontrado), apenas avisar
               if (error.code === 'PGRST116') {
                 console.warn('Usuário autenticado mas sem perfil na tabela users. Aguardando criação automática...');
-                // Criar perfil básico para evitar tela de erro
-                setProfile({
-                  id: session.user.id,
-                  salao_id: null,
-                  nome: session.user.user_metadata?.name || 'Usuário',
-                  tipo: 'funcionario' as const,
-                  email: session.user.email || '',
-                  ativo: true,
-                  cargo: '',
-                  percentual_comissao: 0
-                });
+                // Não criar profile fake - o sistema não funciona sem salao_id
+                setProfile(null);
               } else {
                 console.error('Erro ao carregar perfil do usuário:', error);
-                // Criar perfil básico para evitar tela de erro
-                setProfile({
-                  id: session.user.id,
-                  salao_id: null,
-                  nome: session.user.user_metadata?.name || 'Usuário',
-                  tipo: 'funcionario' as const,
-                  email: session.user.email || '',
-                  ativo: true,
-                  cargo: '',
-                  percentual_comissao: 0
-                });
+                // Não criar profile fake - deixar null para o sistema tratar o erro
+                setProfile(null);
               }
             }
           }, 0);

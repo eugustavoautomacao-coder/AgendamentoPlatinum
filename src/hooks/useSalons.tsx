@@ -186,15 +186,10 @@ export function useSalons() {
 
       if (error) throw error;
       
-      // Criar serviços padrão para o novo salão
-      if (data) {
-        await createDefaultServices(data.id);
-      }
-      
       await fetchSalons();
       toast({
         title: "Sucesso",
-        description: "Salão criado com sucesso com serviços padrão"
+        description: "Salão criado com sucesso"
       });
       
       return { data, error: null };
@@ -238,8 +233,122 @@ export function useSalons() {
     }
   };
 
-  const deleteSalon = async (id: string) => {
+  const deleteSalon = async (id: string, cascade: boolean = true) => {
     try {
+      if (cascade) {
+        // Deletar em cascata todas as dependências do salão
+        // Ordem de deleção: dependências primeiro, depois o salão
+        
+        // 1. Deletar comissões e pagamentos relacionados
+        const { error: comissoesError } = await supabase
+          .from('comissoes')
+          .delete()
+          .eq('salao_id', id);
+        if (comissoesError) console.warn('Erro ao deletar comissões:', comissoesError);
+
+        const { error: comissoesMensaisError } = await supabase
+          .from('comissoes_mensais')
+          .delete()
+          .eq('salao_id', id);
+        if (comissoesMensaisError) console.warn('Erro ao deletar comissões mensais:', comissoesMensaisError);
+
+        // 2. Deletar appointments e appointment_requests
+        const { error: appointmentsError } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('salao_id', id);
+        if (appointmentsError) console.warn('Erro ao deletar appointments:', appointmentsError);
+
+        const { error: appointmentRequestsError } = await supabase
+          .from('appointment_requests')
+          .delete()
+          .eq('salao_id', id);
+        if (appointmentRequestsError) console.warn('Erro ao deletar appointment_requests:', appointmentRequestsError);
+
+        // 3. Deletar blocked_slots
+        const { error: blockedSlotsError } = await supabase
+          .from('blocked_slots')
+          .delete()
+          .eq('salao_id', id);
+        if (blockedSlotsError) console.warn('Erro ao deletar blocked_slots:', blockedSlotsError);
+
+        // 4. Deletar produtos
+        const { error: produtosError } = await supabase
+          .from('produtos')
+          .delete()
+          .eq('salao_id', id);
+        if (produtosError) console.warn('Erro ao deletar produtos:', produtosError);
+
+        // 5. Deletar categorias
+        const { error: categoriasError } = await supabase
+          .from('categorias')
+          .delete()
+          .eq('salao_id', id);
+        if (categoriasError) console.warn('Erro ao deletar categorias:', categoriasError);
+
+        // 6. Deletar clientes
+        const { error: clientesError } = await supabase
+          .from('clientes')
+          .delete()
+          .eq('salao_id', id);
+        if (clientesError) console.warn('Erro ao deletar clientes:', clientesError);
+
+        // 7. Deletar services
+        const { error: servicesError } = await supabase
+          .from('services')
+          .delete()
+          .eq('salao_id', id);
+        if (servicesError) console.warn('Erro ao deletar services:', servicesError);
+
+        // 8. Deletar employees
+        const { error: employeesError } = await supabase
+          .from('employees')
+          .delete()
+          .eq('salao_id', id);
+        if (employeesError) console.warn('Erro ao deletar employees:', employeesError);
+
+        // 9. Deletar users do salão (usando Edge Function para deletar também do auth.users)
+        const { data: usersToDelete, error: usersFetchError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('salao_id', id);
+        
+        if (!usersFetchError && usersToDelete && usersToDelete.length > 0) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // Deletar cada usuário usando a Edge Function
+            for (const user of usersToDelete) {
+              try {
+                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+                  },
+                  body: JSON.stringify({ userId: user.id })
+                });
+                
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  console.warn(`Erro ao deletar usuário ${user.id}:`, errorData.error);
+                }
+              } catch (error) {
+                console.warn(`Erro ao deletar usuário ${user.id}:`, error);
+              }
+            }
+          } else {
+            // Se não houver sessão, deletar diretamente da tabela users (mas não do auth.users)
+            const { error: usersDeleteError } = await supabase
+              .from('users')
+              .delete()
+              .eq('salao_id', id);
+            if (usersDeleteError) console.warn('Erro ao deletar users:', usersDeleteError);
+          }
+        }
+      }
+
+      // 10. Deletar o salão
       const { error } = await supabase
         .from('saloes')
         .delete()
@@ -259,7 +368,7 @@ export function useSalons() {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao remover salão"
+        description: "Erro ao remover salão. Verifique se não há dependências ativas."
       });
       return { error };
     }

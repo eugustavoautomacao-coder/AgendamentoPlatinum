@@ -136,13 +136,14 @@ const ProfissionalDashboard = () => {
   }));
 
   useEffect(() => {
-    // Simular loading inicial
-    const timer = setTimeout(() => {
+    // Finalizar loading quando todos os dados estiverem carregados ou quando não houver salao_id
+    if (!appointmentsLoading && !clientsLoading) {
       setLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [appointmentsLoading, clientsLoading]);
+    } else if (profile && !profile.salao_id) {
+      // Se o profile foi carregado mas não tem salao_id, finalizar loading
+      setLoading(false);
+    }
+  }, [appointmentsLoading, clientsLoading, profile]);
 
   // Funções para ações rápidas
   const handleNovoAgendamento = () => {

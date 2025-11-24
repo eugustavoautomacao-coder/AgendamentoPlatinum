@@ -94,14 +94,36 @@ const ProfissionalServicos = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    if (editService) {
-      await updateService(editService.id, form);
-    } else {
-      await createService(form);
+    try {
+      let result;
+      if (editService) {
+        result = await updateService(editService.id, form);
+      } else {
+        result = await createService(form);
+      }
+      
+      // Só fechar o modal se não houver erro
+      if (!result?.error) {
+        setOpen(false);
+        setForm({
+          nome: '',
+          duracao_minutos: 60,
+          preco: 0,
+          categoria: '',
+          descricao: '',
+          observacao: '',
+          taxa_custo_tipo: 'fixo',
+          taxa_custo_valor: 0,
+          ativo: true
+        });
+        setEditService(null);
+        refetch();
+      }
+    } catch (error) {
+      console.error('Erro ao salvar serviço:', error);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setOpen(false);
-    refetch();
   };
 
   const handleDelete = async (service) => {

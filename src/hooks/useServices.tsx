@@ -25,7 +25,23 @@ export function useServices() {
   const { toast } = useToast();
 
   const fetchServices = async () => {
-    if (!profile?.salao_id) return;
+    // Se não houver profile ainda, aguardar
+    if (!profile) {
+      setLoading(true);
+      return;
+    }
+    
+    // Se não houver salao_id, mostrar erro e finalizar loading
+    if (!profile.salao_id) {
+      setLoading(false);
+      setServices([]);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Salão não encontrado. Verifique se você está vinculado a um salão."
+      });
+      return;
+    }
     
     try {
       setLoading(true);
@@ -44,13 +60,21 @@ export function useServices() {
         title: "Erro",
         description: "Erro ao carregar serviços"
       });
+      setServices([]);
     } finally {
       setLoading(false);
     }
   };
 
   const createService = async (serviceData: Omit<Service, 'id' | 'salao_id' | 'criado_em'>) => {
-    if (!profile?.salao_id) return { error: 'Salon ID não encontrado' };
+    if (!profile?.salao_id) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Salão não encontrado. Verifique se você está vinculado a um salão."
+      });
+      return { data: null, error: 'Salon ID não encontrado' };
+    }
 
     try {
       const { data, error } = await supabase
@@ -68,12 +92,13 @@ export function useServices() {
       });
       
       return { data, error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating service:', error);
+      const errorMessage = error?.message || 'Erro ao criar serviço';
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao criar serviço"
+        description: errorMessage
       });
       return { data: null, error };
     }
@@ -136,7 +161,8 @@ export function useServices() {
   };
 
   useEffect(() => {
-    if (profile?.salao_id) {
+    // Aguardar o profile carregar antes de buscar serviços
+    if (profile !== undefined) {
       fetchServices();
     }
   }, [profile?.salao_id]);

@@ -23,7 +23,21 @@ export function useProfessionals() {
   const { toast } = useToast();
 
   const fetchProfessionals = async () => {
-    if (!profile?.salao_id) {
+    // Se não houver profile ainda, aguardar
+    if (!profile) {
+      setLoading(true);
+      return;
+    }
+    
+    // Se não houver salao_id, mostrar erro e finalizar loading
+    if (!profile.salao_id) {
+      setLoading(false);
+      setProfessionals([]);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Salão não encontrado. Verifique se você está vinculado a um salão."
+      });
       return;
     }
     
@@ -62,6 +76,7 @@ export function useProfessionals() {
         title: "Erro",
         description: "Erro ao carregar profissionais"
       });
+      setProfessionals([]);
     } finally {
       setLoading(false);
     }
@@ -247,10 +262,9 @@ export function useProfessionals() {
   };
 
   useEffect(() => {
-    if (profile?.salao_id) {
-      fetchProfessionals();
-    }
-  }, [profile?.salao_id]);
+    // Sempre chamar fetchProfessionals para tratar o caso quando profile não existe ou não tem salao_id
+    fetchProfessionals();
+  }, [profile?.salao_id, profile]);
 
   return {
     professionals,

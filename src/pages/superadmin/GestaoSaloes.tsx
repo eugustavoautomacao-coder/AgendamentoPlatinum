@@ -151,40 +151,8 @@ const GestaoSaloes = () => {
     if (!selectedSalon) return;
 
     try {
-      if (deleteCascade) {
-        // Exclusão em cascata - primeiro remover registros relacionados
-        const { error: usersError } = await supabase
-          .from('users')
-          .delete()
-          .eq('salao_id', selectedSalon.id);
-        
-        if (usersError) {
-          console.error('Error deleting users:', usersError);
-          throw new Error('Erro ao remover usuários vinculados');
-        }
-
-        const { error: employeesError } = await supabase
-          .from('employees')
-          .delete()
-          .eq('salao_id', selectedSalon.id);
-        
-        if (employeesError) {
-          console.error('Error deleting employees:', employeesError);
-          throw new Error('Erro ao remover funcionários vinculados');
-        }
-
-        const { error: servicesError } = await supabase
-          .from('services')
-          .delete()
-          .eq('salao_id', selectedSalon.id);
-        
-        if (servicesError) {
-          console.error('Error deleting services:', servicesError);
-          throw new Error('Erro ao remover serviços vinculados');
-        }
-      }
-
-      const result = await deleteSalon(selectedSalon.id);
+      // A função deleteSalon já faz a deleção em cascata automaticamente
+      const result = await deleteSalon(selectedSalon.id, deleteCascade);
 
       if (result.error) {
         throw result.error;
