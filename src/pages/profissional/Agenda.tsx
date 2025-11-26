@@ -1478,7 +1478,10 @@ const ProfissionalAgenda = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Movendo para cima:', apt.cliente_nome);
+                              // Log apenas em desenvolvimento
+                              if (import.meta.env.DEV) {
+                                console.log('Movendo agendamento para cima');
+                              }
                               handleMoveAppointment(apt, 'up');
                             }}
                             className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
@@ -1495,7 +1498,10 @@ const ProfissionalAgenda = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Movendo para baixo:', apt.cliente_nome);
+                              // Log apenas em desenvolvimento
+                              if (import.meta.env.DEV) {
+                                console.log('Movendo agendamento para baixo');
+                              }
                               handleMoveAppointment(apt, 'down');
                             }}
                             className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"

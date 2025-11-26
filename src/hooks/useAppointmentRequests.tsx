@@ -122,25 +122,63 @@ export const useAppointmentRequests = () => {
           const result = await response.json();
           temporaryPassword = result.password;
           
-        } catch (clientError) {
+        } catch (clientError: any) {
           console.error('❌ Erro ao criar cliente via Edge Function:', clientError);
-          // Continuar sem criar o cliente se houver erro
+          
+          // Se o erro for "email já registrado", isso é OK - o cliente já existe
+          const errorMessage = clientError?.message || '';
+          if (errorMessage.includes('already been registered') || 
+              errorMessage.includes('already exists') ||
+              errorMessage.includes('já está registrado')) {
+            console.log('ℹ️ Cliente já existe, continuando sem criar novo...');
+            // Continuar normalmente - o cliente já existe
+          } else {
+            // Para outros erros, logar mas continuar
+            console.warn('⚠️ Erro ao criar cliente, mas continuando com a solicitação...');
+          }
+          // Sempre continuar - não bloquear a criação da solicitação
         }
       }
 
+      // Log dos dados sendo enviados para debug
+      console.log('📤 Criando solicitação com dados:', {
+        salao_id: data.salao_id,
+        servico_id: data.servico_id,
+        funcionario_id: data.funcionario_id,
+        data_hora: data.data_hora,
+        cliente_nome: data.cliente_nome,
+        cliente_email: data.cliente_email,
+        status: data.status
+      });
       
-      const { data: request, error } = await supabase
+      // SOLUÇÃO ALTERNATIVA: Inserir SEM select, depois buscar
+      // Isso evita problema com RLS no SELECT durante INSERT
+      const { data: insertedRequest, error: insertError } = await supabase
         .from('appointment_requests')
         .insert([data])
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('❌ Erro ao criar solicitação:', insertError);
+        console.error('❌ Dados que causaram o erro:', data);
+        throw insertError;
+      }
+
+      // Agora buscar o registro com os joins (como autenticado ou com política correta)
+      const { data: request, error } = await supabase
+        .from('appointment_requests')
         .select(`
           *,
           servico:services(nome, duracao_minutos, preco),
-          funcionario:employees!inner(nome, email, telefone)
+          funcionario:employees(nome, email, telefone)
         `)
+        .eq('id', insertedRequest.id)
         .single();
 
       if (error) {
         console.error('❌ Erro ao criar solicitação:', error);
+        console.error('❌ Dados que causaram o erro:', data);
         throw error;
       }
       

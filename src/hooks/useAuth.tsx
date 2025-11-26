@@ -63,8 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         percentual_comissao: employee?.percentual_comissao || 0
       } as any;
       
-              console.log('Profile loaded:', profileWithSalon); // Debug
-              console.log('Profile tipo:', profileWithSalon?.tipo); // Debug
+      // Log apenas em desenvolvimento e sem dados sensíveis
+      if (import.meta.env.DEV) {
+        console.log('Profile loaded:', { 
+          id: profileWithSalon.id, 
+          tipo: profileWithSalon.tipo,
+          salao_id: profileWithSalon.salao_id 
+        });
+      }
       setProfile(profileWithSalon);
     } catch (error) {
       console.error('Error refetching profile:', error);
@@ -112,8 +118,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 percentual_comissao: employee?.percentual_comissao || 0
               } as any;
               
-              console.log('Profile loaded:', profileWithSalon); // Debug
-              console.log('Profile tipo:', profileWithSalon?.tipo); // Debug
+              // Log apenas em desenvolvimento e sem dados sensíveis
+              if (import.meta.env.DEV) {
+                console.log('Profile loaded:', { 
+                  id: profileWithSalon.id, 
+                  tipo: profileWithSalon.tipo,
+                  salao_id: profileWithSalon.salao_id 
+                });
+              }
               setProfile(profileWithSalon);
             } catch (error) {
               if (!isMounted) return;

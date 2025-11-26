@@ -70,7 +70,10 @@ export const useLembretes = (config: LembreteConfig = {
       const sucesso = await emailService.current.enviarLembreteAgendamento(emailData);
       
       if (sucesso) {
-        console.log(`✅ Lembrete ${tipo} enviado para ${agendamento.cliente_email}`);
+        // Log apenas em desenvolvimento e sem dados sensíveis
+        if (import.meta.env.DEV) {
+          console.log(`✅ Lembrete ${tipo} enviado`);
+        }
         // Aqui você pode marcar no banco que o lembrete foi enviado
         // para evitar reenvios
       } else {

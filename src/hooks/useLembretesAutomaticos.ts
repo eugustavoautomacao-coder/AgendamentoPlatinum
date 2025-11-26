@@ -83,7 +83,10 @@ export const useLembretesAutomaticos = (config: LembreteConfig = {
       };
 
       await emailService.current.enviarLembreteAgendamento(emailData);
-      console.log(`✅ Lembrete de ${horasAntes}h enviado para ${agendamento.cliente_nome}`);
+      // Log apenas em desenvolvimento e sem dados sensíveis
+      if (import.meta.env.DEV) {
+        console.log(`✅ Lembrete de ${horasAntes}h enviado`);
+      }
     } catch (error) {
       console.error(`❌ Erro ao enviar lembrete de ${horasAntes}h:`, error);
     }

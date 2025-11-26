@@ -43,7 +43,10 @@ export function useSalonInfo() {
 
     try {
       setLoading(true);
-      console.log('Buscando dados do salão:', profile.salao_id);
+      // Log apenas em desenvolvimento e sem dados sensíveis
+      if (import.meta.env.DEV) {
+        console.log('Buscando dados do salão');
+      }
       
       const { data, error } = await supabase
         .from('saloes')

@@ -217,11 +217,12 @@ export default function SalaoPublico() {
       if (servicesError) throw servicesError;
       setServices(servicesData || []);
 
-      // Buscar profissionais do salão
+      // Buscar profissionais do salão (apenas ativos)
       const { data: professionalsData, error: professionalsError } = await supabase
         .from('employees')
-        .select('*')
+        .select('id, nome, avatar_url, salao_id')
         .eq('salao_id', salaoId)
+        .eq('ativo', true)
         .order('nome');
 
       if (professionalsError) throw professionalsError;
@@ -280,15 +281,33 @@ export default function SalaoPublico() {
     try {
       // Buscar TODOS os agendamentos do funcionário e filtrar por data localmente
       // Isso evita problemas com timezone na query do Supabase
+      // IMPORTANTE: Buscar por funcionario_id OU employee_id, pois agendamentos podem usar qualquer um
+      console.log('🔎 Buscando agendamentos para profissional:', {
+        profissional_id: selectedProfessional.id,
+        profissional_nome: selectedProfessional.nome,
+        data_selecionada: date
+      });
+
       const { data: allAppointments, error } = await supabase
         .from('appointments')
-        .select('data_hora, servico:services(duracao_minutos), status')
-        .eq('funcionario_id', selectedProfessional.id)
+        .select('data_hora, servico:services(duracao_minutos), status, funcionario_id, employee_id')
+        .or(`funcionario_id.eq.${selectedProfessional.id},employee_id.eq.${selectedProfessional.id}`)
         .in('status', ['confirmado', 'pendente', 'concluido']);
 
       if (error) {
-        console.error('Erro ao buscar agendamentos:', error);
+        console.error('❌ Erro ao buscar agendamentos:', error);
         throw error;
+      }
+      
+      console.log('✅ Query executada com sucesso. Total de agendamentos retornados:', allAppointments?.length || 0);
+      if (allAppointments && allAppointments.length > 0) {
+        console.log('📋 Primeiros 3 agendamentos:', allAppointments.slice(0, 3).map(apt => ({
+          data_hora: apt.data_hora,
+          funcionario_id: apt.funcionario_id,
+          employee_id: apt.employee_id,
+          status: apt.status,
+          duracao: apt.servico
+        })));
       }
       
       // Filtrar localmente por data (comparar apenas a data, ignorando hora e timezone)
@@ -379,7 +398,16 @@ export default function SalaoPublico() {
       for (let hour = startHour; hour < endHour; hour++) {
         // Gerar apenas horários cheios (sem minutos fracionados)
         const timeString = `${hour.toString().padStart(2, '0')}:00`;
-        const slotDateTime = new Date(`${date}T${timeString}:00`);
+        // Criar data/hora do slot em UTC (mesmo formato que os agendamentos são salvos)
+        // IMPORTANTE: Usar Date.UTC para garantir que o horário seja interpretado como UTC
+        const slotDateTimeUTC = new Date(Date.UTC(
+          parseInt(date.split('-')[0]),
+          parseInt(date.split('-')[1]) - 1,
+          parseInt(date.split('-')[2]),
+          hour,
+          0,
+          0
+        ));
         
         // Verificar se o slot está disponível (não conflita com agendamentos)
         const isAvailableByAppointments = !appointments?.some(apt => {
@@ -389,19 +417,19 @@ export default function SalaoPublico() {
                                     (apt.servico as any)?.[0]?.duracao_minutos || 
                                     60;
           
-          // IMPORTANTE: Extrair hora e minuto em UTC para comparar corretamente
+          // IMPORTANTE: Comparar tudo em UTC para garantir consistência
           // O agendamento foi salvo em UTC, então precisamos comparar em UTC também
-          const aptHour = aptTime.getUTCHours();
-          const aptMinute = aptTime.getUTCMinutes();
-          const slotHour = hour; // já temos o hour diretamente do loop
-          const slotMinute = 0; // sempre começa no minuto 0
+          const aptHourUTC = aptTime.getUTCHours();
+          const aptMinuteUTC = aptTime.getUTCMinutes();
+          const slotHourUTC = slotDateTimeUTC.getUTCHours();
+          const slotMinuteUTC = slotDateTimeUTC.getUTCMinutes();
           
-          // Calcular horário de término do agendamento existente em minutos do dia
-          const aptStartMinutes = aptHour * 60 + aptMinute;
+          // Calcular horário de término do agendamento existente em minutos do dia (UTC)
+          const aptStartMinutes = aptHourUTC * 60 + aptMinuteUTC;
           const aptEndMinutes = aptStartMinutes + aptServiceDuration;
           
-          // Calcular horário de término do slot que estamos verificando em minutos do dia
-          const slotStartMinutes = slotHour * 60 + slotMinute;
+          // Calcular horário de término do slot que estamos verificando em minutos do dia (UTC)
+          const slotStartMinutes = slotHourUTC * 60 + slotMinuteUTC;
           const slotEndMinutes = slotStartMinutes + serviceDuration;
           
           // Há sobreposição se os intervalos se cruzam
@@ -409,15 +437,15 @@ export default function SalaoPublico() {
           const hasOverlap = (slotStartMinutes < aptEndMinutes && slotEndMinutes > aptStartMinutes);
           
           // Debug detalhado para o primeiro slot e agendamento
-          if (slotHour === 8 && appointments && appointments.length > 0 && appointments.indexOf(apt) === 0) {
-            console.log(`🔍 Verificando slot ${slotHour}:${slotMinute.toString().padStart(2, '0')}:`, {
-              slotStart: `${slotHour}:${slotMinute.toString().padStart(2, '0')}`,
-              slotEnd: `${Math.floor(slotEndMinutes / 60)}:${(slotEndMinutes % 60).toString().padStart(2, '0')}`,
+          if (hour === startHour && appointments && appointments.length > 0 && appointments.indexOf(apt) === 0) {
+            console.log(`🔍 Verificando slot ${hour}:00:`, {
+              slotStart_UTC: `${slotHourUTC}:${slotMinuteUTC.toString().padStart(2, '0')} UTC`,
+              slotEnd_UTC: `${Math.floor(slotEndMinutes / 60)}:${(slotEndMinutes % 60).toString().padStart(2, '0')} UTC`,
               slotStartMinutes,
               slotEndMinutes,
-              aptStart_UTC: `${aptHour}:${aptMinute.toString().padStart(2, '0')} UTC`,
+              aptStart_UTC: `${aptHourUTC}:${aptMinuteUTC.toString().padStart(2, '0')} UTC`,
               aptStart_LOCAL: `${aptTime.getHours()}:${aptTime.getMinutes().toString().padStart(2, '0')} LOCAL`,
-              aptEnd: `${Math.floor(aptEndMinutes / 60)}:${(aptEndMinutes % 60).toString().padStart(2, '0')} UTC`,
+              aptEnd_UTC: `${Math.floor(aptEndMinutes / 60)}:${(aptEndMinutes % 60).toString().padStart(2, '0')} UTC`,
               aptStartMinutes,
               aptEndMinutes,
               aptServiceDuration,
@@ -427,7 +455,7 @@ export default function SalaoPublico() {
           }
           
           if (hasOverlap) {
-            console.log(`🚫 CONFLITO DETECTADO! Slot ${slotHour}:${slotMinute.toString().padStart(2, '0')} (${slotStartMinutes}min - ${slotEndMinutes}min) conflita com agendamento ${aptHour}:${aptMinute.toString().padStart(2, '0')} UTC (${aptStartMinutes}min - ${aptEndMinutes}min) - Duração: ${aptServiceDuration}min`);
+            console.log(`🚫 CONFLITO DETECTADO! Slot ${hour}:00 (${slotStartMinutes}min - ${slotEndMinutes}min UTC) conflita com agendamento ${aptHourUTC}:${aptMinuteUTC.toString().padStart(2, '0')} UTC (${aptStartMinutes}min - ${aptEndMinutes}min) - Duração: ${aptServiceDuration}min`);
           }
           
           return hasOverlap;
@@ -437,11 +465,11 @@ export default function SalaoPublico() {
         const isAvailableByBlockedSlots = !blockedSlots?.some(blocked => {
           const blockedStart = new Date(`${date}T${blocked.hora_inicio}`);
           const blockedEnd = new Date(`${date}T${blocked.hora_fim}`);
-          const slotEndTime = new Date(slotDateTime.getTime() + serviceDuration * 60000);
+          const slotEndTime = new Date(slotDateTimeUTC.getTime() + serviceDuration * 60000);
           
-          return (slotDateTime >= blockedStart && slotDateTime < blockedEnd) ||
+          return (slotDateTimeUTC >= blockedStart && slotDateTimeUTC < blockedEnd) ||
                  (slotEndTime > blockedStart && slotEndTime <= blockedEnd) ||
-                 (slotDateTime <= blockedStart && slotEndTime >= blockedEnd);
+                 (slotDateTimeUTC <= blockedStart && slotEndTime >= blockedEnd);
         });
 
         // Slot está disponível se não conflita com agendamentos E não está bloqueado

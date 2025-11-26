@@ -77,14 +77,18 @@ function PublicRoutes() {
 function AuthenticatedRoutes() {
   const { profile } = useAuth();
   
-  // Debug completo
-  console.log('AuthenticatedRoutes - Profile completo:', profile);
-  console.log('AuthenticatedRoutes - Profile tipo:', profile?.tipo);
-  console.log('AuthenticatedRoutes - URL atual:', window.location.pathname);
+  // Log apenas em desenvolvimento e sem dados sensíveis
+  if (import.meta.env.DEV) {
+    console.log('AuthenticatedRoutes - Profile tipo:', profile?.tipo);
+    console.log('AuthenticatedRoutes - URL atual:', window.location.pathname);
+  }
   
   // Redirecionar baseado no tipo de usuário
   const getDefaultRoute = () => {
-    console.log('getDefaultRoute - Profile tipo:', profile?.tipo); // Debug
+    // Log apenas em desenvolvimento
+    if (import.meta.env.DEV) {
+      console.log('getDefaultRoute - Profile tipo:', profile?.tipo);
+    }
     switch (profile?.tipo) {
       case 'system_admin':
         return '/superadmin';

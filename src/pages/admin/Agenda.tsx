@@ -393,20 +393,21 @@ const Agenda = () => {
       }
 
       // Criar cliente usando o hook useClients
+      // NOTA: useClients cria na tabela 'users' (tipo='cliente'), não em 'clientes'
+      // A tabela 'users' não tem campo 'senha_hash', apenas 'clientes' tem
       const result = await createClient({
         nome: clientForm.nome,
         email: clientForm.email,
         telefone: clientForm.telefone || 'Não informado',
-        salao_id: salonInfo.id,
-        senha_hash: senhaTemporaria // Em produção, isso deveria ser um hash
-      } as any);
+        observacoes: clientForm.observacoes || `Senha temporária gerada: ${senhaTemporaria}`
+      });
       
-      if (result && result.data) {
+      if (result) {
         // Limpar formulário de cliente
         setClientForm({ nome: '', email: '', telefone: '', observacoes: '' });
         
         // Selecionar automaticamente o novo cliente no formulário de agendamento
-        setForm(f => ({ ...f, cliente_id: result.data.id }));
+        setForm(f => ({ ...f, cliente_id: result.id }));
         
         // Fechar popover de cliente se estiver aberto
         setClientPopoverOpen(false);
@@ -1958,7 +1959,10 @@ const Agenda = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Movendo para cima:', apt.cliente_nome);
+                              // Log apenas em desenvolvimento
+                              if (import.meta.env.DEV) {
+                                console.log('Movendo agendamento para cima');
+                              }
                               handleMoveAppointment(apt, 'up');
                             }}
                             className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"
@@ -1975,7 +1979,10 @@ const Agenda = () => {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('Movendo para baixo:', apt.cliente_nome);
+                              // Log apenas em desenvolvimento
+                              if (import.meta.env.DEV) {
+                                console.log('Movendo agendamento para baixo');
+                              }
                               handleMoveAppointment(apt, 'down');
                             }}
                             className="w-6 h-6 rounded-full bg-background/80 hover:bg-background border border-border/50 flex items-center justify-center shadow-sm transition-colors backdrop-blur-sm"

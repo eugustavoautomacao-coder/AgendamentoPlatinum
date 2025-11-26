@@ -133,10 +133,12 @@ export default function ComissoesMensais() {
           employees!inner(
             nome,
             avatar_url,
-            salao_id
+            salao_id,
+            percentual_comissao
           )
         `)
-        .eq('employees.salao_id', profile.salao_id);
+        .eq('employees.salao_id', profile.salao_id)
+        .gt('percentual_comissao', 0); // Filtrar apenas funcionários com comissão > 0%
       
       // Filtrar por período
       if (selectedPeriod === 'current') {
@@ -157,12 +159,13 @@ export default function ComissoesMensais() {
       if (error) throw error;
       
       // Transformar os dados para o formato esperado
-      const transformedData = data?.map(item => ({
+      // Filtrar novamente no frontend para garantir (defesa dupla)
+      const transformedData = (data?.map(item => ({
         ...item,
         funcionario_nome: item.employees.nome,
         funcionario_avatar: item.employees.avatar_url,
         salao_id: item.employees.salao_id
-      })) || [];
+      })) || []).filter(item => item.percentual_comissao > 0);
       
       setComissoesMensais(transformedData);
     } catch (error) {
@@ -417,40 +420,79 @@ export default function ComissoesMensais() {
           <div className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={async () => {
-                if (!profile?.salao_id) return;
+                if (!profile?.salao_id) {
+                  console.error('❌ Salão ID não encontrado');
+                  return;
+                }
+                
+                console.log('🚀 INICIANDO recálculo de comissões...');
+                console.log('🏢 Salão ID:', profile.salao_id);
+                
                 try {
                   setLoading(true);
                   
                   // Buscar todos os funcionários do salão
-                  const { data: funcionarios } = await supabase
+                  const { data: funcionarios, error: funcError } = await supabase
                     .from('employees')
-                    .select('id')
+                    .select('id, nome, percentual_comissao')
                     .eq('salao_id', profile.salao_id)
                     .eq('ativo', true);
                   
-                  if (funcionarios) {
+                  if (funcError) {
+                    console.error('❌ Erro ao buscar funcionários:', funcError);
+                    toast.error('Erro ao buscar funcionários');
+                    return;
+                  }
+
+                  console.log(`👥 Funcionários ativos encontrados: ${funcionarios?.length || 0}`);
+                  console.log('Funcionários:', funcionarios);
+                  
+                  if (funcionarios && funcionarios.length > 0) {
                     const now = new Date();
                     const mes = now.getMonth() + 1;
                     const ano = now.getFullYear();
                     
+                    console.log(`📅 Recalculando para: ${mes}/${ano}`);
+                    
+                    let sucessos = 0;
+                    let erros = 0;
+                    
                     // Recalcular comissões para todos os funcionários do mês atual
                     for (const funcionario of funcionarios) {
-                      await recalcularComissoesMensais(funcionario.id, mes, ano);
+                      try {
+                        console.log(`\n➡️ Processando: ${funcionario.nome}`);
+                        await recalcularComissoesMensais(funcionario.id, mes, ano);
+                        sucessos++;
+                      } catch (err) {
+                        console.error(`❌ Erro ao processar ${funcionario.nome}:`, err);
+                        erros++;
+                      }
                     }
                     
-                    toast.success('Comissões recalculadas e atualizadas com sucesso!');
+                    console.log(`\n📊 RESUMO:`);
+                    console.log(`✅ Sucessos: ${sucessos}`);
+                    console.log(`❌ Erros: ${erros}`);
+                    
+                    if (erros > 0) {
+                      toast.warning(`Comissões recalculadas com ${erros} erro(s). Verifique o console.`);
+                    } else {
+                      toast.success(`Comissões recalculadas com sucesso! (${sucessos} funcionário(s))`);
+                    }
+                    
                     fetchComissoesMensais();
                   } else {
-                    // Se não há funcionários, apenas atualizar
+                    console.warn('⚠️ Nenhum funcionário ativo encontrado');
+                    toast.info('Nenhum funcionário ativo encontrado');
                     fetchComissoesMensais();
                   }
                 } catch (error) {
-                  console.error('Erro ao recalcular comissões:', error);
-                  toast.error('Erro ao recalcular comissões');
+                  console.error('❌ ERRO CRÍTICO ao recalcular comissões:', error);
+                  toast.error('Erro ao recalcular comissões. Verifique o console.');
                   // Tentar apenas atualizar em caso de erro
                   fetchComissoesMensais();
                 } finally {
                   setLoading(false);
+                  console.log('🏁 Processo finalizado\n');
                 }
               }}
               disabled={loading} 

@@ -2,7 +2,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function checkUserExists(email: string) {
   try {
-    console.log('🔍 Verificando se usuário existe:', email);
+    // Log apenas em desenvolvimento e sem dados sensíveis
+    if (import.meta.env.DEV) {
+      console.log('🔍 Verificando se usuário existe');
+    }
     
     // Verificar na tabela public.users
     const { data: publicUser, error: publicError } = await supabase

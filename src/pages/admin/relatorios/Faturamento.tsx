@@ -235,7 +235,7 @@ const RelatorioFaturamento = () => {
       ['EVOLUÇÃO DIÁRIA'],
       ['Data', 'Receita'],
       ...(chartData.daily || []).map(item => [
-        formatDate(item.date),
+        formatDate(item.fullDate), // Usar fullDate que contém a data completa
         formatCurrency(item.revenue || 0)
       ])
     ];

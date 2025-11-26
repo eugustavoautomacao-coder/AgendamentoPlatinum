@@ -119,9 +119,10 @@ export function useAppointments() {
         throw new Error('data_hora é obrigatório');
       }
       
-      // Garantir que o status seja definido
+      // Garantir que o status seja definido e que employee_id também seja populado
       const dataToInsert = {
         ...appointmentData,
+        employee_id: appointmentData.funcionario_id, // Campo duplicado para compatibilidade
         status: appointmentData.status || 'confirmado', // Status padrão se não for fornecido
         criado_em: new Date().toISOString()
       };
