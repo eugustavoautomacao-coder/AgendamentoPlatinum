@@ -42,12 +42,24 @@ const AdminSidebar = () => {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null); // Para mobile (clique)
   const [submenuTop, setSubmenuTop] = useState<number | null>(null);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [submenuAsDropdown, setSubmenuAsDropdown] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { salonName } = useSalonInfo();
+
+  // Detectar se é mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -58,7 +70,19 @@ const AdminSidebar = () => {
     };
   }, [hoverTimeout]);
 
+  // Clique para mobile - toggle do submenu
+  const handleItemClick = (item: MenuItem, event: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile && item.hasSubmenu) {
+      event.preventDefault();
+      event.stopPropagation();
+      setExpandedItem(expandedItem === item.title ? null : item.title);
+    }
+  };
+
   const handleMouseEnter = (itemTitle: string, event: React.MouseEvent<HTMLDivElement>) => {
+    // No mobile, não usar hover
+    if (isMobile) return;
+    
     // Limpar timeout anterior se existir
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
@@ -81,11 +105,18 @@ const AdminSidebar = () => {
   const handleNavigation = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Fechar submenu no mobile após navegação
+    if (isMobile) {
+      setExpandedItem(null);
+    }
     // Navegar sem expandir a sidebar
     navigate(href);
   };
 
   const handleMouseLeave = () => {
+    // No mobile, não usar hover
+    if (isMobile) return;
+    
     // Adicionar delay antes de fechar o menu
     const timeout = setTimeout(() => {
       setHoveredItem(null);
@@ -211,6 +242,7 @@ const AdminSidebar = () => {
                       onMouseLeave={handleMouseLeave}
                     >
                       <div
+                        onClick={(e) => handleItemClick(item, e)}
                         className={`flex items-center gap-3 rounded-lg transition-all duration-200 group cursor-pointer ${
                           collapsed ? 'px-3 py-3 justify-center' : 'px-3 py-2.5'
                         } ${
@@ -225,30 +257,103 @@ const AdminSidebar = () => {
                           <>
                             <span className="font-medium flex-1">{item.title}</span>
                             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${
-                              hoveredItem === item.title ? 'rotate-180' : ''
+                              (hoveredItem === item.title || expandedItem === item.title) ? 'rotate-180' : ''
                             }`} />
                           </>
                         )}
+                      </div>
+                      
+                      {/* Mobile: Submenu inline expandido */}
+                      {isMobile && expandedItem === item.title && !collapsed && (
+                        <div className="mt-1 ml-4 pl-4 border-l-2 border-primary/20 space-y-1">
+                          {item.submenu!.map((subItem: MenuItem) => (
+                            <NavLink
+                              key={subItem.href}
+                              to={subItem.href}
+                              onClick={(e) => handleNavigation(subItem.href, e)}
+                              className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
+                                isActive(subItem.href)
+                                  ? 'text-primary bg-primary/10'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                              }`}
+                            >
+                              <subItem.icon className="h-4 w-4 flex-shrink-0 text-primary" />
+                              <span>{subItem.title}</span>
+                            </NavLink>
+                          ))}
+                        </div>
+                      )}
                         
-                        {/* Flyout Menu */}
-                        {hoveredItem === item.title && createPortal(
-                          submenuAsDropdown ? (
-                            <div
-                              className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max"
-                              style={{ zIndex: 999999 }}
+                      {/* Desktop: Flyout Menu (hover) */}
+                      {!isMobile && hoveredItem === item.title && createPortal(
+                        submenuAsDropdown ? (
+                          <div
+                            className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max"
+                            style={{ zIndex: 999999 }}
+                            onMouseEnter={() => {
+                              if (hoverTimeout) {
+                                clearTimeout(hoverTimeout);
+                                setHoverTimeout(null);
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              const timeout = setTimeout(() => {
+                                setHoveredItem(null);
+                              }, 300);
+                              setHoverTimeout(timeout);
+                            }}
+                          >
+                            {item.submenu!.map((subItem: MenuItem) => (
+                              <NavLink
+                                key={subItem.href}
+                                to={subItem.href}
+                                onClick={(e) => handleNavigation(subItem.href, e)}
+                                className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors duration-200 hover:bg-accent ${
+                                  isActive(subItem.href)
+                                    ? 'text-primary bg-primary/10'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                <subItem.icon className="h-5 w-5 flex-shrink-0 text-primary" />
+                                <span>{subItem.title}</span>
+                              </NavLink>
+                            ))}
+                          </div>
+                        ) : (
+                          <div 
+                            className="fixed inset-0 pointer-events-none"
+                            style={{ zIndex: 999998 }}
+                            onMouseLeave={() => {
+                              const timeout = setTimeout(() => {
+                                setHoveredItem(null);
+                              }, 300);
+                              setHoverTimeout(timeout);
+                            }}
+                          >
+                            <div 
+                              className={`fixed ${collapsed ? 'left-14' : 'left-64'} w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max ml-2 pointer-events-auto`}
+                              style={{
+                                top: submenuTop !== null ? `${submenuTop}px` : '50%',
+                                transform: submenuTop !== null ? 'translateY(-50%)' : 'translateY(-50%)',
+                                zIndex: 999999
+                              }}
                               onMouseEnter={() => {
+                                // Limpar timeout quando mouse entra no flyout
                                 if (hoverTimeout) {
                                   clearTimeout(hoverTimeout);
                                   setHoverTimeout(null);
                                 }
                               }}
                               onMouseLeave={() => {
+                                // Adicionar delay quando mouse sai do flyout
                                 const timeout = setTimeout(() => {
                                   setHoveredItem(null);
                                 }, 300);
                                 setHoverTimeout(timeout);
                               }}
                             >
+                              {/* Seta visual */}
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-card border-r border-t border-border transform -rotate-45"></div>
                               {item.submenu!.map((subItem: MenuItem) => (
                                 <NavLink
                                   key={subItem.href}
@@ -265,62 +370,10 @@ const AdminSidebar = () => {
                                 </NavLink>
                               ))}
                             </div>
-                          ) : (
-                            <div 
-                              className="fixed inset-0 pointer-events-none"
-                              style={{ zIndex: 999998 }}
-                              onMouseLeave={() => {
-                                const timeout = setTimeout(() => {
-                                  setHoveredItem(null);
-                                }, 300);
-                                setHoverTimeout(timeout);
-                              }}
-                            >
-                              <div 
-                                className={`fixed ${collapsed ? 'left-14' : 'left-64'} w-48 bg-card border border-border rounded-lg shadow-elegant py-2 min-w-max ml-2 pointer-events-auto`}
-                                style={{
-                                  top: submenuTop !== null ? `${submenuTop}px` : '50%',
-                                  transform: submenuTop !== null ? 'translateY(-50%)' : 'translateY(-50%)',
-                                  zIndex: 999999
-                                }}
-                                onMouseEnter={() => {
-                                  // Limpar timeout quando mouse entra no flyout
-                                  if (hoverTimeout) {
-                                    clearTimeout(hoverTimeout);
-                                    setHoverTimeout(null);
-                                  }
-                                }}
-                                onMouseLeave={() => {
-                                  // Adicionar delay quando mouse sai do flyout
-                                  const timeout = setTimeout(() => {
-                                    setHoveredItem(null);
-                                  }, 300);
-                                  setHoverTimeout(timeout);
-                                }}
-                              >
-                                {/* Seta visual */}
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-card border-r border-t border-border transform -rotate-45"></div>
-                                {item.submenu!.map((subItem: MenuItem) => (
-                                  <NavLink
-                                    key={subItem.href}
-                                    to={subItem.href}
-                                    onClick={(e) => handleNavigation(subItem.href, e)}
-                                    className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors duration-200 hover:bg-accent ${
-                                      isActive(subItem.href)
-                                        ? 'text-primary bg-primary/10'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                  >
-                                    <subItem.icon className="h-5 w-5 flex-shrink-0 text-primary" />
-                                    <span>{subItem.title}</span>
-                                  </NavLink>
-                                ))}
-                              </div>
-                            </div>
-                          ),
-                          document.body
-                        )}
-                      </div>
+                          </div>
+                        ),
+                        document.body
+                      )}
                     </div>
                   ) : (
                     // Item normal
