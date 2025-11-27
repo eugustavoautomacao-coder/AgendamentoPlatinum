@@ -244,38 +244,64 @@ const AdminDashboard = () => {
           {/* Today's Appointments */}
           <div className="lg:col-span-2">
             <Card className="shadow-elegant">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <Calendar className="h-5 w-5 text-primary flex-shrink-0" />
-                      <span>
+              <CardHeader className="px-3 sm:px-6 pb-3 sm:pb-6">
+                <div className="flex items-start justify-between gap-2 sm:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-1.5 flex-wrap text-base sm:text-lg">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                      <span className="truncate">
                         {selectedDate ? `Agendamentos ${format(selectedDate, 'dd/MM', { locale: ptBR })}` : 'Agendamentos de Hoje'}
                       </span>
                     </CardTitle>
-                    <CardDescription className="mt-0.5">
-                      {nextAppointments.length} {nextAppointments.length === 1 ? 'agendamento programado' : 'agendamentos programados'}
+                    <CardDescription className="mt-0.5 text-xs sm:text-sm">
+                      {nextAppointments.length} {nextAppointments.length === 1 ? 'agendamento' : 'agendamentos'}
                     </CardDescription>
                   </div>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => navigate('/admin/agenda')}
-                    className="flex-shrink-0 self-start"
+                    className="flex-shrink-0 self-start text-xs sm:text-sm px-2 sm:px-3 h-8"
                   >
-                    Ver Todos
+                    <span className="hidden sm:inline">Ver Todos</span>
+                    <span className="sm:hidden">Ver</span>
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-3">
                   {nextAppointments.map((appointment) => (
                     <div
                       key={appointment.id}
-                      className="flex items-center gap-4 p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft hover:scale-[1.02] hover:-translate-y-1 transition-all duration-200 cursor-pointer"
+                      className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-gradient-card rounded-lg border border-border hover:shadow-soft hover:scale-[1.01] sm:hover:scale-[1.02] hover:-translate-y-0.5 sm:hover:-translate-y-1 transition-all duration-200 cursor-pointer"
                       onClick={() => navigate(`/admin/agenda?appointment=${appointment.id}`)}
                     >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Mobile: Header com horário e status */}
+                      <div className="flex items-center justify-between sm:hidden">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-semibold">{appointment.time}</span>
+                          <span className="text-xs text-muted-foreground">({appointment.duration})</span>
+                        </div>
+                        <Badge className={getStatusColor(appointment.status) + ' text-xs'}>
+                          {capitalizeFirstLetter(appointment.status)}
+                        </Badge>
+                      </div>
+                      
+                      {/* Mobile: Conteúdo */}
+                      <div className="flex flex-col gap-1 sm:hidden">
+                        <div className="flex items-center gap-2 font-medium text-foreground">
+                          <UserIcon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                          <span className="text-sm truncate">{appointment.client}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Scissors className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{appointment.service} • {appointment.professional}</span>
+                        </div>
+                      </div>
+
+                      {/* Desktop: Layout original */}
+                      <div className="hidden sm:flex items-center gap-3 flex-1 min-w-0">
                         <div className="text-center flex-shrink-0">
                           <div className="flex items-center gap-1 text-sm font-medium text-foreground">
                             <Clock className="h-4 w-4 text-primary" />
@@ -297,7 +323,7 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                       </div>
-                      <Badge className={getStatusColor(appointment.status) + ' flex-shrink-0'}>
+                      <Badge className={getStatusColor(appointment.status) + ' flex-shrink-0 hidden sm:inline-flex'}>
                         {capitalizeFirstLetter(appointment.status)}
                       </Badge>
                     </div>

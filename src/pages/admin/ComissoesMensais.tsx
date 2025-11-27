@@ -368,6 +368,22 @@ export default function ComissoesMensais() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const formatDateTime = (dateString: string) => {
+    // Extrair data/hora diretamente da string sem conversão de timezone
+    // Formato do banco: "2025-11-26 08:00:00+00" ou "2025-11-26T08:00:00.000Z"
+    try {
+      // Regex que captura ambos os formatos (com T ou espaço)
+      const match = dateString.match(/(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+      if (match) {
+        const [, year, month, day, hour, minute] = match;
+        return `${day}/${month}/${year} às ${hour}:${minute}`;
+      }
+      return dateString;
+    } catch {
+      return dateString;
+    }
+  };
+
   const getMonthName = (mes: number) => {
     const months = [
       'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -892,9 +908,8 @@ export default function ComissoesMensais() {
                   {detalhesAgendamentos.map((detalhe) => {
                     const appointment = detalhe.appointments;
                     const service = appointment?.services;
-                    const appointmentDate = appointment?.data_hora ? new Date(appointment.data_hora) : null;
-                    const formattedDateTime = appointmentDate 
-                      ? `${appointmentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} às ${appointmentDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    const formattedDateTime = appointment?.data_hora 
+                      ? formatDateTime(appointment.data_hora)
                       : formatDate(detalhe.criado_em);
                     
                     return (
@@ -916,7 +931,7 @@ export default function ComissoesMensais() {
                                   </span>
                                 </div>
                               )}
-                              {appointmentDate && (
+                              {appointment?.data_hora && (
                                 <div className="flex items-center gap-1.5">
                                   <Calendar className="h-3 w-3 text-primary/70 flex-shrink-0" />
                                   <span className="text-xs text-muted-foreground">
